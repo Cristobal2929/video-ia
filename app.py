@@ -104,12 +104,12 @@ if st.button("🚀 INICIAR PRODUCCIÓN HD"):
                 if clips:
                     status.write("🎬 Editando con clips reales...")
                     selec = random.choices(clips, k=5)
-                    inputs = "".join([f'-stream_loop -1 -i "{c}" ' for c in selec])
+                    inputs = "".join([f'-i "{c}" ' for c in selec])
                     # Subtítulos chicos (FontSize=30) y HD
                     est = f"Fontname=Impact,FontSize=30,PrimaryColour={ass_color},Outline=3,Alignment=2,MarginV=150"
                     filt = f"concat=n=5:v=1:a=0[v];[v]scale=720:1280,eq=contrast=1.1,subtitles=t.srt:force_style='{est}'[outv]"
                     
-                    cmd = f"ffmpeg -y {inputs} -i \"t.mp3\" -filter_complex \"{filt}\" -map \"[outv]\" -map 5:a -c:v libx264 -pix_fmt yuv420p -movflags +faststart -t {duracion} -y \"{final_p}\""
+                    cmd = f"ffmpeg -y {inputs} -i \"t.mp3\" -filter_complex \"{filt}\" -map \"[outv]\" -map 5:a -c:v libx264 -pix_fmt yuv420p -movflags +faststart -shortest \"{final_p}\""
                     subprocess.run(cmd, shell=True)
                     
                     with open(final_p, 'rb') as f:
