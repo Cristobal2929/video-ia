@@ -114,7 +114,7 @@ if st.button("🚀 INICIAR PRODUCCIÓN HD"):
                     
                     with open(final_p, 'rb') as f:
                         v_bytes = f.read()
-                        st.video(v_bytes)
+                        st.video(v_bytes, format="video/mp4", start_time=0)
                         st.download_button("📥 DESCARGAR VIDEO", v_bytes, file_name=f"Fenix_{uid}.mp4")
                     status.update(label="✅ Vídeo Listo!", state="complete")
                 else:
