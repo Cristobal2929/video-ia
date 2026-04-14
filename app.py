@@ -109,7 +109,7 @@ if st.button("🚀 INICIAR PRODUCCIÓN HD"):
                     est = f"Fontname=Impact,FontSize=30,PrimaryColour={ass_color},Outline=3,Alignment=2,MarginV=150"
                     filt = f"concat=n=5:v=1:a=0[v];[v]scale=720:1280,eq=contrast=1.1,subtitles=t.srt:force_style='{est}'[outv]"
                     
-                    cmd = f'ffmpeg -y {inputs} -i "t.mp3" -filter_complex "{filt}" -map "[outv]" -map 5:a -c:v libx264 -pix_fmt yuv420p -preset ultrafast -crf 18 -t {duracion} -shortest "{final_p}"'
+                    cmd = f"ffmpeg -y {inputs} -i \"t.mp3\" -filter_complex \"{filt}\" -map \"[outv]\" -map 5:a -c:v libx264 -pix_fmt yuv420p -profile:v baseline -level 3.0 -movflags +faststart -t {duracion} -shortest \"{final_p}\""
                     subprocess.run(cmd, shell=True)
                     
                     with open(final_p, 'rb') as f:
