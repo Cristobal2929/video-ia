@@ -4,13 +4,23 @@ import os, time, random, subprocess, re, requests
 st.set_page_config(page_title="Fénix Studio Pro", layout="centered", page_icon="🎬")
 st.markdown("<style>.stApp {background: linear-gradient(135deg, #0f172a, #1e293b); color: white;}</style>", unsafe_allow_html=True)
 
-# Historias base y versiones extendidas
-HISTORIAS = {
-    "terror": "La noche caía pesada sobre la vieja mansión. Las sombras parecían cobrar vida propia en las esquinas de las habitaciones vacías. Cada crujido de la madera sonaba como un grito ahogado en el silencio. No había escapatoria, el frío calaba los huesos mientras una presencia invisible observaba desde la oscuridad más profunda. Algo se movía bajo la cama, algo que no pertenecía a este mundo.",
-    "terror_largo": "La noche caía pesada sobre la vieja mansión. Las sombras parecían cobrar vida propia en las esquinas de las habitaciones vacías. Cada crujido de la madera sonaba como un grito ahogado en el silencio. El viento aullaba entre los árboles secos, golpeando las ventanas como si quisiera entrar. El frío calaba los huesos mientras una presencia invisible observaba desde la oscuridad más profunda. Algo se movía bajo la cama, algo que no pertenecía a este mundo, esperando el momento exacto en el que cerraras los ojos para arrastrarte hacia el abismo eterno del que nadie ha logrado regresar jamás.",
-    "coche": "La ingeniería perfecta se encuentra con la adrenalina pura. Imagina recorrer la carretera a toda velocidad, sintiendo el rugido de quinientos caballos de fuerza bajo el capó. El diseño aerodinámico corta el viento mientras las luces de la ciudad se difuminan en un rastro de colores. Esto no es solo un vehículo, es una obra de arte en movimiento.",
-    "negocio": "El camino hacia el éxito financiero requiere más que solo sueños; requiere una estrategia implacable y una ejecución perfecta. Los grandes imperios no se construyeron en un día, se forjaron en las horas de sacrificio y en la toma de decisiones audaces. Si quieres cambiar tu futuro, debes empezar a invertir en tu activo más valioso."
-}
+# Función para traducir temas comunes al inglés para Pexels (Mejora la búsqueda)
+def traducir_tema(tema):
+    tema = tema.lower()
+    diccionario = {
+        "motos": "motorcycles", "moto": "motorcycle", "comida": "cooking food",
+        "perros": "cute dogs", "gatos": "funny cats", "naturaleza": "nature landscape",
+        "espacio": "outer space", "playa": "ocean beach", "deporte": "sports gym",
+        "aviones": "aviation airplanes", "tecnología": "future technology"
+    }
+    # Si la palabra está en el diccionario la traduce, si no, intenta buscarla tal cual
+    return diccionario.get(tema, tema)
+
+def generar_guion_universal(tema, largo=False):
+    if largo:
+        return f"Bienvenidos a un viaje fascinante por el mundo de {tema}. Pocas cosas son tan impactantes y curiosas como lo que estamos viendo hoy. Cada detalle cuenta una historia de esfuerzo, diseño y evolución. Acompáñame mientras descubrimos los secretos mejor guardados y disfrutamos de estas imágenes espectaculares que nos demuestran que el mundo está lleno de maravillas esperando ser descubiertas. No te pierdas ni un segundo, porque lo que viene a continuación cambiará tu forma de ver este tema para siempre."
+    else:
+        return f"Prepárate para sorprenderte con lo mejor de {tema}. Una experiencia visual única diseñada para inspirarte y mostrarte la belleza en cada detalle. ¡Disfrútalo!"
 
 def transformar_srt_profesional(vtt_path, srt_path):
     try:
@@ -41,24 +51,27 @@ def obtener_duracion(archivo):
     cmd = f"ffprobe -i {archivo} -show_entries format=duration -v quiet -of csv='p=0'"
     return float(subprocess.check_output(cmd, shell=True))
 
-def buscar_y_descargar_exacto(query, api_key, segundos_totales):
-    busqueda_real = "horror creepy" if "terror" in query.lower() else "luxury cars" if "coche" in query.lower() else "business"
-    url = f"https://api.pexels.com/videos/search?query={busqueda_real}&per_page=40&orientation=portrait"
+def buscar_y_descargar_dinamico(query, api_key, segundos_totales):
+    # Limpiamos la frase del usuario para sacar solo el tema
+    tema_limpio = re.sub(r'quiero|un|video|de|sobre|hazme|haz|crea|largo|bastante', '', query.lower()).strip()
+    busqueda_ingles = traducir_tema(tema_limpio)
+    
+    url = f"https://api.pexels.com/videos/search?query={busqueda_ingles}&per_page=40&orientation=portrait"
     descargados = []
-    segundos_acumulados = 0
+    segundos_acum = 0
     try:
         res = requests.get(url, headers={"Authorization": api_key.strip()})
         videos = res.json().get('videos', [])
         random.shuffle(videos)
         for i, v in enumerate(videos):
-            if segundos_acumulados >= segundos_totales + 5: break # Un margen de 5s extra
+            if segundos_acum >= segundos_totales + 3: break
             link = v['video_files'][0]['link']
             nombre = f"clip_{i}.mp4"
             with open(nombre, 'wb') as f: f.write(requests.get(link).content)
             descargados.append(nombre)
-            segundos_acumulados += v.get('duration', 8)
-        return descargados
-    except: return []
+            segundos_acum += v.get('duration', 8)
+        return descargados, tema_limpio
+    except: return [], "error"
 
 with st.sidebar:
     st.title("⚙️ Ajustes")
@@ -68,10 +81,10 @@ with st.sidebar:
     ass_color = f"&H00{hc[4:6]}{hc[2:4]}{hc[0:2]}"
     voz = st.selectbox("🗣️ Voz", ["es-ES-AlvaroNeural", "es-MX-JorgeNeural"])
 
-st.title("🎬 Fénix Studio Pro")
+st.title("🎬 Fénix Studio: Nicho Universal")
 
 if "mensajes" not in st.session_state:
-    st.session_state.mensajes = [{"role": "assistant", "content": "¡Hola! Si quieres un vídeo largo, dime por ejemplo: 'Hazme un vídeo de terror que dure bastante'."}]
+    st.session_state.mensajes = [{"role": "assistant", "content": "¡Hola! Ahora puedes pedirme CUALQUIER tema. Ejemplo: 'Hazme un vídeo largo de motos' o 'Vídeo de cocina'."}]
 
 for msg in st.session_state.mensajes:
     with st.chat_message(msg["role"]):
@@ -79,30 +92,26 @@ for msg in st.session_state.mensajes:
         if "video" in msg:
             with open(msg["video"], "rb") as f: st.video(f.read())
 
-if user_input := st.chat_input("Dime el tema..."):
+if user_input := st.chat_input("¿Qué vídeo quieres crear hoy?"):
     st.session_state.mensajes.append({"role": "user", "content": user_input})
     with st.chat_message("user"): st.markdown(user_input)
 
     with st.chat_message("assistant"):
-        # LÓGICA DE DETECCIÓN DE DURACIÓN
-        es_largo = any(palabra in user_input.lower() for palabra in ["bastante", "mucho", "largo", "minuto"])
-        guion_final = user_input
+        es_largo = any(p in user_input.lower() for p in ["bastante", "largo", "minuto", "mucho"])
         
-        if len(user_input) < 100:
-            if "terror" in user_input.lower():
-                guion_final = HISTORIAS["terror_largo"] if es_largo else HISTORIAS["terror"]
-            elif "coche" in user_input.lower():
-                guion_final = HISTORIAS["coche"] # Aquí podrías añadir un coche_largo
-            elif "negocio" in user_input.lower():
-                guion_final = HISTORIAS["negocio"]
-
-        with st.status("🎬 Creando montaje según tu instrucción de tiempo...", expanded=True) as status:
+        with st.status("🚀 Creando producción personalizada...", expanded=True) as status:
             uid = int(time.time())
             v_final = f"output/v_{uid}.mp4"
+            
+            # Buscamos vídeos y extraemos el tema real
+            clips, tema_detectado = buscar_y_descargar_dinamico(user_input, pexels_key, 60 if es_largo else 10)
+            
+            # Generamos guion basado en ese tema
+            guion_final = generar_guion_universal(tema_detectado, es_largo)
+            
             subprocess.run(f'edge-tts --voice {voz} --text "{guion_final}" --write-media "t.mp3" --write-subtitles "t.vtt"', shell=True)
             
-            duracion_audio = obtener_duracion("t.mp3")
-            clips = buscar_y_descargar_exacto(user_input, pexels_key, duracion_audio)
+            dur_audio = obtener_duracion("t.mp3")
             
             if clips:
                 transformar_srt_profesional("t.vtt", "t.srt")
@@ -116,5 +125,5 @@ if user_input := st.chat_input("Dime el tema..."):
                 cmd = f'ffmpeg -y -i base.mp4 -i t.mp3 -vf "subtitles=t.srt:force_style=\'{est}\'" -c:v libx264 -preset superfast -shortest "{v_final}"'
                 subprocess.run(cmd, shell=True)
                 
-                st.session_state.mensajes.append({"role": "assistant", "content": f"✅ Vídeo de {round(duracion_audio)} segundos listo.", "video": v_final})
+                st.session_state.mensajes.append({"role": "assistant", "content": f"✅ ¡Vídeo de **{tema_detectado}** terminado! Duración: {round(dur_audio)}s.", "video": v_final})
                 st.rerun()
