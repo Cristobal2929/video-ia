@@ -15,8 +15,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX AI STUDIO v6.0</div>', unsafe_allow_html=True)
-st.markdown('<div class="pro-subtitle">Subcerebro Autónomo • Leyes de Retención Psicológica</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX AI STUDIO v7.0</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-subtitle">Lógica Absoluta • Subcerebro + Motor Procedural</div>', unsafe_allow_html=True)
 
 def es_texto_valido(texto):
     t_lower = texto.lower()
@@ -42,10 +42,36 @@ def detectar_nicho(tema):
     t = tema.lower()
     if any(w in t for w in ["miedo", "terror", "fantasma", "paranormal", "horror", "oscuridad", "demonio", "maldito", "asesino", "leyenda", "creepy"]):
         return "terror"
-    elif any(w in t for w in ["negocio", "dinero", "invertir", "empresa", "millonario", "finanzas", "cripto", "emprendedor", "ventas", "marketing", "riqueza", "dolares"]):
+    elif any(w in t for w in ["negocio", "dinero", "invertir", "inversion", "empresa", "millonario", "finanzas", "cripto", "emprendedor", "ventas", "marketing", "riqueza", "dolares"]):
         return "negocios"
     else:
         return "misterio"
+
+# --- MOTOR DE LEGOS ADAPTATIVO (Vuelve la lógica de Dayron) ---
+def generar_guion_emergencia(tema, nicho):
+    tema = tema.upper()
+    if nicho == "terror":
+        ganchos = ["NO MIRES ESTE VIDEO DE NOCHE SI LE TEMES A", "ESTE ES EL VIDEO MAS PERTURBADOR QUE EXISTE SOBRE", "TE RETO A ESCUCHAR LA HISTORIA REAL DE"]
+        creencias = ["MUCHOS CREEN QUE ES FALSO HASTA QUE LES PASA", "PARECIA UNA LEYENDA URBANA MAS DEL MONTON", "TODOS PENSABAN QUE ERA UN SIMPLE MITO"]
+        descubrimientos = ["PERO UN EXPLORADOR GRABO ESTO EN VIDEO Y DESAPARECIO", "HASTA QUE SE FILTRARON LAS LLAMADAS AL NUEVE ONCE", "PERO LA AUTOPSIA REVELO ALGO ESCALOFRIANTE"]
+        giros = ["LA CRIATURA NUNCA ESTUVO FUERA SIEMPRE ESTUVO DENTRO DE LA CASA", "Y DESCUBRIERON QUE ESTABAN INVOCANDO ALGO SIN SABERLO", "LO PEOR ES QUE ESTO SIGUE PASANDO HOY EN DIA"]
+        finales = ["SI ESCUCHAS UN RUIDO HOY NO ABRAS LA PUERTA SIGUENOS PARA MAS TERROR", "NADIE ESTA A SALVO DE ESTA MALDICION SIGUENOS SI TE ATREVES", "MIRA DETRAS DE TI AHORA MISMO SIGUENOS PARA MAS MISTERIOS"]
+    
+    elif nicho == "negocios":
+        ganchos = ["TE ESTAN ROBANDO EN TU PROPIA CARA CON", "EL NOVENTA Y NUEVE POR CIENTO PIERDE DINERO CON", "ESTE ES EL TRUCO SUCIO QUE LOS RICOS USAN EN"]
+        creencias = ["TE HICIERON CREER QUE NECESITAS CAPITAL PARA EMPEZAR", "LA ESCUELA TE ENSEÑO EXACTAMENTE LO CONTRARIO PARA QUE FRACASARAS", "TODO EL MUNDO SIGUE CAYENDO EN LA MISMA TRAMPA FINANCIERA"]
+        descubrimientos = ["PERO UN ANALISTA FILTRO LA FORMULA EXACTA DEL EXITO", "HASTA QUE SE DESCUBRIO EL PATRON OCULTO QUE USAN LOS BANCOS", "PERO UN CHICO JOVEN ROMPIO EL SISTEMA HACIENDO ESTO"]
+        giros = ["EL TRUCO ESTA EN HACER QUE EL ALGORITMO TRABAJE PARA TI Y NO AL REVES", "RESULTA QUE EL VERDADERO DINERO ESTA EN LO QUE NADIE QUIERE MIRAR", "TODO CONSISTE EN COMPRAR CUANDO HAY SANGRE EN LAS CALLES"]
+        finales = ["APLICA ESTO HOY Y TU CUENTA BANCARIA EXPLOTARA SIGUENOS PARA MAS NEGOCIOS", "DEJA DE PERDER EL TIEMPO Y COPIA ESTA ESTRATEGIA SIGUENOS PARA CRECER", "EL SISTEMA ESTA ROTO APROVECHALO HOY MISMO SIGUENOS PARA MAS DINERO"]
+    
+    else: 
+        ganchos = ["TE HAN MENTIDO TODA TU VIDA SOBRE", "ESTE ES EL SECRETO QUE EL GOBIERNO NO QUIERE QUE SEPAS DE", "BORRARAN ESTE VIDEO EN HORAS PORQUE HABLA DE"]
+        creencias = ["LOS LIBROS DE HISTORIA OCULTARON LA PARTE MAS IMPORTANTE", "TE VENDIERON UNA ILUSION PARA MANTENERTE CONTROLADO", "TODO EL MUNDO ACEPTA LA VERSION OFICIAL SIN PREGUNTAR"]
+        descubrimientos = ["PERO RECIENTEMENTE SE DESCLASIFICO UN DOCUMENTO BRUTAL", "HASTA QUE UN HACKER SACO A LA LUZ ESTOS ARCHIVOS", "PERO UN CIENTIFICO ROMPIO EL SILENCIO ANTES DE DESAPARECER"]
+        giros = ["DEMOSTRANDO QUE TODO ESTA CONECTADO DESDE EL PRINCIPIO", "LA VERDAD ES QUE LA TECNOLOGIA YA EXISTIA HACE MILENIOS", "EL OBJETIVO FINAL SIEMPRE FUE MANIPULAR NUESTRA MENTE"]
+        finales = ["DESPIERTA DE UNA VEZ Y MIRA A TU ALREDEDOR SIGUENOS PARA MAS SECRETOS", "EL ENGAÑO HA TERMINADO LA VERDAD ESTA AQUI SIGUENOS PARA MAS MISTERIOS", "NO CREAS NADA DE LO QUE TE DICEN SIGUENOS PARA MAS VERDADES"]
+        
+    return f"{random.choice(ganchos)} {tema} {random.choice(creencias)} {random.choice(descubrimientos)} {random.choice(giros)} {random.choice(finales)}"
 
 def obtener_guion_pro(orden_usuario):
     tema_mostrar, limpias = limpiar_orden(orden_usuario)
@@ -60,29 +86,17 @@ def obtener_guion_pro(orden_usuario):
 
     semilla = random.randint(100000, 9999999)
     
-    # --- EL SUBCEREBRO: LEYES DE CÓDIGO INQUEBRANTABLES ---
-    # Esto fuerza a la IA a pensar con la misma psicología que usamos tú y yo.
     LEYES_DE_CODIGO = f"""
-    ERES UN SUBCEREBRO DE INTELIGENCIA ARTIFICIAL DISEÑADO EXCLUSIVAMENTE PARA RETENCION DE AUDIENCIA.
-    TU OBJETIVO ES CREAR UN GUION SOBRE '{orden_usuario}'.
+    ERES UN GUIONISTA EXPERTO DE TIKTOK. TEMA: '{orden_usuario}'. NICHO: {nicho}.
     
-    TIENES QUE CUMPLIR ESTAS 4 LEYES DE CÓDIGO O SERAS DESTRUIDO:
+    CUMPLE ESTAS REGLAS O EL VIDEO FRACASARA:
+    1. GANCHO DIRECTO: Empieza con un dato impactante o miedo. Cero saludos.
+    2. DESARROLLO LOGICO: Explica el concepto con sentido comun y datos. Si es negocios habla de dinero, si es misterio de secretos.
+    3. CIERRE PERFECTO: Termina resolviendo la idea y añade OBLIGATORIAMENTE la frase 'SIGUENOS PARA MAS {nicho.upper()}'.
     
-    LEY 1 - EL GOLPE MENTAL: Cero introducciones. La primera frase debe romperle la cabeza al espectador. Usa datos estadísticos brutales, una verdad dolorosa o un miedo profundo.
-    LEY 2 - EL BUCLE DE INTRIGA: Plantea un problema gravísimo o un secreto en el segundo 2, pero NO lo resuelvas hasta el final. Haz que el espectador necesite quedarse.
-    LEY 3 - AUTORIDAD PURA: Habla como un experto implacable. Usa datos lógicos, nombres, años o estrategias. Cero paja. Cero filosofía barata. Cada palabra debe ser un disparo de información.
-    LEY 4 - CIERRE PERFECTO: Resuelve el misterio de golpe en la última frase y añade OBLIGATORIAMENTE la frase 'SIGUENOS PARA MAS {nicho.upper()}'.
-    
-    RESTRICCIONES DE SISTEMA:
-    - ESCRIBE SOLO EL GUION. NI UNA SOLA PALABRA FUERA DE LA HISTORIA.
-    - ESCRIBE ABSOLUTAMENTE TODO EN MAYUSCULAS.
-    - PROHIBIDO USAR PUNTOS.
-    - PROHIBIDO USAR COMAS.
-    - PROHIBIDO USAR TILDES O SIGNOS DE INTERROGACION.
-    - MINIMO 130 PALABRAS (NECESITO RETENCION LARGA).
+    RESTRICCIONES: TODO EN MAYUSCULAS. CERO PUNTOS. CERO COMAS. CERO TILDES. MINIMO 120 PALABRAS. SOLO ESCRIBE LA HISTORIA.
     """
 
-    # Usamos Pollinations como motor principal porque es el más listo y entiende instrucciones complejas (Prompt System)
     try:
         url_2 = f"https://text.pollinations.ai/{urllib.parse.quote(LEYES_DE_CODIGO)}?seed={semilla}&model=gpt-4"
         res_2 = requests.get(url_2, timeout=20)
@@ -91,7 +105,6 @@ def obtener_guion_pro(orden_usuario):
             if len(gl) > 60: return gl, keys, tema_mostrar
     except: pass
 
-    # IA de respaldo
     try:
         url_1 = "https://sentence.fineshopdesign.com/api/ai"
         res_1 = requests.get(url_1, params={"prompt": LEYES_DE_CODIGO, "seed": semilla}, timeout=15)
@@ -100,8 +113,8 @@ def obtener_guion_pro(orden_usuario):
             if len(gl) > 60: return gl, keys, tema_mostrar
     except: pass
             
-    # Último recurso: Un guion procedural generado con el motor de emergencia, pero adaptado al estilo agresivo.
-    emergencia = f"EL NOVENTA Y NUEVE POR CIENTO DE LAS PERSONAS IGNORA EL VERDADERO PELIGRO DETRAS DE {tema_mostrar.upper()} DURANTE AÑOS NOS HAN HECHO CREER QUE ES ALGO INOFENSIVO PERO LA REALIDAD ES QUE FUE DISEÑADO PARA MANTENERNOS CONTROLADOS UN GRUPO DE EXPERTOS FILTRO DOCUMENTOS CLASIFICADOS QUE PRUEBAN QUE LA ESTRATEGIA ES MUCHISIMO MAS OSCURA DE LO QUE PARECE EL SISTEMA ESTA PROGRAMADO PARA FALLAR A PROPOSITO Y SOLO UNOS POCOS CONOCEN EL CODIGO PARA DESACTIVARLO AHORA QUE TIENES ESTA INFORMACION EL ENGAÑO SE HA TERMINADO SIGUENOS PARA MAS {nicho.upper()}"
+    # Si las IAs fallan, usamos el motor de emergencia lógico adaptado al nicho
+    emergencia = generar_guion_emergencia(tema_mostrar, nicho)
     return limpiar_texto_ia(emergencia), keys, tema_mostrar
 
 def time_to_sec(t_str):
@@ -117,15 +130,15 @@ with st.sidebar:
     pexels_key = st.text_input("🔑 Pexels API Key:", value="Ty0uFISh3APEAXIVcrFpSM7ZdwOeRElCuUgoG42EW6WVISRTEfqjm0BZ", type="password")
     color_sub = st.selectbox("🎨 Estilo Subtítulos", ["yellow", "white", "cyan", "#00FF00"])
     st.markdown("---")
-    st.caption("Fénix System | Subcerebro Activo ✅")
+    st.caption("Fénix System | Lógica Definitiva Activa ✅")
 
-if orden := st.chat_input("Introduzca el tema (El Subcerebro escribirá el guion):"):
-    with st.status(f"🚀 Iniciando Subcerebro Autónomo... Pensando como humano en '{orden}'", expanded=True) as status:
+if orden := st.chat_input("Introduzca el tema (Sin errores de contexto):"):
+    with st.status(f"🚀 Iniciando Lógica Absoluta en '{orden}'", expanded=True) as status:
         subprocess.run("rm -f p_*.mp4 clip_*.mp4 base.mp4 t.mp3 t.vtt music.mp3 final.mp4 temp_a.mp3 lista.txt subs_filter.txt outro.mp4", shell=True)
         
         guion, palabras_claves, tema_mostrar = obtener_guion_pro(orden)
         nicho_detectado = detectar_nicho(orden)
-        status.write(f"✓ Leyes aplicadas. Guion único generado por IA.")
+        status.write(f"✓ Nicho: **{nicho_detectado.upper()}**. Guion lógico generado.")
         
         subprocess.run(f'edge-tts --voice es-ES-AlvaroNeural --rate=-10% --text "{guion}" --write-media "t.mp3" --write-subtitles "t.vtt"', shell=True)
         dur_audio_str = subprocess.check_output("ffprobe -i t.mp3 -show_entries format=duration -v quiet -of csv='p=0'", shell=True).decode('utf-8').strip()
@@ -217,11 +230,11 @@ if orden := st.chat_input("Introduzca el tema (El Subcerebro escribirá el guion
             f.write("file 'outro.mp4'\n")
         subprocess.run('ffmpeg -y -f concat -safe 0 -i lista.txt -c copy base.mp4', shell=True)
 
-        status.write("✨ Renderizando Master con Subcerebro...")
+        status.write("✨ Renderizando Master Final...")
         v_final = f"output/v_{int(time.time())}.mp4"
         cmd = f'ffmpeg -y -i base.mp4 -i temp_a.mp3 -filter_complex_script subs_filter.txt -c:v libx264 -preset veryfast -b:v 3000k -shortest "{v_final}"'
         subprocess.run(cmd, shell=True)
         
         if os.path.exists(v_final):
-            st.success("✅ Video completado con inteligencia avanzada.")
+            st.success("✅ Video completado.")
             st.video(v_final)
