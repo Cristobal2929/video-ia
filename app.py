@@ -1,5 +1,5 @@
 import streamlit as st
-import os, time, random, subprocess, requests, math, re
+import os, time, random, subprocess, math, re
 
 st.set_page_config(page_title="Fénix Viral PRO", layout="centered")
 
@@ -14,8 +14,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX AI STUDIO v8.0</div>', unsafe_allow_html=True)
-st.markdown('<div class="pro-subtitle">Cerebro Simulado • Plantillas Variables Infinitas</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX AI STUDIO v8.5</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-subtitle">Cerebro Autónomo • Guiones con Flow Humano</div>', unsafe_allow_html=True)
 
 def limpiar_orden(orden):
     basura = ["hazme", "haz", "arme", "asme", "dame", "dime", "un", "una", "el", "la", "los", "las", "video", "vídeo", "videos", "quiero", "sobre", "de", "del", "historia", "que", "hable", "como", "mejor", "para", "sin", "con", "en", "año"]
@@ -26,48 +26,46 @@ def limpiar_orden(orden):
 def detectar_nicho(tema):
     t = tema.lower()
     if any(w in t for w in ["miedo", "terror", "fantasma", "paranormal", "horror", "oscuridad", "demonio", "maldito", "asesino", "leyenda", "creepy"]): return "terror"
-    elif any(w in t for w in ["negocio", "dinero", "invertir", "inversion", "empresa", "millonario", "finanzas", "cripto", "emprendedor", "ventas", "marketing", "riqueza", "dolares"]): return "negocios"
+    elif any(w in t for w in ["negocio", "dinero", "invertir", "inversion", "empresa", "millonario", "finanzas", "cripto", "emprendedor", "ventas", "marketing", "riqueza", "dolares", "trabajo"]): return "negocios"
     else: return "misterio"
 
-# --- LA ILUSIÓN DE LA IA: ARCOS NARRATIVOS CON VARIABLES ---
-def generar_falsa_ia(tema, nicho):
+# --- EL CEREBRO HUMANO AUTÓNOMO (Cero APIs, Cero Robótica) ---
+def generar_guion_humano(tema, nicho):
     tema = tema.upper()
     
-    # 1. Creamos el diccionario de variables (El bot "inventa" datos)
     variables = {
         "tema": tema,
-        "año": random.choice(["DOS MIL OCHO", "MIL NOVECIENTOS NOVENTA Y NUEVE", "DOS MIL QUINCE", "EL AÑO DOS MIL VEINTE", "MIL NOVECIENTOS OCHENTA"]),
-        "enemigo_negocio": random.choice(["LOS BANCOS CENTRALES", "LA ELITE DE WALL STREET", "LAS GRANDES CORPORACIONES", "LOS MULTIMILLONARIOS DEL FORO ECONOMICO"]),
-        "enemigo_misterio": random.choice(["EL GOBIERNO", "UNA AGENCIA DE INTELIGENCIA SECRETA", "EL VATICANO", "UN GRUPO MILITAR CLASIFICADO"]),
-        "porcentaje": random.choice(["NOVENTA Y NUEVE", "NOVENTA Y CINCO", "OCHENTA Y OCHO", "NOVENTA"]),
-        "dinero": random.choice(["MILLONES DE DOLARES", "FORTUNAS INMENSA", "TODO SU CAPITAL EN SEGUNDOS"]),
-        "lugar_creepy": random.choice(["UN HOSPITAL ABANDONADO", "LOS BOSQUES DEL NORTE", "UNA CUEVA SELLADA", "LOS SOTANOS DE UNA IGLESIA ANTIGUA"]),
-        "tiempo_misterio": random.choice(["SETENTA Y DOS HORAS", "UNA SEMANA", "TRES DIAS", "UN MES ENTERO"]),
+        "año": random.choice(["DOS MIL OCHO", "DOS MIL QUINCE", "HACE MUY POCO TIEMPO", "MIL NOVECIENTOS NOVENTA", "EL AÑO PASADO"]),
+        "enemigo_negocio": random.choice(["LOS BANCOS", "LA ELITE FINANCIERA", "LAS GRANDES EMPRESAS", "LOS MULTIMILLONARIOS", "EL SISTEMA TRADICIONAL"]),
+        "enemigo_misterio": random.choice(["EL GOBIERNO", "UNA AGENCIA SECRETA", "LAS ALTAS ESFERAS", "LA ELITE", "UNA ORGANIZACION EN LA SOMBRA"]),
+        "porcentaje": random.choice(["NOVENTA Y NUEVE", "NOVENTA Y CINCO", "OCHENTA Y OCHO"]),
+        "dinero": random.choice(["MILES DE DOLARES", "TODO SU DINERO", "MUCHISIMO CAPITAL", "SUS AHORROS"]),
+        "lugar_creepy": random.choice(["UN HOSPITAL ABANDONADO", "MEDIO DEL BOSQUE", "UNA CUEVA CERRADA AL PUBLICO", "UN SOTANO ANTIGUO", "UNA CASA EN RUINAS"]),
+        "tiempo_misterio": random.choice(["VARIAS SEMANAS", "SETENTA Y DOS HORAS", "TRES DIAS SEGUIDOS", "UN MES ENTERO"]),
+        "locura": random.choice(["UNA VERDADERA LOCURA", "ALGO BRUTAL", "ALGO QUE NO TIENE SENTIDO", "UNA AUTENTICA BARBARIDAD"]),
     }
 
-    # 2. Plantillas MAESTRAS. Tienen principio, nudo y final perfectos. Nunca pierden el sentido.
+    # Plantillas escritas con psicología conversacional (Hablando de "tú" a "tú")
     if nicho == "negocios":
         plantillas = [
-            "EL {porcentaje} POR CIENTO DE LAS PERSONAS PIERDE {dinero} CUANDO INTENTA ENTRAR EN EL MUNDO DE {tema} Y NO ES POR CASUALIDAD EN {año} {enemigo_negocio} DISEÑARON UN SISTEMA PERFECTO PARA QUE EL CIUDADANO COMUN FRACASARA LA ESTRATEGIA ERA MANTENER ESTA INFORMACION OCULTA MIENTRAS ELLOS MULTIPLICABAN SUS INGRESOS PERO UN ANALISTA FINANCIERO FILTRO LA FORMULA EXACTA RESULTA QUE LA CLAVE ESTA EN HACER EXACTAMENTE LO CONTRARIO A LO QUE ENSEÑAN EN LAS NOTICIAS CUANDO TODOS COMPRAN TU VENDES Y CUANDO HAY PANICO TU ATACAS AHORA QUE CONOCES ESTE TRUCO EL SISTEMA YA NO PUEDE ROBARTE APLICALO HOY MISMO Y TU VIDA CAMBIARA SIGUENOS PARA MAS NEGOCIOS",
+            "SI ESTAS INTENTANDO METERTE EN {tema} DEJA DE HACERLO AHORA MISMO Y ESCUCHA EL {porcentaje} POR CIENTO DE LA GENTE PIERDE {dinero} PORQUE NO ENTIENDEN ESTA TRAMPA EN {año} {enemigo_negocio} CREARON UN SISTEMA PERFECTO PARA QUE TU Y YO FRACASEMOS SU PLAN ERA QUEDARSE CON TODO EL BENEFICIO MIENTRAS NOSOTROS PERDEMOS EL TIEMPO PERO HACE NADA UN ANALISTA FILTRO LA ESTRATEGIA REAL Y ES {locura} LA CLAVE ESTA EN HACER JUSTO LO CONTRARIO DE LO QUE DICEN LAS NOTICIAS CUANDO TODOS ENTRAN EN PANICO TU ATACAS CUANDO TODOS COMPRAN TU TE ALEJAS ESTE SIMPLE CAMBIO MENTAL ROMPE SU ALGORITMO APLICALO HOY Y EMPEZARAS A VER RESULTADOS DE VERDAD SIGUENOS PARA MAS NEGOCIOS",
             
-            "TE ESTAN ROBANDO EN TU PROPIA CARA CON {tema} Y LA ESCUELA TE ENSEÑO A ACEPTARLO TODO COMENZO EN {año} CUANDO {enemigo_negocio} SE DIERON CUENTA DE QUE PODIAN CONTROLAR EL MERCADO SI MANTENIAN A LA POBLACION IGNORANTE EL SECRETO MEJOR GUARDADO ES QUE NO NECESITAS {dinero} PARA EMPEZAR SOLO NECESITAS ENTENDER COMO FLUYE EL CAPITAL UN JOVEN EMPRENDEDOR DESCUBRIO ESTA FALLA EN EL SISTEMA Y ROMPIO LAS REGLAS GENERANDO GANANCIAS MASIVAS EN TIEMPO RECORD LA LOGICA ES SIMPLE DEJA DE CAMBIAR TU TIEMPO POR DINERO Y HAZ QUE EL ALGORITMO TRABAJE PARA TI EL JUEGO ESTA ROTO APROVECHALO SIGUENOS PARA MAS NEGOCIOS"
+            "TE ESTAN ROBANDO EN LA CARA CON {tema} Y NI SIQUIERA TE HAS DADO CUENTA TODO EMPEZO EN {año} CUANDO {enemigo_negocio} DECIDIERON QUE ERA MEJOR MANTENER A LA GENTE IGNORANTE NOS VENDIERON LA MENTIRA DE QUE NECESITABAS {dinero} PARA PODER EMPEZAR PERO ESO ES TOTALMENTE FALSO UN CHICO DE VEINTE AÑOS DESCUBRIO UNA FALLA EN ESTE SISTEMA Y REVENTO EL MERCADO SU SECRETO ES TAN SIMPLE QUE DA RABIA CONSISTE EN BUSCAR DONDE NADIE MAS ESTA MIRANDO Y ADELANTARSE A LA MASA DEJA DE CAMBIAR TU TIEMPO POR UN SUELDO Y HAZ QUE LAS REGLAS TRABAJEN A TU FAVOR EL SISTEMA ESTA ROTO Y ES TU TURNO DE APROVECHARLO SIGUENOS PARA MAS NEGOCIOS"
         ]
     elif nicho == "terror":
         plantillas = [
-            "NO MIRES ESTE VIDEO DE NOCHE SI LE TEMES A {tema} TODO EL MUNDO PIENSA QUE ES UNA SIMPLE LEYENDA URBANA PERO EN {año} LA POLICIA ENCONTRO ALGO MACABRO EN {lugar_creepy} HABIA GRABACIONES DE SEGURIDAD QUE MOSTRABAN LO INEXPLICABLE LOS ARCHIVOS FUERON CLASIFICADOS DE INMEDIATO PERO UN INVESTIGADOR LOGRO EXTRAER LOS VIDEOS ANTES DE QUE LO SILENCIARAN LA AUTOPSIA REVELO QUE LAS VICTIMAS COMPARTIAN EL MISMO PATRON EXTRAÑO LO MAS ATERRADOR ES QUE ESTA ENTIDAD NO ESTA ENCERRADA SIGUE BUSCANDO A QUIEN ROMPA LAS REGLAS SI ESCUCHAS UN RUIDO EXTRAÑO HOY NO ABRAS LA PUERTA SIGUENOS PARA MAS TERROR",
+            "NO MIRES ESTO DE NOCHE SI DE VERDAD LE TIENES MIEDO A {tema} SEGURO PIENSAS QUE ES UN INVENTO DE INTERNET O UN CUENTO PARA ASUSTAR PERO EN {año} LA COSA SE SALIO DE CONTROL LA POLICIA ENCONTRO ALGO HORRIBLE EN {lugar_creepy} LAS GRABACIONES DE SEGURIDAD MOSTRARON ALGO QUE DESAFIA TODA LOGICA EL GOBIERNO CLASIFICO LOS VIDEOS EN SEGUNDOS PERO ALGUIEN LOGRO FILTRARLOS EN LA DEEP WEB ANTES DE DESAPARECER LOS DOCUMENTOS REVELAN QUE TODAS LAS VICTIMAS HICIERON LO MISMO ANTES DE SU FINAL Y LO MAS ATERRADOR DE TODO ESTO NO ES QUE HAYA PASADO SINO QUE ESA COSA SIGUE SUELTA BUSCANDO A GENTE QUE NO PRESTA ATENCION SI ESTA NOCHE ESCUCHAS UN GOLPE NO ABRAS LA PUERTA SIGUENOS PARA MAS TERROR",
             
-            "ESTA ES LA HISTORIA MAS ATERRADORA Y REAL SOBRE {tema} DURANTE AÑOS LOS HABITANTES DE LA ZONA HABLABAN EN SUSURROS SOBRE LO QUE PASO EN {año} DENTRO DE {lugar_creepy} EL GOBIERNO MANDO A UN GRUPO DE EXPERTOS A INVESTIGAR PERO DESAPARECIERON DURANTE {tiempo_misterio} CUANDO LOS ENCONTRARON HABIAN PERDIDO LA CORDURA Y SOLO REPETIAN UNA FRASE EN BUCLE DESCUBRIERON QUE HABIAN DESPERTADO ALGO QUE LLEVABA SIGLOS DORMIDO LA VERDAD ES TAN PERTURBADORA QUE DECIDIERON BORRARLA DE LOS REGISTROS OFICIALES PERO EL MAL NUNCA SE FUE DEL TODO MIRA DETRAS DE TI AHORA MISMO SIGUENOS PARA MAS TERROR"
+            "ESTA ES LA HISTORIA MAS CRUEL Y REAL QUE VAS A ESCUCHAR SOBRE {tema} DURANTE MUCHO TIEMPO LA GENTE DEL PUEBLO HABLABA EN SUSURROS DE LO QUE PASO EN {año} DENTRO DE {lugar_creepy} MANDARON A UN EQUIPO ESPECIAL A INVESTIGAR PERO SE PERDIERON DURANTE {tiempo_misterio} CUANDO FINALMENTE LOS ENCONTRARON HABIAN PERDIDO LA CABEZA POR COMPLETO Y SOLO REPETIAN LA MISMA PALABRA UNA Y OTRA VEZ HABIAN DESPERTADO ALGO QUE NO PERTENECE A ESTE MUNDO LA VERDAD ES TAN FUERTE QUE LA BORRARON DE LOS MEDIOS PERO EL MAL NUNCA DESAPARECE SOLO ESPERA SU TURNO MIRA BIEN DETRAS DE TI AHORA MISMO SIGUENOS PARA MAS TERROR"
         ]
-    else:
+    else: # Misterio / Conspiración
         plantillas = [
-            "TE HAN MENTIDO TODA TU VIDA SOBRE {tema} LOS LIBROS DE HISTORIA TE CUENTAN UNA VERSION REDUCIDA PORQUE EN {año} {enemigo_misterio} DECIDIO QUE LA HUMANIDAD NO ESTABA LISTA PARA SABER LA VERDAD UN EX EMPLEADO ROMPIO SU CONTRATO DE SILENCIO Y FILTRO DOCUMENTOS DE LA DEEP WEB QUE LO CAMBIAN TODO RESULTA QUE ESTA TECNOLOGIA YA SE USABA HACE MILENIOS PERO FUE OCULTADA PARA MANTENER EL CONTROL SOBRE LA POBLACION EL {porcentaje} POR CIENTO DE LA GENTE SIGUE CREYENDO LA MENTIRA OFICIAL PERO LAS PRUEBAS MATEMATICAS NO MIENTEN TODO ESTA CONECTADO DESDE EL PRINCIPIO DESPIERTA DE UNA VEZ Y NO CREAS NADA DE LO QUE TE DICEN SIGUENOS PARA MAS SECRETOS",
+            "TE HAN ESTADO MINTIENDO EN LA CARA TODA TU VIDA SOBRE {tema} EN LA ESCUELA TE ENSEÑAN UNA VERSION RECORTADA PORQUE EN {año} {enemigo_misterio} DECIDIO QUE NO ESTABAS LISTO PARA LA VERDAD PERO ALGUIEN DE ADENTRO SE CANSO DE CALLAR Y FILTRO UNOS ARCHIVOS QUE LO CAMBIAN TODO RESULTA QUE ESTA TECNOLOGIA YA ESTABA ENTRE NOSOTROS HACE MILES DE AÑOS PERO LA ESCONDIERON PARA NO PERDER EL CONTROL EL {porcentaje} POR CIENTO DE LA GENTE TODAVIA SE CREE EL CUENTO OFICIAL PERO LAS FOTOS QUE SALIERON A LA LUZ NO DEJAN LUGAR A DUDAS Y ES {locura} TODO ESTUVO CONECTADO DESDE EL PRINCIPIO Y NOSOTROS ERAMOS SOLO PEONES ABRE LOS OJOS Y DEJA DE CREER EN LO QUE TE IMPONEN SIGUENOS PARA MAS SECRETOS",
             
-            "BORRARAN ESTE VIDEO EN HORAS PORQUE REVELA LA VERDAD DETRAS DE {tema} DURANTE DECADAS CREIMOS QUE ERA ALGO INOFENSIVO PERO LA REALIDAD SUPERA A LA FICCION DOCUMENTOS DESCLASIFICADOS DEMUESTRAN QUE EN {año} {enemigo_misterio} LLEVO A CABO EXPERIMENTOS SECRETOS RELACIONADOS CON ESTO EL OBJETIVO FINAL ERA MANIPULAR NUESTRA MENTE SIN QUE NOS DIERAMOS CUENTA UN CIENTIFICO LOGRO ESCAPAR CON LOS DISCOS DUROS Y EXPUSO EL PLAN MAESTRO AUNQUE INTENTARON SILENCIARLO LA INFORMACION YA ESTA EN LA RED EL ENGAÑO HA TERMINADO Y AHORA TIENES EL PODER DE VER LA REALIDAD SIGUENOS PARA MAS MISTERIOS"
+            "VAN A BORRAR ESTE VIDEO EN CUALQUIER MOMENTO PORQUE HABLA DE {tema} LLEVAMOS DECADAS PENSANDO QUE ES ALGO TOTALMENTE INOFENSIVO PERO DOCUMENTOS RECIENTES DEMUESTRAN QUE EN {año} {enemigo_misterio} LLEVO A CABO EXPERIMENTOS SUPER SECRETOS CON ESTO SU OBJETIVO REAL ERA METERSE EN NUESTRA MENTE SIN DEJAR RASTRO UN INVESTIGADOR SE DIO CUENTA DE LA TRAMPA Y ESCAPO CON LOS DISCOS DUROS INTENTARON CALLARLO DE TODAS LAS FORMAS POSIBLES PERO YA ERA TARDE LA INFORMACION ESTA VOLANDO POR LA RED EL ENGAÑO SE HA CAIDO A PEDAZOS Y AHORA TU TAMBIEN LO SABES SIGUENOS PARA MAS MISTERIOS"
         ]
     
-    # Elegimos una plantilla y rellenamos los huecos mágicamente
-    guion_final = random.choice(plantillas).format(**variables)
-    return guion_final
+    return random.choice(plantillas).format(**variables)
 
 def obtener_guion_pro(orden_usuario):
     tema_mostrar, limpias = limpiar_orden(orden_usuario)
@@ -80,8 +78,8 @@ def obtener_guion_pro(orden_usuario):
     keys = [p for p in limpias[:3]] + [f"{p} {sufijo}" for p in limpias[:2]]
     if not keys: keys = [sufijo]
 
-    # AQUÍ ESTÁ EL TRUCO: Ya no llamamos a ninguna IA externa. El Cerebro Simulado es instantáneo y perfecto.
-    guion = generar_falsa_ia(tema_mostrar, nicho)
+    # MAGIA PURA: Guion instantáneo, cero caídas de servidor, 100% flow humano.
+    guion = generar_guion_humano(tema_mostrar, nicho)
     return guion, keys, tema_mostrar
 
 def time_to_sec(t_str):
@@ -91,22 +89,23 @@ def time_to_sec(t_str):
     elif len(partes) == 2: return float(partes[0])*60 + float(partes[1])
     else: return float(partes[0])
 
+import requests
+
 with st.sidebar:
     st.image("https://cdn-icons-png.flaticon.com/512/2111/2111432.png", width=50)
     st.header("⚙️ Panel de Agencia")
     pexels_key = st.text_input("🔑 Pexels API Key:", value="Ty0uFISh3APEAXIVcrFpSM7ZdwOeRElCuUgoG42EW6WVISRTEfqjm0BZ", type="password")
     color_sub = st.selectbox("🎨 Estilo Subtítulos", ["yellow", "white", "cyan", "#00FF00"])
     st.markdown("---")
-    st.caption("Fénix System | Cerebro Simulado Activo ✅")
+    st.caption("Fénix System | Autónomo Humano Activo ✅")
 
-if orden := st.chat_input("Introduzca el tema (Lógica 100% Humana):"):
-    with st.status(f"🚀 Generando guion inteligente para '{orden}'", expanded=True) as status:
+if orden := st.chat_input("Introduzca el tema (Generación Humana Instantánea):"):
+    with st.status(f"🚀 Escribiendo guion con flow humano para '{orden}'", expanded=True) as status:
         subprocess.run("rm -f p_*.mp4 clip_*.mp4 base.mp4 t.mp3 t.vtt music.mp3 final.mp4 temp_a.mp3 lista.txt subs_filter.txt outro.mp4", shell=True)
         
-        # Generación instantánea
         guion, palabras_claves, tema_mostrar = obtener_guion_pro(orden)
         nicho_detectado = detectar_nicho(orden)
-        status.write(f"✓ Nicho: **{nicho_detectado.upper()}**. Guion perfecto inyectado.")
+        status.write(f"✓ Guion humano inyectado. Nicho: **{nicho_detectado.upper()}**")
         
         subprocess.run(f'edge-tts --voice es-ES-AlvaroNeural --rate=-10% --text "{guion}" --write-media "t.mp3" --write-subtitles "t.vtt"', shell=True)
         dur_audio_str = subprocess.check_output("ffprobe -i t.mp3 -show_entries format=duration -v quiet -of csv='p=0'", shell=True).decode('utf-8').strip()
@@ -198,11 +197,11 @@ if orden := st.chat_input("Introduzca el tema (Lógica 100% Humana):"):
             f.write("file 'outro.mp4'\n")
         subprocess.run('ffmpeg -y -f concat -safe 0 -i lista.txt -c copy base.mp4', shell=True)
 
-        status.write("✨ Renderizando Master Definitivo...")
+        status.write("✨ Renderizando Master Final HD...")
         v_final = f"output/v_{int(time.time())}.mp4"
         cmd = f'ffmpeg -y -i base.mp4 -i temp_a.mp3 -filter_complex_script subs_filter.txt -c:v libx264 -preset veryfast -b:v 3000k -shortest "{v_final}"'
         subprocess.run(cmd, shell=True)
         
         if os.path.exists(v_final):
-            st.success("✅ Video completado con Lógica Perfecta.")
+            st.success("✅ Video completado.")
             st.video(v_final)
