@@ -15,9 +15,11 @@ def obtener_guion_pro(orden_usuario):
     tema_limpio = limpiar_orden(orden_usuario)
     keys = [f"{tema_limpio} cinematic", f"{tema_limpio} epic", "ancient mystery", "dark secret"]
     
-    prompt_maestro = f"Eres el mejor guionista de TikTok. TAREA: Escribe una historia fascinante sobre: {tema_limpio}. ESTRUCTURA: 1. Gancho brutal. 2. Desarrollo profundo con datos historicos o increibles reales. 3. Climax y la EXPLICACION LOGICA del misterio al final. REGLAS: MINIMO 100 PALABRAS. ESCRIBE TODO EN MAYUSCULAS. CERO PUNTOS. CERO COMAS. CERO TILDES. SOLO TEXTO."
+    # PROMPT BLINDADO ANTI-HUMO: Le exigimos que revele el secreto.
+    prompt_maestro = f"Eres el mejor guionista de TikTok. TAREA: Escribe una historia completa sobre: {tema_limpio}. ESTRUCTURA OBLIGATORIA: 1. Gancho brutal. 2. Desarrollo del misterio. 3. REVELACION EXACTA DEL SECRETO Y FINAL CERRADO. REGLA VITAL: ESTA PROHIBIDO DEJAR INTRIGA O PEDIR LIKES PARA PARTE 2. TIENES QUE EXPLICAR QUE PASO REALMENTE. MINIMO 100 PALABRAS. ESCRIBE TODO EN MAYUSCULAS. CERO PUNTOS. CERO COMAS. CERO TILDES. SOLO TEXTO."
 
-    guion_fallback = f"TODO LO QUE TE HAN ENSEÑADO SOBRE {tema_limpio.upper()} ES UNA COMPLETA MENTIRA DURANTE AÑOS LOS INVESTIGADORES NOTARON ALGO EXTRAÑO PERO FUERON SILENCIADOS POR LOS DE ARRIBA LA VERDADERA LOGICA DETRAS DE ESTE MISTERIO ES QUE EL GOBIERNO LO USO COMO UN EXPERIMENTO SOCIAL MASIVO PARA VER HASTA DONDE PODIAMOS CREER UNA ILUSION ABSOLUTA AHORA QUE SABES EL SECRETO FINAL EL SISTEMA YA NO PUEDE ENGAÑARTE DESPIERTA Y SIGUENOS"
+    # GUION DE EMERGENCIA CON FINAL REAL (Si falla la IA, cuenta una historia completa)
+    guion_fallback = f"DURANTE DECADAS EL GOBIERNO NOS HA OCULTADO LA VERDADERA HISTORIA SOBRE {tema_limpio.upper()} SIEMPRE NOS DIJERON QUE ERA ALGO NORMAL PERO UN GRUPO DE CIENTIFICOS ENCONTRO DOCUMENTOS CLASIFICADOS QUE LO CAMBIAN TODO EL GRAN SECRETO ES QUE ESTO FUE CREADO ARTIFICIALMENTE CON UNA TECNOLOGIA QUE NO PERTENECE A ESTE MUNDO LOS CIENTIFICOS FUERON SILENCIADOS Y EL DESCUBRIMIENTO SE ESCONDIO BAJO TIERRA PERO UNO DE ELLOS LOGRO FILTRAR ESTOS DATOS ANTES DE DESAPARECER HOY SABEMOS LA VERDAD Y LA HISTORIA OFICIAL HA SIDO DESMENTIDA PARA SIEMPRE EL MISTERIO ESTA RESUELTO"
 
     # INTENTO 1: Motor IA Principal
     try:
@@ -31,7 +33,7 @@ def obtener_guion_pro(orden_usuario):
         print(f"IA Principal falló: {e}. Activando IA de respaldo...")
         pass
 
-    # INTENTO 2: Motor IA de Respaldo (Pollinations) - Entra si la primera falla
+    # INTENTO 2: Motor IA de Respaldo (Pollinations)
     try:
         prompt_codificado = urllib.parse.quote(prompt_maestro)
         url_2 = f"https://text.pollinations.ai/{prompt_codificado}?system=Eres%20un%20guionista%20experto"
@@ -44,7 +46,7 @@ def obtener_guion_pro(orden_usuario):
         print(f"IA Secundaria falló: {e}. Usando guion de emergencia...")
         pass
             
-    # Solo llega aquí si se cae Internet o las dos IAs están muertas
+    # Guion de emergencia con historia CERRADA
     return guion_fallback, keys, tema_limpio
 
 def time_to_sec(t_str):
@@ -54,19 +56,19 @@ def time_to_sec(t_str):
     elif len(partes) == 2: return float(partes[0])*60 + float(partes[1])
     else: return float(partes[0])
 
-st.title("🦅 Fénix Studio: Doble Motor IA")
+st.title("🦅 Fénix Studio: Historias Reales (Cero Humo)")
 
 with st.sidebar:
     st.header("Motor de Renderizado")
     pexels_key = st.text_input("🔑 API Pexels:", value="Ty0uFISh3APEAXIVcrFpSM7ZdwOeRElCuUgoG42EW6WVISRTEfqjm0BZ", type="password")
     color_sub = st.selectbox("🎨 Color Subtítulos", ["yellow", "white", "cyan"])
 
-if orden := st.chat_input("Pide tu tema (Las IAs se encargarán):"):
-    with st.status("🎬 Analizando y creando guion...", expanded=True) as status:
+if orden := st.chat_input("Dime el tema (Te contaré una historia con principio, nudo y FINAL):"):
+    with st.status("🎬 Exigiendo a la IA un final cerrado...", expanded=True) as status:
         subprocess.run("rm -f p_*.mp4 clip_*.mp4 base.mp4 t.mp3 t.vtt music.mp3 final.mp4 temp_a.mp3 lista.txt subs_filter.txt outro.mp4", shell=True)
         
         guion, palabras_claves, tema_limpio = obtener_guion_pro(orden)
-        status.write(f"✍️ Guion completado sobre: '{tema_limpio}'.")
+        status.write(f"✍️ Guion con final revelado generado.")
         
         subprocess.run(f'edge-tts --voice es-ES-AlvaroNeural --rate=-10% --text "{guion}" --write-media "t.mp3" --write-subtitles "t.vtt"', shell=True)
         dur_audio = float(subprocess.check_output("ffprobe -i t.mp3 -show_entries format=duration -v quiet -of csv='p=0'", shell=True).decode('utf-8').strip())
@@ -139,7 +141,7 @@ if orden := st.chat_input("Pide tu tema (Las IAs se encargarán):"):
             f.write("file 'outro.mp4'\n")
         subprocess.run('ffmpeg -y -f concat -safe 0 -i lista.txt -c copy base.mp4', shell=True)
 
-        status.write("✨ Exportando con doble IA...")
+        status.write("✨ Exportando historia completa...")
         v_final = f"output/v_{int(time.time())}.mp4"
         cmd = f'ffmpeg -y -i base.mp4 -i temp_a.mp3 -filter_complex_script subs_filter.txt -c:v libx264 -preset ultrafast -b:v 1500k -shortest "{v_final}"'
         subprocess.run(cmd, shell=True)
