@@ -22,7 +22,7 @@ def transformar_srt(vtt_path, srt_path):
             return f"{ms//3600000:02d}:{(ms%3600000)//60000:02d}:{(ms%60000)//1000:02d},{ms%1000:03d}"
         with open(vtt_path, 'r', encoding='utf-8') as f: lines = f.readlines()
         clean = [l for l in lines if "-->" in l or (l.strip() and not l.strip().isdigit() and not l.startswith("WEBVTT"))]
-        srt_f, cnt = [], 1
+        srt_f, cnt = 1
         for i in range(0, len(clean), 2):
             if i+1 < len(clean) and "-->" in clean[i]:
                 t = clean[i].split(" --> ")
@@ -75,20 +75,21 @@ if st.button("🚀 INICIAR PRODUCCIÓN HD"):
             if transformar_srt("t.vtt", "t.srt"):
                 clips = glob.glob(f"{nicho}/*.mp4")
                 if clips:
-                    status.write("🎬 Editando vídeo para web...")
+                    status.write("🎬 Editando vídeo (Modo Ligero y Rápido)...")
                     clip = random.choice(clips)
                     est = f"Fontname=Impact,FontSize=30,PrimaryColour={ass_color},Outline=3,Alignment=2,MarginV=150"
                     
-                    # Comando ultra-compatible para Google Chrome
-                    cmd = f'ffmpeg -y -stream_loop -1 -i "{clip}" -i t.mp3 -vf "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,subtitles=t.srt:force_style=\'{est}\'" -c:v libx264 -preset ultrafast -pix_fmt yuv420p -profile:v baseline -level 3.0 -c:a aac -b:a 192k -shortest "{final_p}"'
+                    # Motor optimizado: Usa menos RAM (-crf 28 y -threads 2) y no recorta la imagen
+                    cmd = f'ffmpeg -y -stream_loop -1 -i "{clip}" -i t.mp3 -vf "subtitles=t.srt:force_style=\'{est}\'" -c:v libx264 -preset ultrafast -crf 28 -threads 2 -pix_fmt yuv420p -c:a aac -shortest "{final_p}"'
                     
                     subprocess.run(cmd, shell=True)
                     
-                    # Mostrar el video leyendo directamente el archivo (evita bloqueos del navegador)
-                    st.video(final_p)
-                    
-                    with open(final_p, 'rb') as f:
-                        st.download_button("📥 DESCARGAR VIDEO", f.read(), file_name=f"Fenix_{uid}.mp4")
-                    status.update(label="✅ Vídeo Listo y Compatible!", state="complete")
+                    if os.path.exists(final_p):
+                        st.video(final_p)
+                        with open(final_p, 'rb') as f:
+                            st.download_button("📥 DESCARGAR VIDEO", f.read(), file_name=f"Fenix_{uid}.mp4")
+                        status.update(label="✅ Vídeo Listo!", state="complete")
+                    else:
+                        st.error("❌ El servidor se quedó sin memoria. Sube clips de vídeo más ligeros.")
                 else:
                     st.error("No hay clips en la carpeta.")
