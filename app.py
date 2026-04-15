@@ -15,8 +15,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX AI STUDIO v4.5</div>', unsafe_allow_html=True)
-st.markdown('<div class="pro-subtitle">Cerebro Multipolar • Adaptación de Nichos Automática</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX AI STUDIO v5.0</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-subtitle">Motor Anti-Paja • Ganchos Agresivos y Directos</div>', unsafe_allow_html=True)
 
 def es_texto_valido(texto):
     t_lower = texto.lower()
@@ -26,7 +26,7 @@ def es_texto_valido(texto):
     return True
 
 def limpiar_texto_ia(texto):
-    basura_ia = ["USER REQUEST", "START UP", "WRITE A", "ALL CAPS", "NO PERIODS", "SAYS ZERO", "REASONING CONTENT"]
+    basura_ia = ["USER REQUEST", "START UP", "WRITE A", "ALL CAPS", "NO PERIODS", "SAYS ZERO", "REASONING CONTENT", "PRESTA ATENCION", "TE VOY A CONTAR", "HOLA CHICOS"]
     texto_limpio = texto.upper()
     for b in basura_ia: texto_limpio = texto_limpio.replace(b, "")
     texto_limpio = re.sub(r'[^\w\s]', '', texto_limpio).replace('\n', ' ').strip()
@@ -38,7 +38,6 @@ def limpiar_orden(orden):
     limpias = [p for p in palabras if p not in basura and len(p) > 3]
     return " ".join(limpias) if limpias else orden, limpias
 
-# --- DETECTOR DE NICHOS ---
 def detectar_nicho(tema):
     t = tema.lower()
     if any(w in t for w in ["miedo", "terror", "fantasma", "paranormal", "horror", "oscuridad", "demonio", "maldito", "asesino", "leyenda", "creepy"]):
@@ -48,30 +47,30 @@ def detectar_nicho(tema):
     else:
         return "conspiracion"
 
-# --- MOTOR COMBINATORIO ADAPTATIVO (Cambia la salsa según el nicho) ---
+# --- MOTOR COMBINATORIO ANTI-PAJA (Ganchos directos a la cara) ---
 def generar_guion_procedural(tema, nicho):
     tema = tema.upper()
     
     if nicho == "terror":
-        ganchos = ["ESTA ES LA HISTORIA MAS ATERRADORA QUE ESCUCHARAS HOY SOBRE", "NUNCA DEBISTE BUSCAR INFORMACION SOBRE", "HAY UNA LEYENDA MALDITA QUE MUY POCOS CONOCEN SOBRE"]
-        creencias = ["MUCHOS CREEN QUE ES SOLO UN CUENTO PARA ASUSTAR A LOS NIÑOS", "LA GENTE NORMAL PIENSA QUE SON SIMPLES RUMORES DE INTERNET", "DURANTE AÑOS SE PUSO LA EXCUSA DE QUE ERA UN FENOMENO NATURAL"]
-        descubrimientos = ["HASTA QUE UNA CAMARA DE SEGURIDAD GRABO ALGO INEXPLICABLE", "PERO UN GRUPO DE EXPLORADORES ENCONTRO LA VERDADERA PRUEBA EN LA OSCURIDAD", "SIN EMBARGO LOS REGISTROS POLICIALES MUESTRAN SUCESOS ESCALOFRIANTES"]
-        giros = ["LO PEOR ES QUE LA ENTIDAD NUNCA SE FUE SINO QUE SIGUE ACECHANDO", "Y SE DIERON CUENTA DE QUE LAS VICTIMAS TENIAN ALGO MACABRO EN COMUN", "DEMOSTRANDO QUE EL MAL REALMENTE EXISTE Y ESTA BUSCANDO SU PROXIMA PRESA"]
-        finales = ["AHORA QUE LO SABES NO VUELVAS A APAGAR LA LUZ SIGUENOS PARA MAS TERROR", "EL VERDADERO HORROR ES QUE ESTO PODRIA PASARTE A TI SIGUENOS PARA MAS MISTERIOS", "LA MALDICION ESTA SUELTA Y NADIE ESTA A SALVO SIGUENOS SI TE ATREVES"]
+        ganchos = ["NO MIRES ESTE VIDEO DE NOCHE SI LE TEMES A", "ESTE ES EL VIDEO MAS PERTURBADOR QUE EXISTE SOBRE", "TE RETO A ESCUCHAR LA HISTORIA REAL DE"]
+        creencias = ["MUCHOS CREEN QUE ES FALSO HASTA QUE LES PASA", "PARECIA UNA LEYENDA URBANA MAS DEL MONTON", "TODOS PENSABAN QUE ERA UN SIMPLE MITO"]
+        descubrimientos = ["PERO UN EXPLORADOR GRABO ESTO EN VIDEO Y DESAPARECIO", "HASTA QUE SE FILTRARON LAS LLAMADAS AL NUEVE ONCE", "PERO LA AUTOPSIA REVELO ALGO ESCALOFRIANTE"]
+        giros = ["LA CRIATURA NUNCA ESTUVO FUERA SIEMPRE ESTUVO DENTRO DE LA CASA", "Y DESCUBRIERON QUE ESTABAN INVOCANDO ALGO SIN SABERLO", "LO PEOR ES QUE ESTO SIGUE PASANDO HOY EN DIA"]
+        finales = ["SI ESCUCHAS UN RUIDO HOY NO ABRAS LA PUERTA SIGUENOS PARA MAS TERROR", "NADIE ESTA A SALVO DE ESTA MALDICION SIGUENOS SI TE ATREVES", "MIRA DETRAS DE TI AHORA MISMO SIGUENOS PARA MAS MISTERIOS"]
     
     elif nicho == "negocios":
-        ganchos = ["ESTE ES EL SECRETO QUE LOS MULTIMILLONARIOS TE ESTAN OCULTANDO SOBRE", "LA MAYOR TRANSFERENCIA DE RIQUEZA ESTA A PUNTO DE OCURRIR CON", "SI QUIERES HACER DINERO REAL TIENES QUE ENTENDER ESTO SOBRE"]
-        creencias = ["EL SISTEMA EDUCATIVO NOS ENSEÑO A IGNORAR ESTAS OPORTUNIDADES", "LA MAYORIA PIERDE EL TIEMPO EN METODOS TRADICIONALES QUE YA NO FUNCIONAN", "NOS VENDIERON LA IDEA DE QUE SE NECESITA MUCHO CAPITAL PARA EMPEZAR"]
-        descubrimientos = ["PERO LOS NUEVOS EMPRENDEDORES ESTAN USANDO UNA ESTRATEGIA TOTALMENTE DIFERENTE", "HASTA QUE UN ANALISTA REVELO EL PATRON EXACTO QUE GENERA GANANCIAS MASIVAS", "SIN EMBARGO LOS DATOS DEMUESTRAN QUE EL MERCADO HA CAMBIADO PARA SIEMPRE"]
-        giros = ["EL TRUCO ESTA EN APROVECHAR LAS TENDENCIAS ANTES DE QUE SE HAGAN PUBLICAS", "Y LA CLAVE ES SISTEMATIZAR EL PROCESO PARA QUE FUNCIONE EN PILOTO AUTOMATICO", "DEMOSTRANDO QUE LA VERDADERA RIQUEZA SE CREA ROMPIENDO LAS REGLAS ESTABLECIDAS"]
-        finales = ["APLICA ESTA ESTRATEGIA Y TU CUENTA BANCARIA EXPLOTARA SIGUENOS PARA MAS TIPS", "TOMA ACCION HOY MISMO ANTES DE QUE EL MERCADO SE SATURE SIGUENOS PARA MAS NEGOCIOS", "ESTA ES TU OPORTUNIDAD PARA ESCAPAR DEL SISTEMA TRADICIONAL SIGUENOS PARA CRECER"]
+        ganchos = ["TE ESTAN ROBANDO EN TU PROPIA CARA CON", "EL NOVENTA Y NUEVE POR CIENTO PIERDE DINERO CON", "ESTE ES EL TRUCO SUCIO QUE LOS RICOS USAN EN"]
+        creencias = ["TE HICIERON CREER QUE NECESITAS CAPITAL PARA EMPEZAR", "LA ESCUELA TE ENSEÑO EXACTAMENTE LO CONTRARIO", "TODO EL MUNDO SIGUE CAYENDO EN LA MISMA TRAMPA"]
+        descubrimientos = ["PERO UN ANALISTA FILTRO LA FORMULA EXACTA DEL EXITO", "HASTA QUE SE DESCUBRIO EL PATRON QUE USAN LOS BANCOS", "PERO UN CHICO DE VEINTE AÑOS ROMPIO EL SISTEMA HACIENDO ESTO"]
+        giros = ["EL TRUCO ESTA EN HACER QUE EL ALGORITMO TRABAJE PARA TI", "RESULTA QUE EL DINERO ESTA EN LO QUE NADIE QUIERE MIRAR", "TODO CONSISTE EN COMPRAR CUANDO HAY SANGRE EN LAS CALLES"]
+        finales = ["APLICA ESTO HOY Y TU VIDA CAMBIARA SIGUENOS PARA MAS NEGOCIOS", "DEJA DE PERDER EL TIEMPO Y COPIA ESTA ESTRATEGIA SIGUENOS PARA CRECER", "EL SISTEMA ESTA ROTO APROVECHALO SIGUENOS PARA MAS DINERO"]
     
-    else: # Conspiración / Documental Clásico
-        ganchos = ["PRESTA MUCHA ATENCION PORQUE NADIE TE ESTA CONTANDO LA VERDAD SOBRE", "HAY UN MISTERIO MUY OSCURO QUE LA ELITE INTENTA OCULTAR SOBRE", "EL GOBIERNO HA GASTADO MILLONES EN OCULTAR ESTE SECRETO SOBRE"]
-        creencias = ["SIEMPRE NOS HAN HECHO CREER QUE ES ALGO COMPLETAMENTE INOFENSIVO Y NORMAL", "LA MAYORIA DE LA GENTE PIENSA QUE FUNCIONA DE FORMA TRANSPARENTE Y SEGURA", "LA HISTORIA OFICIAL SIEMPRE HA DICHO QUE NO HABIA NADA EXTRAÑO AQUI"]
-        descubrimientos = ["PERO HACE POCO UNOS INVESTIGADORES INDEPENDIENTES FILTRARON PRUEBAS REALES", "SIN EMBARGO UN HACKER LOGRO ENTRAR A LOS SERVIDORES PRIVADOS Y VIO LOS DATOS", "HASTA QUE UN DOCUMENTO CLASIFICADO SALIO A LA LUZ POR COMPLETO ACCIDENTE"]
-        giros = ["Y SE DIERON CUENTA DE QUE EL VERDADERO PROPOSITO ERA MANIPULAR NUESTRAS DECISIONES", "REVELANDO QUE TODO ES UN NEGOCIO MULTIMILLONARIO PARA MANTENERNOS ESTANCADOS", "DEMOSTRANDO QUE TODO HABIA SIDO CALCULADO AL MILIMETRO PARA TENERNOS BAJO CONTROL"]
-        finales = ["AHORA QUE SABES ESTO TIENES LA VENTAJA DEFINITIVA SOBRE EL SISTEMA SIGUENOS PARA MAS SECRETOS", "EL ENGAÑO HA TERMINADO Y LA HISTORIA OFICIAL QUEDA DESTRUIDA SIGUENOS PARA MAS MISTERIOS", "ESTE DESCUBRIMIENTO LO CAMBIA TODO Y NO HAY VUELTA ATRAS SIGUENOS PARA MAS VERDADES"]
+    else: 
+        ganchos = ["TE HAN MENTIDO TODA TU VIDA SOBRE", "ESTE ES EL SECRETO QUE EL GOBIERNO NO QUIERE QUE SEPAS DE", "BORRARAN ESTE VIDEO EN HORAS PORQUE HABLA DE"]
+        creencias = ["LOS LIBROS DE HISTORIA OCULTARON LA PARTE MAS IMPORTANTE", "TE VENDIERON UNA ILUSION PARA MANTENERTE CONTROLADO", "TODO EL MUNDO ACEPTA LA VERSION OFICIAL SIN PREGUNTAR"]
+        descubrimientos = ["PERO RECIENTEMENTE SE DESCLASIFICO UN DOCUMENTO BRUTAL", "HASTA QUE UN HACKER SACO A LA LUZ ESTOS ARCHIVOS", "PERO UN CIENTIFICO ROMPIO EL SILENCIO ANTES DE DESAPARECER"]
+        giros = ["DEMOSTRANDO QUE TODO ESTA CONECTADO DESDE EL PRINCIPIO", "LA VERDAD ES QUE LA TECNOLOGIA YA EXISTIA HACE MILENIOS", "EL OBJETIVO FINAL SIEMPRE FUE MANIPULAR NUESTRA MENTE"]
+        finales = ["DESPIERTA DE UNA VEZ Y MIRA A TU ALREDEDOR SIGUENOS PARA MAS SECRETOS", "EL ENGAÑO HA TERMINADO LA VERDAD ESTA AQUI SIGUENOS PARA MAS MISTERIOS", "NO CREAS NADA DE LO QUE TE DICEN SIGUENOS PARA MAS VERDADES"]
         
     return f"{random.choice(ganchos)} {tema} {random.choice(creencias)} {random.choice(descubrimientos)} {random.choice(giros)} {random.choice(finales)}"
 
@@ -79,7 +78,6 @@ def obtener_guion_pro(orden_usuario):
     tema_mostrar, limpias = limpiar_orden(orden_usuario)
     nicho = detectar_nicho(orden_usuario)
     
-    # Adaptar palabras clave visuales según el nicho para Pexels
     if nicho == "terror": sufijo = "creepy dark"
     elif nicho == "negocios": sufijo = "money success"
     else: sufijo = "cinematic epic"
@@ -90,26 +88,29 @@ def obtener_guion_pro(orden_usuario):
     guion_fallback = generar_guion_procedural(tema_mostrar, nicho)
     semilla = random.randint(100000, 9999999)
     
-    # La IA también recibe instrucciones específicas según el nicho
+    # PROMPT ANTI-PAJA: Instrucciones agresivas para la IA
+    base_prompt = "Crea un guion viral CERO PAJA VE DIRECTO AL GRANO."
+    reglas = "REGLAS ESTRICTAS: PROHIBIDO USAR FRASES COMO PRESTA ATENCION O TE VOY A CONTAR. EMPIEZA DIRECTO CON EL DATO AGRESIVO. TODO EN MAYUSCULAS. CERO PUNTOS. CERO COMAS. CERO TILDES. MINIMO 90 PALABRAS."
+    
     if nicho == "terror":
-        prompt_maestro = f"Crea un guion viral TERRORIFICO Y PARANORMAL. TEMA: '{orden_usuario}'. ESTRUCTURA: 1. Gancho que de mucho miedo. 2. Historia escalofriante o leyenda oscura. 3. FINAL: Cierra con miedo y añade EXACTAMENTE la frase 'SIGUENOS PARA MAS TERROR'. REGLAS: TODO EN MAYUSCULAS. CERO PUNTOS. CERO COMAS. CERO TILDES. MINIMO 120 PALABRAS."
+        prompt_maestro = f"{base_prompt} TEMA: '{orden_usuario}'. 1. Gancho agresivo de miedo (ej: 'No mires esto de noche...'). 2. Dato aterrador sin relleno. 3. Final: 'SIGUENOS PARA MAS TERROR'. {reglas}"
     elif nicho == "negocios":
-        prompt_maestro = f"Crea un guion viral DE NEGOCIOS Y EMPRENDIMIENTO. TEMA: '{orden_usuario}'. ESTRUCTURA: 1. Gancho sobre dinero o exito. 2. Estrategia de negocio o caso de exito real. 3. FINAL: Cierra con una leccion de riqueza y añade EXACTAMENTE la frase 'SIGUENOS PARA MAS NEGOCIOS'. REGLAS: TODO EN MAYUSCULAS. CERO PUNTOS. CERO COMAS. CERO TILDES. MINIMO 120 PALABRAS."
+        prompt_maestro = f"{base_prompt} TEMA: '{orden_usuario}'. 1. Gancho financiero agresivo (ej: 'Te estan robando con...'). 2. Estrategia real sin relleno. 3. Final: 'SIGUENOS PARA MAS NEGOCIOS'. {reglas}"
     else:
-        prompt_maestro = f"Crea un guion viral UNICO DE MISTERIO O CONSPIRACION. TEMA: '{orden_usuario}'. ESTRUCTURA: 1. Gancho explosivo. 2. Desarrollo misterioso con datos reales. 3. FINAL: Concluye la historia y añade EXACTAMENTE la frase 'SIGUENOS PARA MAS SECRETOS'. REGLAS: TODO EN MAYUSCULAS. CERO PUNTOS. CERO COMAS. CERO TILDES. MINIMO 120 PALABRAS."
+        prompt_maestro = f"{base_prompt} TEMA: '{orden_usuario}'. 1. Gancho de conspiracion fuerte. 2. Secreto brutal sin relleno. 3. Final: 'SIGUENOS PARA MAS SECRETOS'. {reglas}"
 
     try:
         res_1 = requests.get("https://sentence.fineshopdesign.com/api/ai", params={"prompt": prompt_maestro, "seed": semilla}, timeout=12)
         if res_1.status_code == 200 and es_texto_valido(res_1.json().get("reply", "")):
             gl = limpiar_texto_ia(res_1.json().get("reply", ""))
-            if len(gl) > 60: return gl, keys, tema_mostrar
+            if len(gl) > 40: return gl, keys, tema_mostrar
     except: pass
 
     try:
         res_2 = requests.get(f"https://text.pollinations.ai/{urllib.parse.quote(prompt_maestro)}?seed={semilla}", timeout=12)
         if res_2.status_code == 200 and es_texto_valido(res_2.text):
             gl = limpiar_texto_ia(res_2.text)
-            if len(gl) > 60: return gl, keys, tema_mostrar
+            if len(gl) > 40: return gl, keys, tema_mostrar
     except: pass
             
     return guion_fallback, keys, tema_mostrar
@@ -127,22 +128,21 @@ with st.sidebar:
     pexels_key = st.text_input("🔑 Pexels API Key:", value="Ty0uFISh3APEAXIVcrFpSM7ZdwOeRElCuUgoG42EW6WVISRTEfqjm0BZ", type="password")
     color_sub = st.selectbox("🎨 Estilo Subtítulos", ["yellow", "white", "cyan", "#00FF00"])
     st.markdown("---")
-    st.caption("Fénix System | Inteligencia Multi-Nicho Activa ✅")
+    st.caption("Fénix System | Cero Paja Activo ✅")
 
-if orden := st.chat_input("Introduzca el tema del vídeo a generar..."):
-    with st.status(f"🚀 Iniciando Motor... Analizando nicho de '{orden}'", expanded=True) as status:
+if orden := st.chat_input("Introduzca el tema (Gancho directo asegurado)..."):
+    with st.status(f"🚀 Iniciando Motor Anti-Paja... Analizando '{orden}'", expanded=True) as status:
         subprocess.run("rm -f p_*.mp4 clip_*.mp4 base.mp4 t.mp3 t.vtt music.mp3 final.mp4 temp_a.mp3 lista.txt subs_filter.txt outro.mp4", shell=True)
         
         guion, palabras_claves, tema_mostrar = obtener_guion_pro(orden)
         nicho_detectado = detectar_nicho(orden)
-        status.write(f"✓ Nicho detectado: **{nicho_detectado.upper()}**. Guion y visuales adaptados.")
+        status.write(f"✓ Nicho: **{nicho_detectado.upper()}**. Guion agresivo sin relleno generado.")
         
         subprocess.run(f'edge-tts --voice es-ES-AlvaroNeural --rate=-10% --text "{guion}" --write-media "t.mp3" --write-subtitles "t.vtt"', shell=True)
         dur_audio_str = subprocess.check_output("ffprobe -i t.mp3 -show_entries format=duration -v quiet -of csv='p=0'", shell=True).decode('utf-8').strip()
         if not dur_audio_str: dur_audio_str = "40.0"
         dur_audio = float(dur_audio_str)
 
-        # Música de fondo adaptada al nicho
         tono = 50 if nicho_detectado == "terror" else 75
         ruido = 0.05 if nicho_detectado == "terror" else 0.02
         subprocess.run(f'ffmpeg -y -f lavfi -i "sine=frequency={tono}:duration={dur_audio+2}" -f lavfi -i "anoisesrc=d={dur_audio+2}:c=pink:a={ruido}" -filter_complex "[0:a]volume=0.5[t];[1:a]volume=0.1[n];[t][n]amix=inputs=2:duration=first" music.mp3', shell=True)
@@ -176,7 +176,7 @@ if orden := st.chat_input("Introduzca el tema del vídeo a generar..."):
         num_clips = math.ceil(dur_audio / clip_duration) 
         processed_clips = []
         
-        status.write(f"🎞️ Sincronizando imágenes ({nicho_detectado})...")
+        status.write(f"🎞️ Sincronizando imágenes de impacto...")
         palabras_guion = guion.split()
         chunk_size = max(1, len(palabras_guion) // max(1, num_clips))
         stop_words = {"PRESTA", "MUCHA", "ATENCION", "PORQUE", "QUE", "TE", "VOY", "A", "CONTAR", "SOBRE", "EL", "LA", "LOS", "LAS", "UN", "UNA", "UNOS", "UNAS", "CON", "SIN", "PARA", "POR", "DE", "DEL", "Y", "O", "ES", "SON", "HA", "HAN", "SE", "LO", "LE", "NO", "MAS", "ESTO", "ESTA", "ESTAS", "ESTOS", "TODO", "PERO", "SI", "COMO", "CUANDO", "DONDE", "AQUI", "ALLI", "MUY", "TAN", "SU", "SUS", "AL", "NOS", "MI", "MIS", "ENTRE", "HAY", "ESTE", "AUNQUE", "HASTA", "DESDE", "ENTONCES", "TIENES", "SIGUENOS", "AHORA", "ELLOS", "MUNDO", "TIEMPO", "SOLO"}
@@ -190,7 +190,6 @@ if orden := st.chat_input("Introduzca el tema del vídeo a generar..."):
             palabras_utiles = [p for p in trozo if p not in stop_words and len(p) > 4]
             busquedas_a_intentar = []
             
-            # Buscamos las palabras del guion, pero les añadimos el tono del nicho (creepy, money, cinematic)
             sufijo_nicho = "creepy" if nicho_detectado == "terror" else ("money" if nicho_detectado == "negocios" else "cinematic")
             
             if palabras_utiles:
@@ -229,11 +228,11 @@ if orden := st.chat_input("Introduzca el tema del vídeo a generar..."):
             f.write("file 'outro.mp4'\n")
         subprocess.run('ffmpeg -y -f concat -safe 0 -i lista.txt -c copy base.mp4', shell=True)
 
-        status.write("✨ Renderizando Master Final HD...")
+        status.write("✨ Renderizando Master Definitivo (Cero Paja)...")
         v_final = f"output/v_{int(time.time())}.mp4"
         cmd = f'ffmpeg -y -i base.mp4 -i temp_a.mp3 -filter_complex_script subs_filter.txt -c:v libx264 -preset veryfast -b:v 3000k -shortest "{v_final}"'
         subprocess.run(cmd, shell=True)
         
         if os.path.exists(v_final):
-            st.success("✅ Video completado con adaptación de nicho.")
+            st.success("✅ Video completado con gancho de alto impacto.")
             st.video(v_final)
