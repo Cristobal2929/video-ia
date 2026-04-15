@@ -16,8 +16,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX AI STUDIO v3.1</div>', unsafe_allow_html=True)
-st.markdown('<div class="pro-subtitle">Generador de Contenido Viral • Lógica Perfecta HD</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX AI STUDIO v4.0</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-subtitle">Visuales Dinámicas • Sincronización Inteligente HD</div>', unsafe_allow_html=True)
 
 def es_texto_valido(texto):
     t_lower = texto.lower()
@@ -39,65 +39,43 @@ def limpiar_orden(orden):
     limpias = [p for p in palabras if p not in basura and len(p) > 3]
     return " ".join(limpias) if limpias else orden, limpias
 
-# --- MOTOR COMBINATORIO CON FLUIDEZ GRAMATICAL LÓGICA ---
 def generar_guion_procedural(tema):
     tema = tema.upper()
-    
-    # 1. GANCHO DIRECTO AL TEMA
     ganchos = [
         "PRESTA MUCHA ATENCION PORQUE NADIE TE ESTA CONTANDO LA VERDAD SOBRE",
         "HAY UN MISTERIO MUY OSCURO QUE LA ELITE INTENTA OCULTAR SOBRE",
         "ESTO ES LO QUE NO QUIEREN QUE DESCUBRAS CUANDO INVESTIGAS SOBRE",
         "DURANTE DECADAS NOS HAN ESTADO MINTIENDO DESCARADAMENTE SOBRE",
-        "SIEMPRE HAS CREIDO QUE LO SABIAS TODO SOBRE",
-        "EL GOBIERNO HA GASTADO MILLONES EN OCULTAR ESTE SECRETO SOBRE",
-        "HAY UNA ESTRATEGIA PROHIBIDA QUE MUY POCOS CONOCEN SOBRE"
+        "SIEMPRE HAS CREIDO QUE LO SABIAS TODO SOBRE"
     ]
-    
-    # 2. EL PUENTE LÓGICO (Explica por qué estábamos engañados)
     creencias = [
         "SIEMPRE NOS HAN HECHO CREER QUE ES ALGO COMPLETAMENTE INOFENSIVO Y NORMAL",
         "LA MAYORIA DE LA GENTE PIENSA QUE FUNCIONA DE FORMA TRANSPARENTE Y SEGURA",
         "NOS VENDIERON LA IDEA DE QUE ERA PARA NUESTRO BENEFICIO EXCLUSIVO",
         "Y CASI TODO EL MUNDO HA CAIDO EN LA TRAMPA SIN HACER MAS PREGUNTAS",
-        "A SIMPLE VISTA PARECE ALGO COTIDIANO A LO QUE NO HAY QUE PRESTAR ATENCION",
-        "NOS EDUCARON PARA PENSAR QUE ESTO NO TENIA NINGUNA IMPORTANCIA REAL",
         "LA HISTORIA OFICIAL SIEMPRE HA DICHO QUE NO HABIA NADA EXTRAÑO AQUI"
     ]
-    
-    # 3. EL SUCESO DETONANTE (Alguien descubre la verdad)
     descubrimientos = [
         "PERO HACE POCO UNOS INVESTIGADORES INDEPENDIENTES FILTRARON PRUEBAS REALES",
         "SIN EMBARGO UN HACKER LOGRO ENTRAR A LOS SERVIDORES PRIVADOS Y VIO LOS DATOS",
         "HASTA QUE UN DOCUMENTO CLASIFICADO SALIO A LA LUZ POR COMPLETO ACCIDENTE",
         "PERO RECIENTEMENTE ALGUIEN DE ADENTRO ROMPIO EL SILENCIO PARA AVISARNOS",
-        "AUNQUE TODO CAMBIO CUANDO UN CIENTIFICO ANALIZO LOS VERDADEROS PATRONES",
-        "HASTA QUE UN GRUPO DE EXPERTOS SE DIO CUENTA DE UN PEQUEÑO ERROR MATEMATICO",
         "PERO UN ARCHIVO OLVIDADO EN LA DEEP WEB DEMOSTRO QUE ESTABAMOS CIEGOS"
     ]
-    
-    # 4. EL GIRO Y LA VERDAD CRUDA
     giros = [
         "Y SE DIERON CUENTA DE QUE EL VERDADERO PROPOSITO ERA MANIPULAR NUESTRAS DECISIONES",
         "REVELANDO QUE TODO ES UN NEGOCIO MULTIMILLONARIO PARA MANTENERNOS ESTANCADOS",
         "Y DESCUBRIERON QUE ESTA TECNOLOGIA ES MUCHO MAS AVANZADA DE LO QUE PARECE",
         "DEMOSTRANDO QUE TODO HABIA SIDO CALCULADO AL MILIMETRO PARA TENERNOS BAJO CONTROL",
-        "LA CONCLUSION FUE QUE ALGUIEN DESDE LAS SOMBRAS LO ESTA USANDO A SU FAVOR",
-        "Y LO PEOR DE TODO ES QUE ESTE SISTEMA LLEVA ACTIVO MUCHISIMO MAS TIEMPO DEL QUE CREIAMOS",
         "CONFIRMANDO QUE LA REGLA PRINCIPAL FUE CREADA JUSTAMENTE PARA QUE FRACASARAMOS"
     ]
-    
-    # 5. EL FINAL PERFECTO
     finales = [
         "AHORA QUE SABES ESTO TIENES LA VENTAJA DEFINITIVA SOBRE EL SISTEMA SIGUENOS PARA MAS SECRETOS",
         "EL ENGAÑO HA TERMINADO Y LA HISTORIA OFICIAL QUEDA DESTRUIDA SIGUENOS PARA MAS SECRETOS",
         "ESTE DESCUBRIMIENTO LO CAMBIA TODO Y NO HAY VUELTA ATRAS SIGUENOS PARA MAS SECRETOS",
         "YA CONOCES LA VERDAD OCULTA APLICALA Y NADIE PODRA DETENERTE SIGUENOS PARA MAS SECRETOS",
-        "LA ILUSION SE HA ROTO AHORA TIENES EL PODER EN TUS MANOS SIGUENOS PARA MAS SECRETOS",
-        "EL MUNDO YA NO VOLVERA A SER IGUAL DESPUES DE ESTO DESPIERTA Y SIGUENOS PARA MAS SECRETOS",
-        "TIENES LA CLAVE PARA ENTENDERLO TODO NO TE DEJES MANIPULAR SIGUENOS PARA MAS SECRETOS"
+        "LA ILUSION SE HA ROTO AHORA TIENES EL PODER EN TUS MANOS SIGUENOS PARA MAS SECRETOS"
     ]
-    
     return f"{random.choice(ganchos)} {tema} {random.choice(creencias)} {random.choice(descubrimientos)} {random.choice(giros)} {random.choice(finales)}"
 
 def obtener_guion_pro(orden_usuario):
@@ -141,11 +119,11 @@ with st.sidebar:
     st.caption("Fénix System | Licencia Comercial Activa ✅")
 
 if orden := st.chat_input("Introduzca el tema del vídeo a generar..."):
-    with st.status("🚀 Iniciando Motor de Producción HD...", expanded=True) as status:
+    with st.status("🚀 Iniciando Motor Dinámico de Producción...", expanded=True) as status:
         subprocess.run("rm -f p_*.mp4 clip_*.mp4 base.mp4 t.mp3 t.vtt music.mp3 final.mp4 temp_a.mp3 lista.txt subs_filter.txt outro.mp4", shell=True)
         
         guion, palabras_claves, tema_mostrar = obtener_guion_pro(orden)
-        status.write(f"✓ Guion lógico y de alta retención generado.")
+        status.write(f"✓ Guion lógico generado.")
         
         subprocess.run(f'edge-tts --voice es-ES-AlvaroNeural --rate=-10% --text "{guion}" --write-media "t.mp3" --write-subtitles "t.vtt"', shell=True)
         dur_audio_str = subprocess.check_output("ffprobe -i t.mp3 -show_entries format=duration -v quiet -of csv='p=0'", shell=True).decode('utf-8').strip()
@@ -183,19 +161,45 @@ if orden := st.chat_input("Introduzca el tema del vídeo a generar..."):
         num_clips = math.ceil(dur_audio / clip_duration) 
         processed_clips = []
         
-        status.write(f"✓ Descargando metraje HD...")
-        v_urls = []
-        for k in palabras_claves:
-            try:
-                res = requests.get(f"https://api.pexels.com/videos/search?query={k}&per_page=10&orientation=portrait", headers={"Authorization": pexels_key.strip()}, timeout=10).json()
-                for v in res.get('videos', []): v_urls.append(v['video_files'][0]['link'])
-            except: pass
+        # --- EL MOTOR VISUAL DINÁMICO ---
+        status.write(f"🎞️ Sincronizando imágenes con la voz en tiempo real...")
         
-        random.shuffle(v_urls)
+        palabras_guion = guion.split()
+        chunk_size = len(palabras_guion) / num_clips
+        stop_words = {"PRESTA", "MUCHA", "ATENCION", "PORQUE", "QUE", "TE", "VOY", "A", "CONTAR", "SOBRE", "EL", "LA", "LOS", "LAS", "UN", "UNA", "UNOS", "UNAS", "CON", "SIN", "PARA", "POR", "DE", "DEL", "Y", "O", "ES", "SON", "HA", "HAN", "SE", "LO", "LE", "NO", "MAS", "ESTO", "ESTA", "ESTAS", "ESTOS", "TODO", "PERO", "SI", "COMO", "CUANDO", "DONDE", "AQUI", "ALLI", "MUY", "TAN", "SU", "SUS", "AL", "NOS", "MI", "MIS", "ENTRE", "HAY", "ESTE", "AUNQUE", "HASTA", "DESDE", "ENTONCES", "TIENES", "SIGUENOS", "AHORA", "ELLOS", "MUNDO", "TIEMPO", "SOLO"}
+        
         last_valid_clip = None
         for i in range(num_clips): 
+            # Cortamos el trozo de guion que se está leyendo en este preciso clip
+            inicio = int(i * chunk_size)
+            fin = int((i + 1) * chunk_size)
+            trozo = palabras_guion[inicio:fin]
+            
+            # Filtramos para sacar las palabras más "pesadas" y descriptivas
+            palabras_utiles = [p for p in trozo if p not in stop_words and len(p) > 4]
+            busquedas_a_intentar = []
+            
+            if palabras_utiles:
+                palabras_utiles.sort(key=len, reverse=True) # Cogemos las más largas (ej: "INVESTIGADORES")
+                busquedas_a_intentar.append(f"{palabras_utiles[0]} cinematic")
+                if len(palabras_utiles) > 1:
+                    busquedas_a_intentar.append(f"{palabras_utiles[1]} cinematic")
+            
+            # Siempre dejamos el tema principal como salvavidas por si Pexels no encuentra la palabra rara
+            busquedas_a_intentar.extend(palabras_claves)
+            
+            v_url = None
+            for busqueda in busquedas_a_intentar:
+                try:
+                    res = requests.get(f"https://api.pexels.com/videos/search?query={busqueda}&per_page=5&orientation=portrait", headers={"Authorization": pexels_key.strip()}, timeout=5).json()
+                    videos = res.get('videos', [])
+                    if videos:
+                        v_url = random.choice(videos)['video_files'][0]['link']
+                        status.write(f"  ► Clip {i+1}: Imagen sincronizada para '{busqueda}'")
+                        break
+                except: pass
+            
             try:
-                v_url = v_urls[i % len(v_urls)] if v_urls else None
                 if v_url:
                     with open(f"clip_{i}.mp4", 'wb') as f: f.write(requests.get(v_url, timeout=10).content)
                     subprocess.run(f'ffmpeg -y -i "clip_{i}.mp4" -vf "scale=1280:-1,zoompan=z=\'min(zoom+0.0015,1.4)\':d=125:x=iw/2-(iw/zoom/2):y=ih/2-(ih/zoom/2):s=720x1280,fps=30" -an -c:v libx264 -preset veryfast -t {clip_duration} "p_{i}.mp4"', shell=True)
@@ -212,7 +216,7 @@ if orden := st.chat_input("Introduzca el tema del vídeo a generar..."):
             f.write("file 'outro.mp4'\n")
         subprocess.run('ffmpeg -y -f concat -safe 0 -i lista.txt -c copy base.mp4', shell=True)
 
-        status.write("✨ Renderizando Exportación Final Comercial...")
+        status.write("✨ Renderizando Exportación Final HD...")
         v_final = f"output/v_{int(time.time())}.mp4"
         cmd = f'ffmpeg -y -i base.mp4 -i temp_a.mp3 -filter_complex_script subs_filter.txt -c:v libx264 -preset veryfast -b:v 3000k -shortest "{v_final}"'
         subprocess.run(cmd, shell=True)
