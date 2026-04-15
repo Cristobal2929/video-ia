@@ -1,7 +1,7 @@
 import streamlit as st
 import os, time, random, subprocess, re, requests
 
-st.set_page_config(page_title="Fénix Studio Ultra", layout="centered", page_icon="🎬")
+st.set_page_config(page_title="Fénix Studio Final", layout="centered")
 st.markdown("<style>.stApp {background: #0d1117; color: white;}</style>", unsafe_allow_html=True)
 
 def crear_guion_y_keywords(tema):
@@ -16,34 +16,10 @@ def crear_guion_y_keywords(tema):
         return guion, keys
     return f"Bienvenidos a {tema}. Un viaje increible por detalles que no conocías.", [t, f"{t} cinematic"]
 
-def transformar_srt(vtt_path, srt_path):
-    try:
-        def parse_t(t):
-            p = t.split(':')
-            return int(p[-3])*3600000 + int(p[-2])*60000 + int(float(p[-1].replace(',','.'))*1000)
-        def format_t(ms):
-            return f"{ms//3600000:02d}:{(ms%3600000)//60000:02d}:{(ms%60000)//1000:02d},{ms%1000:03d}"
-        with open(vtt_path, 'r', encoding='utf-8') as f: lines = f.readlines()
-        clean = [l for l in lines if "-->" in l or (l.strip() and not l.strip().isdigit() and not l.startswith("WEBVTT"))]
-        srt_f, cnt = [], 1
-        for i in range(0, len(clean), 2):
-            if i+1 < len(clean) and "-->" in clean[i]:
-                t = clean[i].split(" --> ")
-                s, e = parse_t(t[0]), parse_t(t[1])
-                palabras = re.sub(r'[.,;!¡¿?]', '', clean[i+1].strip()).upper().split()
-                if not palabras: continue
-                ms_p = (e - s) / len(palabras)
-                for j in range(0, len(palabras), 2):
-                    g = palabras[j:j+2]
-                    srt_f.append(f"{cnt}\n{format_t(s+int(j*ms_p))} --> {format_t(s+int((j+len(g))*ms_p))}\n{' '.join(g)}\n")
-                    cnt += 1
-        with open(srt_path, 'w', encoding='utf-8') as f: f.write("\n".join(srt_f))
-        return True
-    except: return False
-
-def buscar_vids(keywords, api_key):
+def buscar_vids(keywords, api_key, status):
     desc = []
     for i, word in enumerate(keywords):
+        status.write(f"🔍 Buscando imagen para: {word}...")
         url = f"https://api.pexels.com/videos/search?query={word}&per_page=1&orientation=portrait"
         try:
             res = requests.get(url, headers={"Authorization": api_key.strip()}, timeout=10).json()
@@ -64,26 +40,35 @@ with st.sidebar:
     ass_col = f"&H00{hc[4:6]}{hc[2:4]}{hc[0:2]}"
 
 if user_input := st.chat_input("Dime el tema (Terror, Humor...)"):
-    with st.status("🦅 El Fénix está creando tu vídeo...", expanded=True):
+    with st.status("🦅 El Fénix está trabajando...", expanded=True) as status:
         # 1. Limpieza
+        status.write("🧹 Limpiando mesa de trabajo...")
         subprocess.run("rm -f p_*.mp4 clip_*.mp4 base.mp4 t.* outro.mp4 music.mp3", shell=True)
         
         guion, keys = crear_guion_y_keywords(user_input)
         v_final = f"output/v_{int(time.time())}.mp4"
         
-        # 2. Voz y Duración
+        # 2. Voz
+        status.write("🎙️ Grabando voz del narrador...")
         subprocess.run(f'edge-tts --voice es-ES-AlvaroNeural --text "{guion}" --write-media "t.mp3" --write-subtitles "t.vtt"', shell=True)
         dur = float(subprocess.check_output("ffprobe -i t.mp3 -show_entries format=duration -v quiet -of csv='p=0'", shell=True))
         
         # 3. Clips
-        clips = buscar_vids(keys, pexels_key)
+        clips = buscar_vids(keys, pexels_key, status)
+        
         if clips:
-            transformar_srt("t.vtt", "t.srt")
+            status.write("✂️ Ajustando clips y formato...")
+            # Transformar SRT (subtítulos)
+            with open("t.vtt", 'r') as f: lines = f.readlines()
+            # Simplificamos el VTT a SRT básico para evitar errores
+            subprocess.run("ffmpeg -y -i t.vtt t.srt", shell=True)
+            
             for i, c in enumerate(clips):
                 subprocess.run(f'ffmpeg -y -i "{c}" -vf "scale=480:854:force_original_aspect_ratio=increase,crop=480:854,fps=25" -an -c:v libx264 -preset ultrafast "p_{i}.mp4"', shell=True)
             
-            # 4. Sello Final (Outro de 2.5 seg)
-            subprocess.run('ffmpeg -y -f lavfi -i color=c=black:s=480x854:d=2.5:r=25 -vf "drawtext=text=\'FENIX STUDIO 🦅\':fontcolor=white:fontsize=45:x=(w-tw)/2:y=(h-th)/2" -c:v libx264 -preset ultrafast outro.mp4', shell=True)
+            # 4. Sello Final
+            status.write("🎨 Creando sello Fénix Studio...")
+            subprocess.run('ffmpeg -y -f lavfi -i color=c=black:s=480x854:d=2.5:r=25 -vf "drawtext=text=\'FENIX STUDIO 🦅\':fontcolor=white:fontsize=40:x=(w-tw)/2:y=(h-th)/2" -c:v libx264 -preset ultrafast outro.mp4', shell=True)
             
             with open("lista.txt", "w") as f:
                 for i in range(len(clips)): f.write(f"file 'p_{i}.mp4'\n")
@@ -91,16 +76,18 @@ if user_input := st.chat_input("Dime el tema (Terror, Humor...)"):
             
             subprocess.run('ffmpeg -y -f concat -safe 0 -i lista.txt -c copy base.mp4', shell=True)
             
-            # 5. Música de Fondo (Descarga rápida de Bensound o similar)
+            # 5. Música
+            status.write("🎵 Añadiendo música de fondo...")
             m_url = "https://www.bensound.com/bensound-music/bensound-creativeminds.mp3"
             try:
-                with open("music.mp3", "wb") as f: f.write(requests.get(m_url, timeout=5).content)
+                r = requests.get(m_url, timeout=5)
+                with open("music.mp3", "wb") as f: f.write(r.content)
             except:
-                # Si falla la descarga, genera un silencio para que no rompa el comando
                 subprocess.run('ffmpeg -y -f lavfi -i anullsrc=r=44100:cl=mono -t 30 music.mp3', shell=True)
 
-            # 6. Mezcla Maestra: Voz + Música + Subtítulos + Sello
-            est = f"Fontname=Impact,FontSize=32,PrimaryColour={ass_col},Outline=4,Alignment=2,MarginV=140"
+            # 6. Mezcla Final
+            status.write("🧪 Mezclando todo el material...")
+            est = f"Fontname=Impact,FontSize=30,PrimaryColour={ass_col},Outline=3,Alignment=2,MarginV=140"
             cmd = (
                 f'ffmpeg -y -i base.mp4 -i t.mp3 -i music.mp3 -filter_complex '
                 f'"[1:a]volume=3.0[v];[2:a]volume=0.2,afade=t=out:st={dur}:d=2[m];[v][m]amix=inputs=2:duration=first" '
@@ -110,5 +97,8 @@ if user_input := st.chat_input("Dime el tema (Terror, Humor...)"):
             subprocess.run(cmd, shell=True)
             
             if os.path.exists(v_final):
+                status.write("✨ ¡Vídeo completado con éxito!")
                 st.video(v_final)
                 st.balloons()
+            else:
+                st.error("❌ Algo falló en la mezcla final.")
