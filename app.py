@@ -1,30 +1,38 @@
 import streamlit as st
-import os, time, random, subprocess, requests, math
+import os, time, random, subprocess, requests, math, re
 
 st.set_page_config(page_title="Fénix Viral PRO", layout="centered")
 st.markdown("<style>.stApp {background: #0d1117; color: white;}</style>", unsafe_allow_html=True)
 
-# 1. GENERADOR DE GUIONES Y KEYWORDS BLINDADO
+# 1. EL INGENIERO DE PROMPTS (Cerebro del Bot)
 def obtener_guion_pro(tema):
     t = tema.lower()
-    # Mapeo de conceptos visuales en INGLÉS para Pexels (Así no salen cosas raras)
-    keys = ["cinematic", "mystery", "epic"]
-    if "terror" in t or "miedo" in t:
-        keys = ["creepy shadow", "abandoned house", "scary dark", "horror movie", "nightmare"]
-        guion_fallback = "HAY UN EXPERIMENTO DE 1980 QUE EL GOBIERNO INTENTO BORRAR DE LA HISTORIA. ENCERRARON A CINCO PERSONAS EN LA OSCURIDAD TOTAL DURANTE UN MES. LO QUE ENCONTRARON AL ABRIR LA PUERTA TE DEJARA SIN DORMIR. SIGUENOS."
+    
+    # Asignación de imágenes en inglés para que los vídeos tengan sentido visual
+    if "terror" in t or "miedo" in t or "paranormal" in t:
+        keys = ["creepy shadow", "abandoned room", "scary dark", "horror movie", "nightmare"]
+        guion_fallback = "EN MIL NOVECIENTOS NOVENTA Y CUATRO UN GRUPO DE EXPLORADORES ENTRO EN UNA CUEVA SELLADA EN LOS ALPES DENTRO ENCONTRARON ALGO QUE DESAFIA LA CIENCIA LAS PAREDES ESTABAN CUBIERTAS DE MARCAS HECHAS DESDE EL INTERIOR EL GOBIERNO CERRO EL LUGAR Y NADIE VOLVIO A ENTRAR JAMAS"
     elif "coche" in t or "motor" in t:
         keys = ["sports car", "engine", "fast racing", "luxury vehicle", "drifting"]
-        guion_fallback = "ESTE ES EL SECRETO MEJOR GUARDADO DE LA INDUSTRIA AUTOMOTRIZ. HAY UN MOTOR QUE NO USA GASOLINA Y QUE FUE DESTRUIDO PARA PROTEGER LOS NEGOCIOS DE LOS MAS RICOS. PRESTA ATENCION AL FINAL."
+        guion_fallback = "EN LOS AÑOS OCHENTA UN INGENIERO CREO UN MOTOR QUE FUNCIONABA SOLO CON AGUA Y ALCANZABA VELOCIDADES INCREIBLES DIAS ANTES DE PATENTARLO SU TALLER ARDIO HASTA LOS CIMIENTOS Y EL DESAPARECIO SIN DEJAR RASTRO LA TECNOLOGIA NUNCA SE RECUPERO"
     else:
-        keys = [f"{t} cinematic", "epic discovery", "secret mystery", "shocking truth"]
-        guion_fallback = f"EL MUNDO DE {tema.upper()} ESCONDE UN SECRETO QUE NADIE QUIERE QUE SEPAS. ESTO NO ES UNA TEORIA, ES UN PLAN PERFECTO PARA OCULTAR LA VERDAD MAS PERTURBADORA. SIGUENOS PARA DESCUBRIRLO."
+        keys = [f"{t} cinematic", "epic discovery", "secret documents", "shocking truth"]
+        guion_fallback = f"LA HISTORIA OFICIAL DE {tema.upper()} ES UNA MENTIRA HACE DECADAS UN INVESTIGADOR DESCUBRIO DOCUMENTOS QUE PROBABAN LO CONTRARIO ANTES DE PODER PUBLICARLOS FUE SILENCIADO Y SU TRABAJO DESTRUIDO HOY LAS PIEZAS COMIENZAN A ENCAJAR Y LA VERDAD ESTA SALIENDO A LA LUZ"
+
+    # EL PROMPT MAESTRO (Marketing Puro)
+    prompt_maestro = f"Actúa como un experto en retención de audiencia de TikTok. Escribe una historia impactante sobre: {tema}. REGLAS ESTRICTAS: 1. Empieza con una pregunta psicológica o dato perturbador (Gancho). 2. Cuenta una historia con datos lógicos y reales (Nudo). 3. Termina con una revelación brutal (Desenlace). MÁXIMO 65 PALABRAS. ESCRIBE TODO EN MAYÚSCULAS. NO USES PUNTOS NO USES COMAS NO USES TILDES NO USES SIGNOS DE INTERROGACIÓN. SOLO PALABRAS."
 
     try:
-        prompt = f"Escribe un guion viral increible de 60 palabras sobre {tema}. Estructura: Gancho -> Datos -> Final. SOLO MAYUSCULAS. SIN SIGNOS."
-        url = f"https://sentence.fineshopdesign.com/api/ai?prompt={prompt}"
-        res = requests.get(url, timeout=5).json()
+        # ENVÍO SEGURO (Evita que el prompt se rompa en internet)
+        url = "https://sentence.fineshopdesign.com/api/ai"
+        res = requests.get(url, params={"prompt": prompt_maestro}, timeout=12).json()
         guion = res.get("reply", "").upper()
-        if len(guion) < 40: raise Exception("IA lenta")
+        
+        # LIMPIEZA MILITAR (Por si la IA desobedece)
+        guion = re.sub(r'[^\w\s]', '', guion) # Borra cualquier símbolo raro
+        guion = guion.replace('\n', ' ').strip()
+        
+        if len(guion) < 40: raise Exception("IA generó respuesta corta")
         return guion, keys
     except:
         return guion_fallback, keys
@@ -41,21 +49,21 @@ def time_to_sec(t_str):
     else: 
         return float(partes[0])
 
-st.title("🦅 Fénix Studio: Viral Perfecto")
+st.title("🦅 Fénix Studio: Prompts Maestros")
 
 with st.sidebar:
     st.header("Motor de Renderizado")
     pexels_key = st.text_input("🔑 API Pexels:", value="Ty0uFISh3APEAXIVcrFpSM7ZdwOeRElCuUgoG42EW6WVISRTEfqjm0BZ", type="password")
     color_sub = st.selectbox("🎨 Color Subtítulos", ["yellow", "white", "cyan"])
 
-if user_input := st.chat_input("Dime el tema (Terror, Coches, Espacio...):"):
-    with st.status("🎬 Producción Viral en curso...", expanded=True) as status:
+if user_input := st.chat_input("Dime el tema (El bot exigirá una historia perfecta):"):
+    with st.status("🎬 Ejecutando Prompt Maestro...", expanded=True) as status:
         subprocess.run("rm -f p_*.mp4 clip_*.mp4 base.mp4 t.mp3 t.vtt music.mp3 final.mp4 temp_a.mp3 lista.txt subs_filter.txt outro.mp4", shell=True)
         
         guion, palabras_claves = obtener_guion_pro(user_input)
-        status.write("✍️ Guion y conceptos visuales listos.")
+        status.write("✍️ IA controlada. Argumento lógico generado.")
         
-        # 1. AUDIO
+        # 1. AUDIO Y SINCRONIZACIÓN
         subprocess.run(f'edge-tts --voice es-ES-AlvaroNeural --text "{guion}" --write-media "t.mp3" --write-subtitles "t.vtt"', shell=True)
         dur_audio = float(subprocess.check_output("ffprobe -i t.mp3 -show_entries format=duration -v quiet -of csv='p=0'", shell=True).decode('utf-8').strip())
         
@@ -63,7 +71,7 @@ if user_input := st.chat_input("Dime el tema (Terror, Coches, Espacio...):"):
         subprocess.run(f'ffmpeg -y -f lavfi -i "sine=frequency={tono}:duration={dur_audio+2}" -f lavfi -i "anoisesrc=d={dur_audio+2}:c=pink:a=0.03" -filter_complex "[0:a]volume=0.5[t];[1:a]volume=0.1[n];[t][n]amix=inputs=2:duration=first" music.mp3', shell=True)
         subprocess.run(f'ffmpeg -y -i t.mp3 -i music.mp3 -filter_complex "[0:a]volume=3.0[v];[1:a]volume=0.2[m];[v][m]amix=inputs=2:duration=first" temp_a.mp3', shell=True)
 
-        # 2. SUBTÍTULOS CORTADOS A 1-2 PALABRAS (El gran arreglo)
+        # 2. SUBTÍTULOS MILIMÉTRICOS (1-2 Palabras)
         drawtext_filters = []
         try:
             with open('t.vtt', 'r', encoding='utf-8') as f:
@@ -74,9 +82,8 @@ if user_input := st.chat_input("Dime el tema (Terror, Coches, Espacio...):"):
                     start = time_to_sec(tiempos[0])
                     end = time_to_sec(tiempos[1])
                     if i + 1 < len(lines):
-                        texto = lines[i+1].strip().replace("'", "").replace('"', '')
+                        texto = lines[i+1].strip()
                         if texto:
-                            # Rompemos la frase larga en trozos de 2 palabras máximo
                             palabras = texto.split()
                             chunks = [" ".join(palabras[j:j+2]) for j in range(0, len(palabras), 2)]
                             time_per_chunk = (end - start) / len(chunks)
@@ -92,7 +99,7 @@ if user_input := st.chat_input("Dime el tema (Terror, Coches, Espacio...):"):
             st.error(f"Error en VTT: {e}")
             st.stop()
 
-        # 3. ESCENAS COHERENTES
+        # 3. IMÁGENES
         clip_duration = 3.5 
         num_clips = math.ceil(dur_audio / clip_duration) 
         processed_clips = []
@@ -100,7 +107,7 @@ if user_input := st.chat_input("Dime el tema (Terror, Coches, Espacio...):"):
         random.shuffle(palabras_claves)
         last_valid_clip = None
         
-        status.write(f"🎞️ Reuniendo escenas visuales épicas...")
+        status.write(f"🎞️ Buscando vídeos...")
         for i in range(num_clips): 
             k = palabras_claves[i % len(palabras_claves)]
             url = f"https://api.pexels.com/videos/search?query={k}&per_page=1&orientation=portrait"
@@ -116,7 +123,7 @@ if user_input := st.chat_input("Dime el tema (Terror, Coches, Espacio...):"):
             
             processed_clips.append(f"p_{i}.mp4")
 
-        # 4. CIERRE
+        # 4. CIERRE FÉNIX
         subprocess.run('ffmpeg -y -f lavfi -i color=c=black:s=480x854:d=3:r=25 -vf "drawtext=text=\'FENIX STUDIO 🦅\':fontcolor=white:fontsize=45:x=(w-tw)/2:y=(h-th)/2" -c:v libx264 -preset ultrafast outro.mp4', shell=True)
 
         with open("lista.txt", "w") as f:
@@ -126,7 +133,7 @@ if user_input := st.chat_input("Dime el tema (Terror, Coches, Espacio...):"):
         subprocess.run('ffmpeg -y -f concat -safe 0 -i lista.txt -c copy base.mp4', shell=True)
 
         # 5. RENDER FINAL
-        status.write("✨ Quemando master viral...")
+        status.write("✨ Exportando...")
         v_final = f"output/v_{int(time.time())}.mp4"
         cmd = f'ffmpeg -y -i base.mp4 -i temp_a.mp3 -filter_complex_script subs_filter.txt -c:v libx264 -preset ultrafast -b:v 1500k -shortest "{v_final}"'
         subprocess.run(cmd, shell=True)
