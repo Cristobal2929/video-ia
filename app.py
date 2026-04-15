@@ -8,192 +8,134 @@ st.markdown("""
 <style>
     .stApp { background: linear-gradient(135deg, #0B0F19 0%, #1A2235 100%); color: #F8FAFC; }
     .pro-title { font-size: 38px; font-weight: 900; background: -webkit-linear-gradient(45deg, #00C6FF, #0072FF); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: center; margin-bottom: 5px; letter-spacing: -1px; }
-    .pro-subtitle { text-align: center; color: #94A3B8; font-size: 15px; margin-bottom: 30px; font-weight: 400; }
     .stTextInput>div>div>input { background-color: #0F172A; color: white; border: 1px solid #334155; border-radius: 8px; }
-    .stSelectbox>div>div>div { background-color: #0F172A; color: white; border: 1px solid #334155; border-radius: 8px; }
-    hr { border-color: #334155; }
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX AI STUDIO v9.5</div>', unsafe_allow_html=True)
-st.markdown('<div class="pro-subtitle">Escudo Visual • Fondo Blindado Anti-Errores</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX AI STUDIO v11.0</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-subtitle">Sincronización Total • Imagen por Palabra</div>', unsafe_allow_html=True)
+
+# Diccionario de traducción rápido para que Pexels no se pierda
+TRADUCTOR = {
+    "AMOR": "love", "ELEFANTE": "elephant", "DINERO": "money", "ESTAFA": "scam",
+    "GATO": "cat", "PERRO": "dog", "COCHE": "car", "CIUDAD": "city", "MIEDO": "scary",
+    "TRABAJO": "work", "MUNDO": "world", "ESPACIO": "space", "LUNA": "moon",
+    "SOL": "sun", "GENTE": "people", "NIÑO": "child", "MUJER": "woman", "HOMBRE": "man",
+    "COMIDA": "food", "AGUA": "water", "ORO": "gold", "MUERTE": "death", "VIDA": "life"
+}
+
+def traducir(palabra):
+    return TRADUCTOR.get(palabra.upper(), palabra.lower())
 
 def limpiar_orden(orden):
     basura = ["hazme", "haz", "arme", "asme", "dame", "dime", "un", "una", "el", "la", "los", "las", "video", "vídeo", "videos", "quiero", "sobre", "de", "del", "historia", "que", "hable", "como", "mejor", "para", "sin", "con", "en", "año"]
     palabras = orden.lower().split()
     limpias = [p for p in palabras if p not in basura and len(p) > 3]
-    return " ".join(limpias) if limpias else orden, limpias
+    return " ".join(limpias) if limpias else orden
 
 def detectar_nicho(tema):
     t = tema.lower()
-    if any(w in t for w in ["miedo", "terror", "fantasma", "paranormal", "horror", "oscuridad", "demonio", "maldito", "asesino", "leyenda", "creepy"]): return "terror"
-    elif any(w in t for w in ["negocio", "dinero", "invertir", "inversion", "empresa", "millonario", "finanzas", "cripto", "emprendedor", "ventas", "marketing", "riqueza", "dolares", "trabajo"]): return "negocios"
-    elif any(w in t for w in ["ciencia", "espacio", "universo", "planeta", "luna", "tecnologia", "curiosidad", "animales", "naturaleza", "biologia", "descubrimiento"]): return "ciencia"
-    elif any(w in t for w in ["motivacion", "psicologia", "mente", "exito", "depresion", "ansiedad", "habitos", "disciplina", "desarrollo"]): return "motivacion"
-    elif any(w in t for w in ["salud", "fitness", "ejercicio", "dieta", "gimnasio", "musculo", "entrenamiento", "comida", "nutricion"]): return "salud"
-    elif any(w in t for w in ["conspiracion", "gobierno", "secreto", "oculto", "misterio", "alien", "ovni"]): return "misterio"
-    else: return "universal"
+    if any(w in t for w in ["miedo", "terror", "fantasma", "creepy"]): return "terror"
+    if any(w in t for w in ["negocio", "dinero", "invertir", "rico"]): return "negocios"
+    return "misterio"
 
-def generar_guion_humano(tema, nicho):
+def generar_guion(tema, nicho):
     tema = tema.upper()
-    variables = {
-        "tema": tema,
-        "año": random.choice(["DOS MIL OCHO", "DOS MIL QUINCE", "HACE MUY POCO TIEMPO", "MIL NOVECIENTOS NOVENTA", "EL AÑO PASADO", "HACE UNOS MESES"]),
-        "enemigo_negocio": random.choice(["LOS BANCOS", "LA ELITE FINANCIERA", "LAS GRANDES EMPRESAS", "EL SISTEMA TRADICIONAL"]),
-        "enemigo_misterio": random.choice(["EL GOBIERNO", "UNA AGENCIA SECRETA", "LAS ALTAS ESFERAS", "LA ELITE"]),
-        "porcentaje": random.choice(["NOVENTA Y NUEVE", "NOVENTA Y CINCO", "OCHENTA Y OCHO", "NOVENTA"]),
-        "dinero": random.choice(["MILES DE DOLARES", "TODO SU DINERO", "MUCHISIMO CAPITAL", "SUS AHORROS"]),
-        "lugar_creepy": random.choice(["UN HOSPITAL ABANDONADO", "MEDIO DEL BOSQUE", "UNA CUEVA CERRADA AL PUBLICO", "UN SOTANO ANTIGUO"]),
-        "locura": random.choice(["UNA VERDADERA LOCURA", "ALGO BRUTAL", "ALGO QUE NO TIENE SENTIDO LOGICO", "UNA AUTENTICA BARBARIDAD", "ALGO QUE TE VOLARA LA CABEZA"]),
-    }
-
     if nicho == "negocios":
-        plantillas = ["SI ESTAS INTENTANDO METERTE EN {tema} DEJA DE HACERLO AHORA MISMO Y ESCUCHA EL {porcentaje} POR CIENTO DE LA GENTE PIERDE {dinero} PORQUE NO ENTIENDEN ESTA TRAMPA EN {año} {enemigo_negocio} CREARON UN SISTEMA PERFECTO PARA QUE TU Y YO FRACASEMOS SU PLAN ERA QUEDARSE CON TODO EL BENEFICIO MIENTRAS NOSOTROS PERDEMOS EL TIEMPO PERO HACE NADA UN ANALISTA FILTRO LA ESTRATEGIA REAL Y ES {locura} LA CLAVE ESTA EN HACER JUSTO LO CONTRARIO DE LO QUE DICEN LAS NOTICIAS CUANDO TODOS ENTRAN EN PANICO TU ATACAS CUANDO TODOS COMPRAN TU TE ALEJAS ESTE SIMPLE CAMBIO MENTAL ROMPE SU ALGORITMO APLICALO HOY Y EMPEZARAS A VER RESULTADOS DE VERDAD SIGUENOS PARA MAS NEGOCIOS"]
+        return f"EL NOVENTA Y NUEVE POR CIENTO DE LA GENTE PIERDE DINERO CON {tema} PORQUE NO ENTIENDEN ESTA TRAMPA SIEMPRE NOS ENSEÑARON QUE EL DINERO ES DIFICIL DE CONSEGUIR PERO LA REALIDAD ES QUE EL SISTEMA ESTA ROTO UN ANALISTA FILTRO LA FORMULA REAL PARA HACERSE RICO Y ES UNA LOCURA LA CLAVE ESTA EN BUSCAR DONDE NADIE MAS ESTA MIRANDO APLICALO HOY MISMO Y TU VIDA CAMBIARA SIGUENOS PARA MAS NEGOCIOS"
     elif nicho == "terror":
-        plantillas = ["NO MIRES ESTO DE NOCHE SI DE VERDAD LE TIENES MIEDO A {tema} SEGURO PIENSAS QUE ES UN INVENTO DE INTERNET O UN CUENTO PARA ASUSTAR PERO EN {año} LA COSA SE SALIO DE CONTROL LA POLICIA ENCONTRO ALGO HORRIBLE EN {lugar_creepy} LAS GRABACIONES DE SEGURIDAD MOSTRARON ALGO QUE DESAFIA TODA LOGICA EL GOBIERNO CLASIFICO LOS VIDEOS EN SEGUNDOS PERO ALGUIEN LOGRO FILTRARLOS EN LA DEEP WEB ANTES DE DESAPARECER LOS DOCUMENTOS REVELAN QUE TODAS LAS VICTIMAS HICIERON LO MISMO ANTES DE SU FINAL Y LO MAS ATERRADOR DE TODO ESTO NO ES QUE HAYA PASADO SINO QUE ESA COSA SIGUE SUELTA BUSCANDO A GENTE QUE NO PRESTA ATENCION SI ESTA NOCHE ESCUCHAS UN GOLPE NO ABRAS LA PUERTA SIGUENOS PARA MAS TERROR"]
-    elif nicho == "ciencia":
-        plantillas = ["EL {porcentaje} POR CIENTO DE LA GENTE NO TIENE NI IDEA DE ESTA LOCURA SOBRE {tema} SIEMPRE NOS ENSEÑARON QUE ERA ALGO SUPER ABURRIDO O NORMAL PERO UN ESTUDIO DE {año} REVELO UN DATO QUE TE VA A DEJAR SIN PALABRAS RESULTA QUE LOS EXPERTOS HABIAN IGNORADO UN DETALLE DURANTE DECADAS PERO UN CIENTIFICO SE PUSO A INVESTIGAR A FONDO Y ENCONTRO {locura} BASICAMENTE LA CIENCIA MODERNA CONFIRMA QUE CASI TODO LO QUE SABIAMOS ESTABA MAL ESTE SIMPLE HECHO CAMBIA POR COMPLETO NUESTRA FORMA DE ENTENDER EL MUNDO AHORA QUE CONOCES ESTE DATO ERES PARTE DEL UNO POR CIENTO QUE VE LA REALIDAD COMO ES SIGUENOS PARA MAS CURIOSIDADES"]
-    elif nicho == "motivacion":
-        plantillas = ["ESTAS PERDIENDO EL TIEMPO CON {tema} Y TE VOY A EXPLICAR EXACTAMENTE POR QUE TODO EL MUNDO SE OBSESIONA CON HACERLO COMO TE DIJERON EN LA ESCUELA PERO ESO ES UNA TRAMPA GIGANTE LA VERDADERA CLAVE LA DESCUBRIO UN EXPERTO EN PSICOLOGIA HACE NADA Y ES {locura} EL TRUCO ESTA EN CAMBIAR COMPLETAMENTE TU ENFOQUE MENTAL DEJA DE HACER LO QUE HACE LA MASA ABORREGADA Y EMPIEZA A USAR TUS HABITOS A TU FAVOR APLICALO HOY MISMO Y NOTARAS EL CAMBIO EN TU VIDA AL INSTANTE DEJA DE PONER EXCUSAS Y TOMA EL CONTROL DE UNA VEZ SIGUENOS PARA MAS MOTIVACION"]
-    elif nicho == "salud":
-        plantillas = ["TE ESTAN ENGAÑANDO DESCARADAMENTE CON {tema} LA INDUSTRIA GASTA MILLONES PARA QUE CREAS QUE NECESITAS METODOS COMPLICADOS Y CAROS PERO ES PURA BASURA EN {año} SE FILTRO UN ESTUDIO INDEPENDIENTE QUE LO CAMBIO TODO DESCUBRIERON QUE EL {porcentaje} POR CIENTO DE LOS PRODUCTOS COMERCIALES NO SIRVEN PARA NADA EL VERDADERO SECRETO ES TAN SIMPLE QUE DA RABIA Y ES {locura} SOLO TIENES QUE DEJAR DE SEGUIR MODAS TONTAS Y APLICAR LA BIOLOGIA BASICA A TU FAVOR TU CUERPO RESPONDERA EN CUESTION DE DIAS SI DEJAS DE METERLE BASURA EMPIEZA HOY MISMO Y SIENTE LA DIFERENCIA SIGUENOS PARA MAS SALUD"]
-    elif nicho == "misterio":
-        plantillas = ["VAN A BORRAR ESTE VIDEO EN CUALQUIER MOMENTO PORQUE HABLA DE {tema} LLEVAMOS DECADAS PENSANDO QUE ES ALGO TOTALMENTE INOFENSIVO PERO DOCUMENTOS RECIENTES DEMUESTRAN QUE EN {año} {enemigo_misterio} LLEVO A CABO EXPERIMENTOS SUPER SECRETOS CON ESTO SU OBJETIVO REAL ERA METERSE EN NUESTRA MENTE SIN DEJAR RASTRO UN INVESTIGADOR SE DIO CUENTA DE LA TRAMPA Y ESCAPO CON LOS DISCOS DUROS INTENTARON CALLARLO PERO YA ERA TARDE LA INFORMACION ESTA VOLANDO POR LA RED EL ENGAÑO SE HA CAIDO A PEDAZOS Y AHORA TU TAMBIEN LO SABES SIGUENOS PARA MAS MISTERIOS"]
+        return f"NO MIRES ESTO DE NOCHE SI LE TEMES A {tema} TODO EL MUNDO PIENSA QUE ES UN INVENTO PERO LA POLICIA ENCONTRO ALGO HORRIBLE EN UN LUGAR ABANDONADO HABIA PRUEBAS DE QUE ALGO MALDITO ESTABA PASANDO LO MAS ATERRADOR ES QUE ESA COSA SIGUE SUELTA BUSCANDO A QUIEN ROMPA LAS REGLAS SI ESCUCHAS UN GOLPE HOY NO ABRAS LA PUERTA SIGUENOS PARA MAS TERROR"
     else:
-        plantillas = ["TE APUESTO LO QUE QUIERAS A QUE NO SABIAS ESTO SOBRE {tema} CASI TODO EL MUNDO CREE QUE ES ALGO TOTALMENTE NORMAL Y CORRIENTE PERO HAY UN DETALLE OCULTO QUE MUY POCOS CONOCEN HACE POCO TIEMPO SE HIZO VIRAL UN CASO QUE LO CAMBIA TODO ALGUIEN SE DIO CUENTA DE UN PATRON QUE NADIE MAS HABIA VISTO Y ES {locura} ESTE SIMPLE DETALLE CAMBIA POR COMPLETO LA FORMA EN LA QUE DEBERIAMOS VERLO LA PROXIMA VEZ QUE ESTES FRENTE A ESTO RECUERDA ESTE VIDEO PORQUE YA NO VAS A PODER IGNORARLO NUNCA MAS COMPARTELO CON TUS AMIGOS Y SIGUENOS PARA MAS CURIOSIDADES INCREIBLES"]
-    
-    return random.choice(plantillas).format(**variables)
-
-def obtener_guion_pro(orden_usuario):
-    tema_mostrar, limpias = limpiar_orden(orden_usuario)
-    nicho = detectar_nicho(orden_usuario)
-    guion = generar_guion_humano(tema_mostrar, nicho)
-    return guion, tema_mostrar, nicho
+        return f"TE HAN MENTIDO TODA TU VIDA SOBRE {tema} UNA AGENCIA SECRETA DECIDIO QUE NO ESTABAS LISTO PARA LA VERDAD PERO ALGUIEN DE ADENTRO FILTRO ARCHIVOS QUE LO CAMBIAN TODO RESULTA QUE ESTO ES UN SECRETO BRUTAL Y FUE OCULTADO PARA MANTENER EL CONTROL EL MUNDO YA NO VOLVERA A SER IGUAL SIGUENOS PARA MAS SECRETOS"
 
 def time_to_sec(t_str):
-    t_str = t_str.strip().split(' ')[0].replace(',', '.')
-    partes = t_str.split(':')
-    if len(partes) == 3: return float(partes[0])*3600 + float(partes[1])*60 + float(partes[2])
-    elif len(partes) == 2: return float(partes[0])*60 + float(partes[1])
-    else: return float(partes[0])
+    try:
+        t_str = t_str.strip().split(' ')[0].replace(',', '.')
+        partes = t_str.split(':')
+        if len(partes) == 3: return float(partes[0])*3600 + float(partes[1])*60 + float(partes[2])
+        elif len(partes) == 2: return float(partes[0])*60 + float(partes[1])
+        else: return float(partes[0])
+    except: return 0
 
 with st.sidebar:
-    st.image("https://cdn-icons-png.flaticon.com/512/2111/2111432.png", width=50)
-    st.header("⚙️ Panel de Agencia")
+    st.header("⚙️ Configuración")
     pexels_key = st.text_input("🔑 Pexels API Key:", value="Ty0uFISh3APEAXIVcrFpSM7ZdwOeRElCuUgoG42EW6WVISRTEfqjm0BZ", type="password")
-    color_sub = st.selectbox("🎨 Estilo Subtítulos", ["yellow", "white", "cyan", "#00FF00"])
-    st.markdown("---")
-    st.caption("Fénix System | Fondo Blindado Activo ✅")
+    color_sub = st.selectbox("🎨 Color Subtítulos", ["yellow", "white", "cyan"])
 
-if orden := st.chat_input("Dime tu tema (Imágenes garantizadas al 100%):"):
-    with st.status(f"🚀 Renderizando '{orden}' con Escudo Visual...", expanded=True) as status:
-        subprocess.run("rm -f p_*.mp4 clip_*.mp4 base.mp4 t.mp3 t.vtt music.mp3 final.mp4 temp_a.mp3 lista.txt subs_filter.txt outro.mp4", shell=True)
+if orden := st.chat_input("Dime tu idea (Ej: El amor, Elefantes...):"):
+    with st.status(f"🚀 Creando vídeo sincronizado...", expanded=True) as status:
+        subprocess.run("rm -f p_*.mp4 clip_*.mp4 base.mp4 t.mp3 t.vtt music.mp3 final.mp4 temp_a.mp3 lista.txt subs_filter.txt", shell=True)
         
-        guion, tema_mostrar, nicho_detectado = obtener_guion_pro(orden)
-        status.write(f"✓ Guion listo. Nicho: **{nicho_detectado.upper()}**")
+        tema_limpio = limpiar_orden(orden)
+        nicho = detectar_nicho(orden)
+        guion = generar_guion(tema_limpio, nicho)
         
+        # 1. Generar Audio y Subtítulos
         subprocess.run(f'edge-tts --voice es-ES-AlvaroNeural --rate=-10% --text "{guion}" --write-media "t.mp3" --write-subtitles "t.vtt"', shell=True)
-        dur_audio_str = subprocess.check_output("ffprobe -i t.mp3 -show_entries format=duration -v quiet -of csv='p=0'", shell=True).decode('utf-8').strip()
-        if not dur_audio_str: dur_audio_str = "40.0"
-        dur_audio = float(dur_audio_str)
-
-        tono = 50 if nicho_detectado == "terror" else 75
-        ruido = 0.05 if nicho_detectado == "terror" else 0.02
-        subprocess.run(f'ffmpeg -y -f lavfi -i "sine=frequency={tono}:duration={dur_audio+2}" -f lavfi -i "anoisesrc=d={dur_audio+2}:c=pink:a={ruido}" -filter_complex "[0:a]volume=0.5[t];[1:a]volume=0.1[n];[t][n]amix=inputs=2:duration=first" music.mp3', shell=True)
-        subprocess.run(f'ffmpeg -y -i t.mp3 -i music.mp3 -filter_complex "[0:a]volume=3.0[v];[1:a]volume=0.2[m];[v][m]amix=inputs=2:duration=first" temp_a.mp3', shell=True)
-
-        drawtext_filters = []
+        
+        # 2. Analizar Sincronización (Palabra -> Tiempo)
+        escenas = []
         try:
             with open('t.vtt', 'r', encoding='utf-8') as f:
                 lines = f.readlines()
-            for i in range(len(lines)):
-                if "-->" in lines[i]:
-                    tiempos = lines[i].strip().split(" --> ")
-                    start = time_to_sec(tiempos[0])
-                    end = time_to_sec(tiempos[1])
-                    if i + 1 < len(lines):
-                        texto = lines[i+1].strip()
-                        if texto:
-                            palabras = texto.split()
-                            chunks = [" ".join(palabras[j:j+2]) for j in range(0, len(palabras), 2)]
-                            total_letras = sum(len(c) for c in chunks)
-                            current_time = start
-                            for chunk in chunks:
-                                duracion_chunk = (len(chunk) / total_letras) * (end - start) if total_letras > 0 else (end - start)
-                                drawtext_filters.append(f"drawtext=text='{chunk}':fontcolor={color_sub}:fontsize=32:fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:borderw=3:bordercolor=black:shadowcolor=black:shadowx=2:shadowy=2:x=(w-tw)/2:y=(h-th)/2:enable='between(t,{current_time},{current_time+duracion_chunk})'")
-                                current_time += duracion_chunk
-            with open("subs_filter.txt", "w", encoding='utf-8') as f:
-                f.write(",\n".join(drawtext_filters))
+                for i in range(len(lines)):
+                    if "-->" in lines[i]:
+                        start = time_to_sec(lines[i].split(" --> ")[0])
+                        end = time_to_sec(lines[i].split(" --> ")[1])
+                        txt = lines[i+1].strip().upper()
+                        # Extraer la palabra más importante de la frase para buscar el vídeo
+                        palabras = [p for p in txt.split() if len(p) > 3]
+                        keyword = palabras[-1] if palabras else tema_limpio
+                        escenas.append({"start": start, "end": end, "text": txt, "keyword": keyword})
         except: pass
 
-        clip_duration = 3.5 
-        num_clips = math.ceil(dur_audio / clip_duration) 
-        processed_clips = []
+        # 3. Descargar y Procesar Vídeos por cada Escena
+        status.write("🎞️ Sincronizando imágenes con cada palabra...")
+        clips_finales = []
+        last_clip = None
         
-        status.write(f"🎞️ Sincronizando imágenes (Buscador Blindado)...")
-        palabras_guion = guion.split()
-        chunk_size = max(1, len(palabras_guion) // max(1, num_clips))
-        stop_words = {"PRESTA", "MUCHA", "ATENCION", "PORQUE", "QUE", "TE", "VOY", "A", "CONTAR", "SOBRE", "EL", "LA", "LOS", "LAS", "UN", "UNA", "UNOS", "UNAS", "CON", "SIN", "PARA", "POR", "DE", "DEL", "Y", "O", "ES", "SON", "HA", "HAN", "SE", "LO", "LE", "NO", "MAS", "ESTO", "ESTA", "ESTAS", "ESTOS", "TODO", "PERO", "SI", "COMO", "CUANDO", "DONDE", "AQUI", "ALLI", "MUY", "TAN", "SU", "SUS", "AL", "NOS", "MI", "MIS", "ENTRE", "HAY", "ESTE", "AUNQUE", "HASTA", "DESDE", "ENTONCES", "TIENES", "SIGUENOS", "AHORA", "ELLOS", "MUNDO", "TIEMPO", "SOLO"}
-        
-        if nicho_detectado == "terror": sufijo_nicho = "creepy"
-        elif nicho_detectado == "negocios": sufijo_nicho = "money"
-        elif nicho_detectado == "ciencia": sufijo_nicho = "science"
-        elif nicho_detectado == "motivacion": sufijo_nicho = "success"
-        elif nicho_detectado == "salud": sufijo_nicho = "fitness"
-        else: sufijo_nicho = "cinematic"
-
-        last_valid_clip = None
-        for i in range(num_clips): 
-            inicio = int(i * chunk_size)
-            fin = int((i + 1) * chunk_size)
-            trozo = palabras_guion[inicio:fin]
-            palabras_utiles = [p for p in trozo if p not in stop_words and len(p) > 4]
+        for i, escena in enumerate(escenas):
+            dur_escena = escena["end"] - escena["start"]
+            if dur_escena <= 0: continue
             
-            # EL ESCUDO DE 4 NIVELES
-            busquedas_a_intentar = []
-            if palabras_utiles:
-                palabras_utiles.sort(key=len, reverse=True)
-                busquedas_a_intentar.append(palabras_utiles[0]) # Nivel 1: Palabra pura
-            
-            busquedas_a_intentar.append(tema_mostrar) # Nivel 2: El tema
-            busquedas_a_intentar.append(sufijo_nicho) # Nivel 3: El Nicho en Inglés (A prueba de balas)
-            busquedas_a_intentar.append("abstract background") # Nivel 4: Último recurso
-            
+            search_query = traducir(escena["keyword"])
             v_url = None
-            for busqueda in busquedas_a_intentar:
-                try:
-                    url_pex = f"https://api.pexels.com/videos/search?query={urllib.parse.quote(busqueda)}&per_page=15&orientation=portrait"
-                    res = requests.get(url_pex, headers={"Authorization": pexels_key.strip()}, timeout=5)
-                    if res.status_code == 200:
-                        videos = res.json().get('videos', [])
-                        if videos:
-                            v_url = random.choice(videos)['video_files'][0]['link']
-                            status.write(f"  ► Clip {i+1}: Video encontrado usando '{busqueda}'")
-                            break
-                except: pass
+            try:
+                r = requests.get(f"https://api.pexels.com/videos/search?query={search_query}&per_page=1&orientation=portrait", headers={"Authorization": pexels_key.strip()}, timeout=5).json()
+                if r.get('videos'):
+                    v_url = r['videos'][0]['video_files'][0]['link']
+            except: pass
             
             try:
-                if v_url:
-                    with open(f"clip_{i}.mp4", 'wb') as f: f.write(requests.get(v_url, timeout=10).content)
-                    subprocess.run(f'ffmpeg -y -i "clip_{i}.mp4" -vf "scale=1280:-1,zoompan=z=\'min(zoom+0.0015,1.4)\':d=125:x=iw/2-(iw/zoom/2):y=ih/2-(ih/zoom/2):s=720x1280,fps=30" -an -c:v libx264 -preset veryfast -t {clip_duration} "p_{i}.mp4"', shell=True)
-                    last_valid_clip = f"p_{i}.mp4"
-                else: raise Exception("Error")
+                if not v_url: raise Exception("No video")
+                with open(f"clip_{i}.mp4", 'wb') as f: f.write(requests.get(v_url, timeout=10).content)
+                subprocess.run(f'ffmpeg -y -i "clip_{i}.mp4" -vf "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,fps=30" -an -c:v libx264 -preset ultrafast -t {dur_escena + 0.1} "p_{i}.mp4"', shell=True)
+                last_clip = f"p_{i}.mp4"
             except:
-                if last_valid_clip: subprocess.run(f"cp {last_valid_clip} p_{i}.mp4", shell=True)
-                else: subprocess.run(f'ffmpeg -y -f lavfi -i color=c=black:s=720x1280:d={clip_duration}:r=30 -c:v libx264 -preset veryfast p_{i}.mp4', shell=True)
-            processed_clips.append(f"p_{i}.mp4")
+                if last_clip: subprocess.run(f"cp {last_clip} p_{i}.mp4", shell=True)
+                else: subprocess.run(f'ffmpeg -y -f lavfi -i color=c=black:s=720x1280:d={dur_audio}:r=30 -c:v libx264 -preset ultrafast p_{i}.mp4', shell=True)
+            
+            clips_finales.append(f"p_{i}.mp4")
+            status.write(f"  ✓ Palabra '{escena['keyword']}' sincronizada.")
 
-        subprocess.run('ffmpeg -y -f lavfi -i color=c=black:s=720x1280:d=3:r=30 -vf "drawtext=text=\'FÉNIX STUDIO 🦅\':fontcolor=white:fontsize=55:x=(w-tw)/2:y=(h-th)/2" -c:v libx264 -preset veryfast outro.mp4', shell=True)
+        # 4. Crear Filtro de Subtítulos
+        subs_cmd = []
+        for i, escena in enumerate(escenas):
+            subs_cmd.append(f"drawtext=text='{escena['text']}':fontcolor={color_sub}:fontsize=35:fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:borderw=3:bordercolor=black:x=(w-tw)/2:y=(h-th)/2:enable='between(t,{escena['start']},{escena['end']})'")
+        with open("subs_filter.txt", "w") as f: f.write(",\n".join(subs_cmd))
+
+        # 5. Montaje Final
         with open("lista.txt", "w") as f:
-            for p in processed_clips: f.write(f"file '{p}'\n")
-            f.write("file 'outro.mp4'\n")
+            for c in clips_finales: f.write(f"file '{c}'\n")
+        
         subprocess.run('ffmpeg -y -f concat -safe 0 -i lista.txt -c copy base.mp4', shell=True)
-
-        status.write("✨ Renderizando Master Final HD...")
+        # Música de fondo
+        subprocess.run(f'ffmpeg -y -f lavfi -i "sine=f=75:d=60" -filter_complex "[0:a]volume=0.1" music.mp3', shell=True)
+        subprocess.run(f'ffmpeg -y -i t.mp3 -i music.mp3 -filter_complex "[0:a]volume=3.0[v];[1:a]volume=0.2[m];[v][m]amix=inputs=2:duration=first" temp_a.mp3', shell=True)
+        
         v_final = f"output/v_{int(time.time())}.mp4"
-        cmd = f'ffmpeg -y -i base.mp4 -i temp_a.mp3 -filter_complex_script subs_filter.txt -c:v libx264 -preset veryfast -b:v 3000k -shortest "{v_final}"'
-        subprocess.run(cmd, shell=True)
+        subprocess.run(f'ffmpeg -y -i base.mp4 -i temp_a.mp3 -filter_complex_script subs_filter.txt -c:v libx264 -preset ultrafast -b:v 2500k -shortest "{v_final}"', shell=True)
         
         if os.path.exists(v_final):
-            st.success("✅ Video completado con imágenes.")
             st.video(v_final)
+            st.balloons()
