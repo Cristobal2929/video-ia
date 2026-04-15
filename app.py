@@ -3,7 +3,7 @@ import os, time, random, subprocess, re, urllib.parse
 import requests
 from concurrent.futures import ThreadPoolExecutor
 
-st.set_page_config(page_title="Fénix Viral PRO V19.5", layout="centered")
+st.set_page_config(page_title="Fénix Viral PRO V20", layout="centered")
 
 st.markdown("""
 <style>
@@ -12,19 +12,19 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX AI STUDIO v19.5 AUTO MUSIC</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX AI STUDIO v20 PRO REAL</div>', unsafe_allow_html=True)
 
 CACHE="cache"
 OUT="output"
 os.makedirs(CACHE, exist_ok=True)
 os.makedirs(OUT, exist_ok=True)
 
-# -------- UTILS --------
+# ---------- UTILS ----------
 def run(cmd):
     try:
         subprocess.run(cmd, shell=True, check=True)
-    except:
-        pass
+    except Exception as e:
+        print("CMD ERROR:", e)
 
 def time_to_sec(t):
     h, m, s = t.strip().split(':')
@@ -39,29 +39,27 @@ def clean(txt):
     txt = txt.replace("'", "")
     return re.sub(r'[^\w\s]', '', txt).upper()
 
-# -------- GUION --------
+# ---------- GUION PRO ----------
 def generar_guion(tema):
-    return f"""
-Nadie te contó esto sobre {tema}.
-Esto puede cambiar completamente tu forma de verlo.
+    bloques = [
+        f"Nadie te contó esto sobre {tema}.",
+        "Lo que estás a punto de escuchar cambia completamente la perspectiva.",
+        "La mayoría de personas comete este error sin darse cuenta.",
+        "Y por eso nunca avanzan.",
+        "Pero hay un detalle que lo cambia todo.",
+        "Los que entienden esto empiezan a ver resultados.",
+        "No es magia. Es lógica aplicada correctamente.",
+        "Cuando todos hacen lo mismo tú haces lo contrario.",
+        "Ahí está la ventaja real.",
+        "Ahora que lo sabes úsalo."
+    ]
+    return " ".join(bloques)
 
-La mayoría ignora esto.
-Pero los que lo entienden… ganan ventaja.
-
-No se trata de trabajar más.
-Se trata de hacerlo mejor.
-
-Ahora que lo sabes…
-todo cambia.
-"""
-
-# -------- MUSICA AUTO --------
-def obtener_musica():
+# ---------- MUSICA ----------
+def get_music():
     path = os.path.join(CACHE, "music.mp3")
-
     if os.path.exists(path):
         return path
-
     try:
         url = "https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8b7c0d1b7.mp3"
         r = requests.get(url, timeout=10)
@@ -71,7 +69,7 @@ def obtener_musica():
     except:
         return None
 
-# -------- PEXELS --------
+# ---------- PEXELS ----------
 def buscar_video(q, key):
     try:
         url=f"https://api.pexels.com/videos/search?query={urllib.parse.quote(q)}&per_page=10"
@@ -83,9 +81,19 @@ def buscar_video(q, key):
     except:
         return None
 
-def descargar(url,name):
+def buscar_imagen(q, key):
+    try:
+        url=f"https://api.pexels.com/v1/search?query={urllib.parse.quote(q)}&per_page=5"
+        r=requests.get(url,headers={"Authorization":key},timeout=5).json()
+        if r.get("photos"):
+            return r["photos"][0]["src"]["original"]
+    except:
+        return None
+
+def descargar(url, name):
     path=os.path.join(CACHE,name)
-    if os.path.exists(path): return path
+    if os.path.exists(path):
+        return path
     try:
         r=requests.get(url,timeout=10)
         with open(path,"wb") as f:
@@ -94,46 +102,69 @@ def descargar(url,name):
     except:
         return None
 
-# -------- UI --------
+# ---------- UI ----------
 with st.sidebar:
     key = st.text_input("API Pexels", type="password")
 
-# -------- MAIN --------
+# ---------- MAIN ----------
 if prompt := st.chat_input("Tema del vídeo"):
     try:
         guion = generar_guion(prompt)
-        st.write("🧠 Generando...")
+        st.write("🧠 Generando vídeo PRO...")
 
         # AUDIO VOZ
-        run(f'edge-tts --voice es-ES-AlvaroNeural --rate=-10% --text "{guion}" --write-media t.mp3 --write-subtitles t.vtt')
+        run(f'edge-tts --voice es-ES-AlvaroNeural --rate=-5% --text "{guion}" --write-media t.mp3 --write-subtitles t.vtt')
 
         escenas=[]
-        with open("t.vtt") as f:
-            l=f.readlines()
-            for i in range(len(l)):
-                if "-->" in l[i]:
-                    try:
-                        s=time_to_sec(l[i].split(" --> ")[0])
-                        e=time_to_sec(l[i].split(" --> ")[1])
-                        txt=clean(l[i+1]) if i+1<len(l) else ""
-                        escenas.append((s,e,txt))
-                    except:
-                        pass
+        if os.path.exists("t.vtt"):
+            with open("t.vtt") as f:
+                l=f.readlines()
+                for i in range(len(l)):
+                    if "-->" in l[i]:
+                        try:
+                            s=time_to_sec(l[i].split(" --> ")[0])
+                            e=time_to_sec(l[i].split(" --> ")[1])
+                            txt=clean(l[i+1]) if i+1<len(l) else ""
+                            escenas.append((s,e,txt))
+                        except:
+                            pass
 
         if not escenas:
             escenas=[(0,5,clean(guion))]
 
-        # CLIPS
+        # ---------- CLIPS ----------
         def clip(i,esc):
             dur=max(esc[1]-esc[0],2)
-            v=buscar_video(prompt,key)
-            f=descargar(v,f"{i}.mp4") if v else None
 
-            if f:
-                run(f'ffmpeg -y -i "{f}" -vf "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280" -t {dur} c{i}.mp4')
-            else:
-                run(f'ffmpeg -y -f lavfi -i color=c=black:s=720x1280:d={dur} c{i}.mp4')
+            queries=[prompt, esc[2], "cinematic", "abstract"]
 
+            video=None
+            for q in queries:
+                video=buscar_video(q,key)
+                if video:
+                    break
+
+            if video:
+                f=descargar(video,f"v{i}.mp4")
+                if f:
+                    run(f'ffmpeg -y -i "{f}" -vf "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,fps=30" -t {dur} c{i}.mp4')
+                    return f"c{i}.mp4"
+
+            # fallback imagen
+            img=None
+            for q in queries:
+                img=buscar_imagen(q,key)
+                if img:
+                    break
+
+            if img:
+                f=descargar(img,f"i{i}.jpg")
+                if f:
+                    run(f'ffmpeg -y -loop 1 -i "{f}" -c:v libx264 -t {dur} -vf "scale=720:1280" c{i}.mp4')
+                    return f"c{i}.mp4"
+
+            # fallback negro
+            run(f'ffmpeg -y -f lavfi -i color=c=black:s=720x1280:d={dur} c{i}.mp4')
             return f"c{i}.mp4"
 
         with ThreadPoolExecutor(max_workers=4) as ex:
@@ -146,28 +177,30 @@ if prompt := st.chat_input("Tema del vídeo"):
 
         run("ffmpeg -y -f concat -safe 0 -i list.txt -c copy base.mp4")
 
-        # SUBS
+        # ---------- SUBTITULOS ----------
         filtros=[]
         for esc in escenas:
-            filtros.append(f"drawtext=text='{esc[2]}':fontcolor=white:fontsize=40:x=(w-text_w)/2:y=(h-text_h)/2:enable='between(t,{esc[0]},{esc[1]})'")
+            filtros.append(
+                f"drawtext=text='{esc[2]}':fontcolor=yellow:fontsize=48:borderw=3:bordercolor=black:x=(w-text_w)/2:y=h-200:enable='between(t,{esc[0]},{esc[1]})'"
+            )
 
         with open("subs.txt","w") as f:
             f.write(",".join(filtros))
 
-        # MUSICA
-        music = obtener_musica()
+        # ---------- AUDIO ----------
+        music = get_music()
 
         if music:
-            run(f'ffmpeg -y -i t.mp3 -i "{music}" -filter_complex "[0:a]volume=2[a];[1:a]volume=0.2[b];[a][b]amix=inputs=2" audio.mp3')
+            run(f'ffmpeg -y -i t.mp3 -i "{music}" -filter_complex "[0:a]volume=2[a];[1:a]volume=0.2[b];[a][b]amix=inputs=2:duration=first:dropout_transition=2" audio.mp3')
         else:
             run("cp t.mp3 audio.mp3")
 
-        # FINAL
+        # ---------- FINAL ----------
         out=f"{OUT}/video_{int(time.time())}.mp4"
         run(f'ffmpeg -y -i base.mp4 -i audio.mp3 -filter_complex_script subs.txt -shortest "{out}"')
 
         if os.path.exists(out):
-            st.success("🔥 VIDEO PRO CON MÚSICA AUTO")
+            st.success("🔥 VIDEO PRO REAL GENERADO")
             st.video(out)
 
     except Exception as e:
