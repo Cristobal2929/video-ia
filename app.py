@@ -13,10 +13,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-PEXELS_API_KEY = "TyOuFlSh3APEAXlVcrFpSM7ZdwOeRElCuUgoG42EW6WVISRTEfqjmOBZ"
-
-def buscar_y_descargar_pexels(nicho, output_filename="clip_base.mp4"):
-    # Búsquedas más simples para asegurar que siempre haya resultados
+def buscar_y_descargar_pexels(nicho, api_key, output_filename="clip_base.mp4"):
     terminos = {
         "Negocio": "business",
         "Dieta": "fitness",
@@ -24,22 +21,21 @@ def buscar_y_descargar_pexels(nicho, output_filename="clip_base.mp4"):
     }
     query = terminos.get(nicho, "abstract")
     url = f"https://api.pexels.com/videos/search?query={query}&per_page=15&orientation=portrait"
-    headers = {"Authorization": PEXELS_API_KEY}
+    headers = {"Authorization": api_key.strip()} # .strip() quita espacios accidentales
 
     try:
         res = requests.get(url, headers=headers)
         if res.status_code != 200:
-            return f"Acceso denegado o error API: {res.status_code} - {res.text}"
+            return f"Acceso denegado. Clave incorrecta o caducada. (Error {res.status_code})"
             
         data = res.json()
         if not data.get('videos') or len(data['videos']) == 0:
-            return f"Pexels no encontró ningún vídeo para la palabra: {query}"
+            return f"Pexels no encontró vídeos para: {query}"
             
         video_info = random.choice(data['videos'])
         archivos = video_info['video_files']
         link_descarga = None
         
-        # Buscar el mejor formato mp4 ligero
         for archivo in archivos:
             if archivo['file_type'] == 'video/mp4' and 480 <= archivo['height'] <= 1920:
                 link_descarga = archivo['link']
@@ -85,6 +81,11 @@ st.markdown('<div class="stHeader"><h1>🎬 FÉNIX AI STUDIO</h1><p>Producción 
 
 with st.sidebar:
     st.header("⚙️ Configuración")
+    
+    # ¡NUEVA CAJA PARA PEGAR LA CLAVE DIRECTAMENTE!
+    pexels_key = st.text_input("🔑 Tu Clave API de Pexels:", type="password", placeholder="Pega tu clave aquí...")
+    
+    st.markdown("---")
     nicho = st.selectbox("Nicho", ["Negocio", "Dieta", "Historia"])
     color_sub = st.color_picker("Color Subtítulos", "#00FFFF")
     hc = color_sub.lstrip('#')
@@ -94,8 +95,10 @@ with st.sidebar:
 guion_final = st.text_area("✍️ Guion:", placeholder="Escribe o pega aquí el guion para tu vídeo...", height=150)
 
 if st.button("🚀 INICIAR PRODUCCIÓN AUTOMÁTICA"):
-    if not guion_final:
-        st.warning("⚠️ Primero escribe un guion en la caja de arriba.")
+    if not pexels_key:
+        st.error("⚠️ Falta la clave de Pexels. Pégala en el menú de la izquierda.")
+    elif not guion_final:
+        st.warning("⚠️ Primero escribe un guion en la caja.")
     else:
         uid = int(time.time())
         os.makedirs("output", exist_ok=True)
@@ -108,8 +111,8 @@ if st.button("🚀 INICIAR PRODUCCIÓN AUTOMÁTICA"):
             
             status.write(f"🌍 Buscando vídeos de '{nicho}' en Pexels...")
             
-            # Aquí controlamos si Pexels nos dio el vídeo o nos dio un error
-            resultado_pexels = buscar_y_descargar_pexels(nicho, clip_base)
+            # Usamos la clave que has pegado en la web
+            resultado_pexels = buscar_y_descargar_pexels(nicho, pexels_key, clip_base)
             
             if resultado_pexels is True:
                 if transformar_srt("t.vtt", "t.srt"):
@@ -128,5 +131,4 @@ if st.button("🚀 INICIAR PRODUCCIÓN AUTOMÁTICA"):
                     else:
                         st.error("❌ Fallo en la edición. Inténtalo de nuevo.")
             else:
-                # Mostrará el texto rojo con el ERROR EXACTO
-                st.error(f"❌ Fallo al conectar con Pexels: {resultado_pexels}")
+                st.error(f"❌ {resultado_pexels}")
