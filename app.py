@@ -4,11 +4,10 @@ import os, time, random, subprocess, re, requests
 st.set_page_config(page_title="Fénix Studio Pro", layout="centered", page_icon="🎬")
 st.markdown("<style>.stApp {background: linear-gradient(135deg, #0f172a, #1e293b); color: white;}</style>", unsafe_allow_html=True)
 
-# --- CEREBRO DE HISTORIAS LARGAS ---
 HISTORIAS = {
-    "terror": "La noche caía pesada sobre la vieja mansión. Las sombras parecían cobrar vida propia en las esquinas de las habitaciones vacías. Cada crujido de la madera sonaba como un grito ahogado en el silencio. No había escapatoria, el frío calaba los huesos mientras una presencia invisible observaba desde la oscuridad más profunda. Algo se movía bajo la cama, algo que no pertenecía a este mundo, esperando el momento exacto para atrapar a su próxima víctima.",
-    "coche": "La ingeniería perfecta se encuentra con la adrenalina pura. Imagina recorrer la carretera a toda velocidad, sintiendo el rugido de quinientos caballos de fuerza bajo el capó. El diseño aerodinámico corta el viento mientras las luces de la ciudad se difuminan en un rastro de colores. Esto no es solo un vehículo, es una obra de arte en movimiento, una máquina diseñada para aquellos que no aceptan límites.",
-    "negocio": "El camino hacia el éxito financiero requiere más que solo sueños; requiere una estrategia implacable y una ejecución perfecta. Los grandes imperios no se construyeron en un día, se forjaron en las horas de sacrificio y en la toma de decisiones audaces. Si quieres cambiar tu futuro, debes empezar a invertir en tu activo más valioso: tu propia mente. El mercado no espera a nadie, es hora de tomar tu lugar en la cima."
+    "terror": "La noche caía pesada sobre la vieja mansión. Las sombras parecían cobrar vida propia en las esquinas de las habitaciones vacías. Cada crujido de la madera sonaba como un grito ahogado en el silencio. No había escapatoria, el frío calaba los huesos mientras una presencia invisible observaba desde la oscuridad más profunda. Algo se movía bajo la cama, algo que no pertenecía a este mundo.",
+    "coche": "La ingeniería perfecta se encuentra con la adrenalina pura. Imagina recorrer la carretera a toda velocidad, sintiendo el rugido de quinientos caballos de fuerza bajo el capó. El diseño aerodinámico corta el viento mientras las luces de la ciudad se difuminan en un rastro de colores. Esto no es solo un vehículo, es una obra de arte en movimiento.",
+    "negocio": "El camino hacia el éxito financiero requiere más que solo sueños; requiere una estrategia implacable y una ejecución perfecta. Los grandes imperios no se construyeron en un día, se forjaron en las horas de sacrificio y en la toma de decisiones audaces. Si quieres cambiar tu futuro, debes empezar a invertir en tu activo más valioso."
 }
 
 def obtener_duracion(archivo):
@@ -45,7 +44,7 @@ with st.sidebar:
 st.title("🎬 Fénix AI: Cine Automático")
 
 if "mensajes" not in st.session_state:
-    st.session_state.mensajes = [{"role": "assistant", "content": "¡Hola! Pídeme un tema (ej: 'terror') y yo escribiré una historia larga y haré el montaje."}]
+    st.session_state.mensajes = [{"role": "assistant", "content": "¡Hola! Pídeme un tema y crearé un montaje largo con los subtítulos de siempre."}]
 
 for msg in st.session_state.mensajes:
     with st.chat_message(msg["role"]):
@@ -59,7 +58,6 @@ if user_input := st.chat_input("Dime el tema o pega tu guion..."):
     with st.chat_message("user"): st.markdown(user_input)
 
     with st.chat_message("assistant"):
-        # ¿El usuario solo dio un tema corto? Expandimos con una historia real
         guion_final = user_input
         if len(user_input) < 50:
             for k, v in HISTORIAS.items():
@@ -67,7 +65,7 @@ if user_input := st.chat_input("Dime el tema o pega tu guion..."):
                     guion_final = v
                     break
 
-        with st.status("🎬 Produciendo película completa...", expanded=True) as status:
+        with st.status("🎬 Produciendo película...", expanded=True) as status:
             uid = int(time.time())
             v_final = f"output/v_{uid}.mp4"
             subprocess.run(f'edge-tts --voice {voz} --text "{guion_final}" --write-media "t.mp3" --write-subtitles "t.vtt"', shell=True)
@@ -82,9 +80,10 @@ if user_input := st.chat_input("Dime el tema o pega tu guion..."):
                     for i in range(len(clips)): f.write(f"file 'p_{i}.mp4'\n")
                 subprocess.run('ffmpeg -y -f concat -safe 0 -i lista.txt -c copy base.mp4', shell=True)
                 
+                # REVERTIDO A TU ESTILO ORIGINAL
                 est = f"Fontname=Impact,FontSize=26,PrimaryColour={ass_color},Outline=2,Alignment=2,MarginV=120"
                 cmd = f'ffmpeg -y -i base.mp4 -i t.mp3 -vf "subtitles=t.vtt:force_style=\'{est}\'" -c:v libx264 -preset superfast -shortest "{v_final}"'
                 subprocess.run(cmd, shell=True)
                 
-                st.session_state.mensajes.append({"role": "assistant", "content": f"✅ Vídeo de {round(duracion_audio)}s completado.", "video": v_final})
+                st.session_state.mensajes.append({"role": "assistant", "content": "✅ Vídeo terminado con tus subtítulos clásicos.", "video": v_final})
                 st.rerun()
