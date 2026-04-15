@@ -1,5 +1,6 @@
 import streamlit as st
-import os, time, random, subprocess, math, re
+import os, time, random, subprocess, math, re, urllib.parse
+import requests
 
 st.set_page_config(page_title="Fénix Viral PRO", layout="centered")
 
@@ -14,8 +15,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX AI STUDIO v9.0</div>', unsafe_allow_html=True)
-st.markdown('<div class="pro-subtitle">Cerebro Omnipotente • Todos los Nichos del Mundo</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX AI STUDIO v9.5</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-subtitle">Escudo Visual • Fondo Blindado Anti-Errores</div>', unsafe_allow_html=True)
 
 def limpiar_orden(orden):
     basura = ["hazme", "haz", "arme", "asme", "dame", "dime", "un", "una", "el", "la", "los", "las", "video", "vídeo", "videos", "quiero", "sobre", "de", "del", "historia", "que", "hable", "como", "mejor", "para", "sin", "con", "en", "año"]
@@ -23,21 +24,18 @@ def limpiar_orden(orden):
     limpias = [p for p in palabras if p not in basura and len(p) > 3]
     return " ".join(limpias) if limpias else orden, limpias
 
-# --- EL MEGA DETECTOR DE NICHOS ---
 def detectar_nicho(tema):
     t = tema.lower()
     if any(w in t for w in ["miedo", "terror", "fantasma", "paranormal", "horror", "oscuridad", "demonio", "maldito", "asesino", "leyenda", "creepy"]): return "terror"
     elif any(w in t for w in ["negocio", "dinero", "invertir", "inversion", "empresa", "millonario", "finanzas", "cripto", "emprendedor", "ventas", "marketing", "riqueza", "dolares", "trabajo"]): return "negocios"
-    elif any(w in t for w in ["ciencia", "espacio", "universo", "planeta", "tecnologia", "curiosidad", "animales", "naturaleza", "biologia", "descubrimiento"]): return "ciencia"
+    elif any(w in t for w in ["ciencia", "espacio", "universo", "planeta", "luna", "tecnologia", "curiosidad", "animales", "naturaleza", "biologia", "descubrimiento"]): return "ciencia"
     elif any(w in t for w in ["motivacion", "psicologia", "mente", "exito", "depresion", "ansiedad", "habitos", "disciplina", "desarrollo"]): return "motivacion"
     elif any(w in t for w in ["salud", "fitness", "ejercicio", "dieta", "gimnasio", "musculo", "entrenamiento", "comida", "nutricion"]): return "salud"
     elif any(w in t for w in ["conspiracion", "gobierno", "secreto", "oculto", "misterio", "alien", "ovni"]): return "misterio"
-    else: return "universal" # El Comodín para TODO LO DEMÁS
+    else: return "universal"
 
-# --- EL CEREBRO HUMANO UNIVERSAL ---
 def generar_guion_humano(tema, nicho):
     tema = tema.upper()
-    
     variables = {
         "tema": tema,
         "año": random.choice(["DOS MIL OCHO", "DOS MIL QUINCE", "HACE MUY POCO TIEMPO", "MIL NOVECIENTOS NOVENTA", "EL AÑO PASADO", "HACE UNOS MESES"]),
@@ -50,54 +48,27 @@ def generar_guion_humano(tema, nicho):
     }
 
     if nicho == "negocios":
-        plantillas = [
-            "SI ESTAS INTENTANDO METERTE EN {tema} DEJA DE HACERLO AHORA MISMO Y ESCUCHA EL {porcentaje} POR CIENTO DE LA GENTE PIERDE {dinero} PORQUE NO ENTIENDEN ESTA TRAMPA EN {año} {enemigo_negocio} CREARON UN SISTEMA PERFECTO PARA QUE TU Y YO FRACASEMOS SU PLAN ERA QUEDARSE CON TODO EL BENEFICIO MIENTRAS NOSOTROS PERDEMOS EL TIEMPO PERO HACE NADA UN ANALISTA FILTRO LA ESTRATEGIA REAL Y ES {locura} LA CLAVE ESTA EN HACER JUSTO LO CONTRARIO DE LO QUE DICEN LAS NOTICIAS CUANDO TODOS ENTRAN EN PANICO TU ATACAS CUANDO TODOS COMPRAN TU TE ALEJAS ESTE SIMPLE CAMBIO MENTAL ROMPE SU ALGORITMO APLICALO HOY Y EMPEZARAS A VER RESULTADOS DE VERDAD SIGUENOS PARA MAS NEGOCIOS"
-        ]
+        plantillas = ["SI ESTAS INTENTANDO METERTE EN {tema} DEJA DE HACERLO AHORA MISMO Y ESCUCHA EL {porcentaje} POR CIENTO DE LA GENTE PIERDE {dinero} PORQUE NO ENTIENDEN ESTA TRAMPA EN {año} {enemigo_negocio} CREARON UN SISTEMA PERFECTO PARA QUE TU Y YO FRACASEMOS SU PLAN ERA QUEDARSE CON TODO EL BENEFICIO MIENTRAS NOSOTROS PERDEMOS EL TIEMPO PERO HACE NADA UN ANALISTA FILTRO LA ESTRATEGIA REAL Y ES {locura} LA CLAVE ESTA EN HACER JUSTO LO CONTRARIO DE LO QUE DICEN LAS NOTICIAS CUANDO TODOS ENTRAN EN PANICO TU ATACAS CUANDO TODOS COMPRAN TU TE ALEJAS ESTE SIMPLE CAMBIO MENTAL ROMPE SU ALGORITMO APLICALO HOY Y EMPEZARAS A VER RESULTADOS DE VERDAD SIGUENOS PARA MAS NEGOCIOS"]
     elif nicho == "terror":
-        plantillas = [
-            "NO MIRES ESTO DE NOCHE SI DE VERDAD LE TIENES MIEDO A {tema} SEGURO PIENSAS QUE ES UN INVENTO DE INTERNET O UN CUENTO PARA ASUSTAR PERO EN {año} LA COSA SE SALIO DE CONTROL LA POLICIA ENCONTRO ALGO HORRIBLE EN {lugar_creepy} LAS GRABACIONES DE SEGURIDAD MOSTRARON ALGO QUE DESAFIA TODA LOGICA EL GOBIERNO CLASIFICO LOS VIDEOS EN SEGUNDOS PERO ALGUIEN LOGRO FILTRARLOS EN LA DEEP WEB ANTES DE DESAPARECER LOS DOCUMENTOS REVELAN QUE TODAS LAS VICTIMAS HICIERON LO MISMO ANTES DE SU FINAL Y LO MAS ATERRADOR DE TODO ESTO NO ES QUE HAYA PASADO SINO QUE ESA COSA SIGUE SUELTA BUSCANDO A GENTE QUE NO PRESTA ATENCION SI ESTA NOCHE ESCUCHAS UN GOLPE NO ABRAS LA PUERTA SIGUENOS PARA MAS TERROR"
-        ]
+        plantillas = ["NO MIRES ESTO DE NOCHE SI DE VERDAD LE TIENES MIEDO A {tema} SEGURO PIENSAS QUE ES UN INVENTO DE INTERNET O UN CUENTO PARA ASUSTAR PERO EN {año} LA COSA SE SALIO DE CONTROL LA POLICIA ENCONTRO ALGO HORRIBLE EN {lugar_creepy} LAS GRABACIONES DE SEGURIDAD MOSTRARON ALGO QUE DESAFIA TODA LOGICA EL GOBIERNO CLASIFICO LOS VIDEOS EN SEGUNDOS PERO ALGUIEN LOGRO FILTRARLOS EN LA DEEP WEB ANTES DE DESAPARECER LOS DOCUMENTOS REVELAN QUE TODAS LAS VICTIMAS HICIERON LO MISMO ANTES DE SU FINAL Y LO MAS ATERRADOR DE TODO ESTO NO ES QUE HAYA PASADO SINO QUE ESA COSA SIGUE SUELTA BUSCANDO A GENTE QUE NO PRESTA ATENCION SI ESTA NOCHE ESCUCHAS UN GOLPE NO ABRAS LA PUERTA SIGUENOS PARA MAS TERROR"]
     elif nicho == "ciencia":
-        plantillas = [
-            "EL {porcentaje} POR CIENTO DE LA GENTE NO TIENE NI IDEA DE ESTA LOCURA SOBRE {tema} SIEMPRE NOS ENSEÑARON QUE ERA ALGO SUPER ABURRIDO O NORMAL PERO UN ESTUDIO DE {año} REVELO UN DATO QUE TE VA A DEJAR SIN PALABRAS RESULTA QUE LOS EXPERTOS HABIAN IGNORADO UN DETALLE DURANTE DECADAS PERO UN CIENTIFICO SE PUSO A INVESTIGAR A FONDO Y ENCONTRO {locura} BASICAMENTE LA CIENCIA MODERNA CONFIRMA QUE CASI TODO LO QUE SABIAMOS ESTABA MAL ESTE SIMPLE HECHO CAMBIA POR COMPLETO NUESTRA FORMA DE ENTENDER EL MUNDO AHORA QUE CONOCES ESTE DATO ERES PARTE DEL UNO POR CIENTO QUE VE LA REALIDAD COMO ES SIGUENOS PARA MAS CURIOSIDADES"
-        ]
+        plantillas = ["EL {porcentaje} POR CIENTO DE LA GENTE NO TIENE NI IDEA DE ESTA LOCURA SOBRE {tema} SIEMPRE NOS ENSEÑARON QUE ERA ALGO SUPER ABURRIDO O NORMAL PERO UN ESTUDIO DE {año} REVELO UN DATO QUE TE VA A DEJAR SIN PALABRAS RESULTA QUE LOS EXPERTOS HABIAN IGNORADO UN DETALLE DURANTE DECADAS PERO UN CIENTIFICO SE PUSO A INVESTIGAR A FONDO Y ENCONTRO {locura} BASICAMENTE LA CIENCIA MODERNA CONFIRMA QUE CASI TODO LO QUE SABIAMOS ESTABA MAL ESTE SIMPLE HECHO CAMBIA POR COMPLETO NUESTRA FORMA DE ENTENDER EL MUNDO AHORA QUE CONOCES ESTE DATO ERES PARTE DEL UNO POR CIENTO QUE VE LA REALIDAD COMO ES SIGUENOS PARA MAS CURIOSIDADES"]
     elif nicho == "motivacion":
-        plantillas = [
-            "ESTAS PERDIENDO EL TIEMPO CON {tema} Y TE VOY A EXPLICAR EXACTAMENTE POR QUE TODO EL MUNDO SE OBSESIONA CON HACERLO COMO TE DIJERON EN LA ESCUELA PERO ESO ES UNA TRAMPA GIGANTE LA VERDADERA CLAVE LA DESCUBRIO UN EXPERTO EN PSICOLOGIA HACE NADA Y ES {locura} EL TRUCO ESTA EN CAMBIAR COMPLETAMENTE TU ENFOQUE MENTAL DEJA DE HACER LO QUE HACE LA MASA ABORREGADA Y EMPIEZA A USAR TUS HABITOS A TU FAVOR APLICALO HOY MISMO Y NOTARAS EL CAMBIO EN TU VIDA AL INSTANTE DEJA DE PONER EXCUSAS Y TOMA EL CONTROL DE UNA VEZ SIGUENOS PARA MAS MOTIVACION"
-        ]
+        plantillas = ["ESTAS PERDIENDO EL TIEMPO CON {tema} Y TE VOY A EXPLICAR EXACTAMENTE POR QUE TODO EL MUNDO SE OBSESIONA CON HACERLO COMO TE DIJERON EN LA ESCUELA PERO ESO ES UNA TRAMPA GIGANTE LA VERDADERA CLAVE LA DESCUBRIO UN EXPERTO EN PSICOLOGIA HACE NADA Y ES {locura} EL TRUCO ESTA EN CAMBIAR COMPLETAMENTE TU ENFOQUE MENTAL DEJA DE HACER LO QUE HACE LA MASA ABORREGADA Y EMPIEZA A USAR TUS HABITOS A TU FAVOR APLICALO HOY MISMO Y NOTARAS EL CAMBIO EN TU VIDA AL INSTANTE DEJA DE PONER EXCUSAS Y TOMA EL CONTROL DE UNA VEZ SIGUENOS PARA MAS MOTIVACION"]
     elif nicho == "salud":
-        plantillas = [
-            "TE ESTAN ENGAÑANDO DESCARADAMENTE CON {tema} LA INDUSTRIA GASTA MILLONES PARA QUE CREAS QUE NECESITAS METODOS COMPLICADOS Y CAROS PERO ES PURA BASURA EN {año} SE FILTRO UN ESTUDIO INDEPENDIENTE QUE LO CAMBIO TODO DESCUBRIERON QUE EL {porcentaje} POR CIENTO DE LOS PRODUCTOS COMERCIALES NO SIRVEN PARA NADA EL VERDADERO SECRETO ES TAN SIMPLE QUE DA RABIA Y ES {locura} SOLO TIENES QUE DEJAR DE SEGUIR MODAS TONTAS Y APLICAR LA BIOLOGIA BASICA A TU FAVOR TU CUERPO RESPONDERA EN CUESTION DE DIAS SI DEJAS DE METERLE BASURA EMPIEZA HOY MISMO Y SIENTE LA DIFERENCIA SIGUENOS PARA MAS SALUD"
-        ]
+        plantillas = ["TE ESTAN ENGAÑANDO DESCARADAMENTE CON {tema} LA INDUSTRIA GASTA MILLONES PARA QUE CREAS QUE NECESITAS METODOS COMPLICADOS Y CAROS PERO ES PURA BASURA EN {año} SE FILTRO UN ESTUDIO INDEPENDIENTE QUE LO CAMBIO TODO DESCUBRIERON QUE EL {porcentaje} POR CIENTO DE LOS PRODUCTOS COMERCIALES NO SIRVEN PARA NADA EL VERDADERO SECRETO ES TAN SIMPLE QUE DA RABIA Y ES {locura} SOLO TIENES QUE DEJAR DE SEGUIR MODAS TONTAS Y APLICAR LA BIOLOGIA BASICA A TU FAVOR TU CUERPO RESPONDERA EN CUESTION DE DIAS SI DEJAS DE METERLE BASURA EMPIEZA HOY MISMO Y SIENTE LA DIFERENCIA SIGUENOS PARA MAS SALUD"]
     elif nicho == "misterio":
-        plantillas = [
-            "VAN A BORRAR ESTE VIDEO EN CUALQUIER MOMENTO PORQUE HABLA DE {tema} LLEVAMOS DECADAS PENSANDO QUE ES ALGO TOTALMENTE INOFENSIVO PERO DOCUMENTOS RECIENTES DEMUESTRAN QUE EN {año} {enemigo_misterio} LLEVO A CABO EXPERIMENTOS SUPER SECRETOS CON ESTO SU OBJETIVO REAL ERA METERSE EN NUESTRA MENTE SIN DEJAR RASTRO UN INVESTIGADOR SE DIO CUENTA DE LA TRAMPA Y ESCAPO CON LOS DISCOS DUROS INTENTARON CALLARLO PERO YA ERA TARDE LA INFORMACION ESTA VOLANDO POR LA RED EL ENGAÑO SE HA CAIDO A PEDAZOS Y AHORA TU TAMBIEN LO SABES SIGUENOS PARA MAS MISTERIOS"
-        ]
-    else: # UNIVERSAL (El comodín maestro para cualquier tema)
-        plantillas = [
-            "TE APUESTO LO QUE QUIERAS A QUE NO SABIAS ESTO SOBRE {tema} CASI TODO EL MUNDO CREE QUE ES ALGO TOTALMENTE NORMAL Y CORRIENTE PERO HAY UN DETALLE OCULTO QUE MUY POCOS CONOCEN HACE POCO TIEMPO SE HIZO VIRAL UN CASO QUE LO CAMBIA TODO ALGUIEN SE DIO CUENTA DE UN PATRON QUE NADIE MAS HABIA VISTO Y ES {locura} ESTE SIMPLE DETALLE CAMBIA POR COMPLETO LA FORMA EN LA QUE DEBERIAMOS VERLO LA PROXIMA VEZ QUE ESTES FRENTE A ESTO RECUERDA ESTE VIDEO PORQUE YA NO VAS A PODER IGNORARLO NUNCA MAS COMPARTELO CON TUS AMIGOS Y SIGUENOS PARA MAS CURIOSIDADES INCREIBLES",
-            
-            "EL NOVENTA Y NUEVE POR CIENTO DE LAS PERSONAS HACE MAL ESTO CON {tema} SIEMPRE NOS HEMOS ACOSTUMBRADO A HACERLO DE LA MANERA TRADICIONAL PERO ESTAMOS DESPERDICIANDO SU VERDADERO POTENCIAL UN EXPERTO REVELO HACE POCO EL TRUCO DEFINITIVO Y ES {locura} EN LUGAR DE COMPLICARTE LA VIDA SOLO TIENES QUE HACER UN PEQUEÑO AJUSTE Y EL RESULTADO SE MULTIPLICA AL INSTANTE LOS QUE YA LO ESTAN HACIENDO TIENEN UNA VENTAJA BRUTAL SOBRE EL RESTO NO TE QUEDES ATRAS Y EMPIEZA A APLICARLO HOY MISMO TE PROMETO QUE ME LO VAS A AGRADECER SIGUENOS PARA MAS TRUCOS COMO ESTE"
-        ]
+        plantillas = ["VAN A BORRAR ESTE VIDEO EN CUALQUIER MOMENTO PORQUE HABLA DE {tema} LLEVAMOS DECADAS PENSANDO QUE ES ALGO TOTALMENTE INOFENSIVO PERO DOCUMENTOS RECIENTES DEMUESTRAN QUE EN {año} {enemigo_misterio} LLEVO A CABO EXPERIMENTOS SUPER SECRETOS CON ESTO SU OBJETIVO REAL ERA METERSE EN NUESTRA MENTE SIN DEJAR RASTRO UN INVESTIGADOR SE DIO CUENTA DE LA TRAMPA Y ESCAPO CON LOS DISCOS DUROS INTENTARON CALLARLO PERO YA ERA TARDE LA INFORMACION ESTA VOLANDO POR LA RED EL ENGAÑO SE HA CAIDO A PEDAZOS Y AHORA TU TAMBIEN LO SABES SIGUENOS PARA MAS MISTERIOS"]
+    else:
+        plantillas = ["TE APUESTO LO QUE QUIERAS A QUE NO SABIAS ESTO SOBRE {tema} CASI TODO EL MUNDO CREE QUE ES ALGO TOTALMENTE NORMAL Y CORRIENTE PERO HAY UN DETALLE OCULTO QUE MUY POCOS CONOCEN HACE POCO TIEMPO SE HIZO VIRAL UN CASO QUE LO CAMBIA TODO ALGUIEN SE DIO CUENTA DE UN PATRON QUE NADIE MAS HABIA VISTO Y ES {locura} ESTE SIMPLE DETALLE CAMBIA POR COMPLETO LA FORMA EN LA QUE DEBERIAMOS VERLO LA PROXIMA VEZ QUE ESTES FRENTE A ESTO RECUERDA ESTE VIDEO PORQUE YA NO VAS A PODER IGNORARLO NUNCA MAS COMPARTELO CON TUS AMIGOS Y SIGUENOS PARA MAS CURIOSIDADES INCREIBLES"]
     
     return random.choice(plantillas).format(**variables)
 
 def obtener_guion_pro(orden_usuario):
     tema_mostrar, limpias = limpiar_orden(orden_usuario)
     nicho = detectar_nicho(orden_usuario)
-    
-    if nicho == "terror": sufijo = "creepy dark"
-    elif nicho == "negocios": sufijo = "money success"
-    elif nicho == "ciencia": sufijo = "science macro"
-    elif nicho == "motivacion": sufijo = "success focus"
-    elif nicho == "salud": sufijo = "fitness healthy"
-    else: sufijo = "cinematic epic"
-        
-    keys = [p for p in limpias[:3]] + [f"{p} {sufijo}" for p in limpias[:2]]
-    if not keys: keys = [sufijo]
-
     guion = generar_guion_humano(tema_mostrar, nicho)
-    return guion, keys, tema_mostrar
+    return guion, tema_mostrar, nicho
 
 def time_to_sec(t_str):
     t_str = t_str.strip().split(' ')[0].replace(',', '.')
@@ -112,22 +83,20 @@ with st.sidebar:
     pexels_key = st.text_input("🔑 Pexels API Key:", value="Ty0uFISh3APEAXIVcrFpSM7ZdwOeRElCuUgoG42EW6WVISRTEfqjm0BZ", type="password")
     color_sub = st.selectbox("🎨 Estilo Subtítulos", ["yellow", "white", "cyan", "#00FF00"])
     st.markdown("---")
-    st.caption("Fénix System | Cerebro Omnipotente ✅")
+    st.caption("Fénix System | Fondo Blindado Activo ✅")
 
-if orden := st.chat_input("Dime CUALQUIER tema (Ej: el amor, perros, dieta, planetas...):"):
-    with st.status(f"🚀 Iniciando... Analizando nicho para '{orden}'", expanded=True) as status:
+if orden := st.chat_input("Dime tu tema (Imágenes garantizadas al 100%):"):
+    with st.status(f"🚀 Renderizando '{orden}' con Escudo Visual...", expanded=True) as status:
         subprocess.run("rm -f p_*.mp4 clip_*.mp4 base.mp4 t.mp3 t.vtt music.mp3 final.mp4 temp_a.mp3 lista.txt subs_filter.txt outro.mp4", shell=True)
         
-        guion, palabras_claves, tema_mostrar = obtener_guion_pro(orden)
-        nicho_detectado = detectar_nicho(orden)
-        status.write(f"✓ Nicho activado: **{nicho_detectado.upper()}**")
+        guion, tema_mostrar, nicho_detectado = obtener_guion_pro(orden)
+        status.write(f"✓ Guion listo. Nicho: **{nicho_detectado.upper()}**")
         
         subprocess.run(f'edge-tts --voice es-ES-AlvaroNeural --rate=-10% --text "{guion}" --write-media "t.mp3" --write-subtitles "t.vtt"', shell=True)
         dur_audio_str = subprocess.check_output("ffprobe -i t.mp3 -show_entries format=duration -v quiet -of csv='p=0'", shell=True).decode('utf-8').strip()
         if not dur_audio_str: dur_audio_str = "40.0"
         dur_audio = float(dur_audio_str)
 
-        # Ajuste de audio según nicho
         tono = 50 if nicho_detectado == "terror" else 75
         ruido = 0.05 if nicho_detectado == "terror" else 0.02
         subprocess.run(f'ffmpeg -y -f lavfi -i "sine=frequency={tono}:duration={dur_audio+2}" -f lavfi -i "anoisesrc=d={dur_audio+2}:c=pink:a={ruido}" -filter_complex "[0:a]volume=0.5[t];[1:a]volume=0.1[n];[t][n]amix=inputs=2:duration=first" music.mp3', shell=True)
@@ -161,44 +130,46 @@ if orden := st.chat_input("Dime CUALQUIER tema (Ej: el amor, perros, dieta, plan
         num_clips = math.ceil(dur_audio / clip_duration) 
         processed_clips = []
         
-        status.write(f"🎞️ Sincronizando imágenes HD ({nicho_detectado})...")
+        status.write(f"🎞️ Sincronizando imágenes (Buscador Blindado)...")
         palabras_guion = guion.split()
         chunk_size = max(1, len(palabras_guion) // max(1, num_clips))
         stop_words = {"PRESTA", "MUCHA", "ATENCION", "PORQUE", "QUE", "TE", "VOY", "A", "CONTAR", "SOBRE", "EL", "LA", "LOS", "LAS", "UN", "UNA", "UNOS", "UNAS", "CON", "SIN", "PARA", "POR", "DE", "DEL", "Y", "O", "ES", "SON", "HA", "HAN", "SE", "LO", "LE", "NO", "MAS", "ESTO", "ESTA", "ESTAS", "ESTOS", "TODO", "PERO", "SI", "COMO", "CUANDO", "DONDE", "AQUI", "ALLI", "MUY", "TAN", "SU", "SUS", "AL", "NOS", "MI", "MIS", "ENTRE", "HAY", "ESTE", "AUNQUE", "HASTA", "DESDE", "ENTONCES", "TIENES", "SIGUENOS", "AHORA", "ELLOS", "MUNDO", "TIEMPO", "SOLO"}
         
+        if nicho_detectado == "terror": sufijo_nicho = "creepy"
+        elif nicho_detectado == "negocios": sufijo_nicho = "money"
+        elif nicho_detectado == "ciencia": sufijo_nicho = "science"
+        elif nicho_detectado == "motivacion": sufijo_nicho = "success"
+        elif nicho_detectado == "salud": sufijo_nicho = "fitness"
+        else: sufijo_nicho = "cinematic"
+
         last_valid_clip = None
         for i in range(num_clips): 
             inicio = int(i * chunk_size)
             fin = int((i + 1) * chunk_size)
             trozo = palabras_guion[inicio:fin]
-            
             palabras_utiles = [p for p in trozo if p not in stop_words and len(p) > 4]
+            
+            # EL ESCUDO DE 4 NIVELES
             busquedas_a_intentar = []
-            
-            if nicho_detectado == "terror": sufijo_nicho = "creepy"
-            elif nicho_detectado == "negocios": sufijo_nicho = "money"
-            elif nicho_detectado == "ciencia": sufijo_nicho = "science"
-            elif nicho_detectado == "motivacion": sufijo_nicho = "success"
-            elif nicho_detectado == "salud": sufijo_nicho = "fitness"
-            else: sufijo_nicho = "cinematic"
-            
             if palabras_utiles:
                 palabras_utiles.sort(key=len, reverse=True)
-                busquedas_a_intentar.append(f"{palabras_utiles[0]} {sufijo_nicho}")
-                if len(palabras_utiles) > 1:
-                    busquedas_a_intentar.append(f"{palabras_utiles[1]} {sufijo_nicho}")
+                busquedas_a_intentar.append(palabras_utiles[0]) # Nivel 1: Palabra pura
             
-            busquedas_a_intentar.extend(palabras_claves)
+            busquedas_a_intentar.append(tema_mostrar) # Nivel 2: El tema
+            busquedas_a_intentar.append(sufijo_nicho) # Nivel 3: El Nicho en Inglés (A prueba de balas)
+            busquedas_a_intentar.append("abstract background") # Nivel 4: Último recurso
             
             v_url = None
             for busqueda in busquedas_a_intentar:
                 try:
-                    res = requests.get(f"https://api.pexels.com/videos/search?query={busqueda}&per_page=5&orientation=portrait", headers={"Authorization": pexels_key.strip()}, timeout=5).json()
-                    videos = res.get('videos', [])
-                    if videos:
-                        v_url = random.choice(videos)['video_files'][0]['link']
-                        status.write(f"  ► Clip {i+1}: '{busqueda}'")
-                        break
+                    url_pex = f"https://api.pexels.com/videos/search?query={urllib.parse.quote(busqueda)}&per_page=15&orientation=portrait"
+                    res = requests.get(url_pex, headers={"Authorization": pexels_key.strip()}, timeout=5)
+                    if res.status_code == 200:
+                        videos = res.json().get('videos', [])
+                        if videos:
+                            v_url = random.choice(videos)['video_files'][0]['link']
+                            status.write(f"  ► Clip {i+1}: Video encontrado usando '{busqueda}'")
+                            break
                 except: pass
             
             try:
@@ -224,5 +195,5 @@ if orden := st.chat_input("Dime CUALQUIER tema (Ej: el amor, perros, dieta, plan
         subprocess.run(cmd, shell=True)
         
         if os.path.exists(v_final):
-            st.success("✅ Video Universal completado.")
+            st.success("✅ Video completado con imágenes.")
             st.video(v_final)
