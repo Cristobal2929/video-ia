@@ -15,17 +15,17 @@ def obtener_guion_pro(tema):
     except:
         return f"PRESTA MUCHA ATENCION PORQUE LO QUE TE VOY A CONTAR SOBRE {tema.upper()} ES UN SECRETO QUE HA SIDO GUARDADO DURANTE AÑOS. ESTO NO ES UNA COINCIDENCIA ES UN PLAN PERFECTO PARA OCULTAR LA VERDAD. SI TE QUEDAS HASTA EL FINAL DESCUBRIRAS ALGO QUE CAMBIARA TU FORMA DE VER EL MUNDO PARA SIEMPRE. SIGUENOS PARA MAS VERDADES."
 
-# EL FIX DEFINITIVO: Función inteligente que lee cualquier formato de tiempo
+# EL FIX DEFINITIVO: Cambiamos la coma por un punto para que Python no crashee
 def time_to_sec(t_str):
-    t_str = t_str.strip().split(' ')[0] # Quita la basura extra
+    t_str = t_str.strip().split(' ')[0].replace(',', '.') # <--- LA MAGIA ESTÁ AQUÍ
     partes = t_str.split(':')
-    if len(partes) == 3: # Si tiene horas (HH:MM:SS.mmm)
+    if len(partes) == 3: 
         h, m, s = partes
         return float(h)*3600 + float(m)*60 + float(s)
-    elif len(partes) == 2: # Si solo tiene minutos y segundos (MM:SS.mmm)
+    elif len(partes) == 2: 
         m, s = partes
         return float(m)*60 + float(s)
-    else: # Por si acaso
+    else: 
         return float(partes[0])
 
 st.title("🦅 Fénix Studio: Sistema Profesional")
