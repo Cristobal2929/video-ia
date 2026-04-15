@@ -13,7 +13,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-PEXELS_API_KEY = "Ty0uFlSh3APEAXIVcrFpSM7ZdwOeRElCuUgoG42EW6WVISRTEfqjmOBZ"
+PEXELS_API_KEY = "TyOuFISh3APEAXIVcrFpSM7ZdwOeRElCuUgoG42EW6WVISRTEfqjmOBZ"
 
 def buscar_y_descargar_pexels(nicho, output_filename="clip_base.mp4"):
     # Búsquedas más simples para asegurar que siempre haya resultados
