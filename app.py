@@ -12,7 +12,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX AI STUDIO v18.0</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX AI STUDIO v18.1</div>', unsafe_allow_html=True)
 
 # -------- CONFIG --------
 CACHE_DIR = "cache_videos"
@@ -28,9 +28,16 @@ def run_cmd(cmd):
         print("CMD ERROR:", e)
 
 def time_to_sec(t):
+    t = t.strip()
     h, m, s = t.split(':')
-    s, ms = s.split('.')
-    return int(h)*3600 + int(m)*60 + int(s) + int(ms)/1000
+
+    if '.' in s:
+        s, ms = s.split('.')
+        ms = int(ms) / 1000
+    else:
+        ms = 0
+
+    return int(h)*3600 + int(m)*60 + int(s) + ms
 
 def limpiar_texto(texto):
     texto = texto.replace("'", "")
@@ -103,25 +110,45 @@ if prompt := st.chat_input("Tema del vídeo"):
         # AUDIO
         run_cmd(f'edge-tts --voice es-ES-AlvaroNeural --text "{guion}" --write-media t.mp3 --write-subtitles t.vtt')
 
+        if not os.path.exists("t.vtt"):
+            st.error("Error generando subtítulos")
+            st.stop()
+
         escenas = []
-        with open("t.vtt") as f:
+        with open("t.vtt", encoding="utf-8") as f:
             lines = f.readlines()
             for i in range(len(lines)):
                 if "-->" in lines[i]:
-                    start = time_to_sec(lines[i].split(" --> ")[0])
-                    end = time_to_sec(lines[i].split(" --> ")[1])
-                    txt = limpiar_texto(lines[i+1])
-                    escenas.append((start, end, txt))
+                    try:
+                        start = time_to_sec(lines[i].split(" --> ")[0])
+                        end = time_to_sec(lines[i].split(" --> ")[1])
+
+                        if i+1 < len(lines):
+                            txt = limpiar_texto(lines[i+1])
+                        else:
+                            txt = ""
+
+                        escenas.append((start, end, txt))
+                    except:
+                        continue
+
+        # FALLBACK si no detecta escenas
+        if not escenas:
+            escenas = [(0, 5, limpiar_texto(guion))]
 
         # CLIPS PARALELOS
         def make_clip(i, esc):
-            dur = esc[1] - esc[0]
+            dur = max(esc[1] - esc[0], 1)
+
             v = obtener_video(prompt, api)
             vid = descargar_video(v, f"{i}.mp4") if v else None
 
-            if vid:
-                run_cmd(f'ffmpeg -y -i "{vid}" -vf "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,fps=30" -t {dur} p_{i}.mp4')
-            else:
+            try:
+                if vid:
+                    run_cmd(f'ffmpeg -y -i "{vid}" -vf "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,fps=30" -t {dur} p_{i}.mp4')
+                else:
+                    raise Exception()
+            except:
                 run_cmd(f'ffmpeg -y -f lavfi -i color=c=black:s=720x1280:d={dur}:r=30 p_{i}.mp4')
 
             return f"p_{i}.mp4"
@@ -141,7 +168,7 @@ if prompt := st.chat_input("Tema del vídeo"):
         run_cmd(f'ffmpeg -y -i base.mp4 -i t.mp3 -shortest "{output}"')
 
         if os.path.exists(output):
-            st.success("✅ VIDEO GENERADO V18 PRO")
+            st.success("✅ VIDEO GENERADO V18.1 PRO")
             st.video(output)
 
     except Exception as e:
