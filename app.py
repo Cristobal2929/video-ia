@@ -20,16 +20,16 @@ def obtener_guion_pro(tema):
         guion_fallback = f"LA HISTORIA OFICIAL DE {tema.upper()} ES UNA MENTIRA HACE DECADAS UN INVESTIGADOR DESCUBRIO DOCUMENTOS QUE PROBABAN LO CONTRARIO ANTES DE PODER PUBLICARLOS FUE SILENCIADO Y SU TRABAJO DESTRUIDO HOY LAS PIEZAS COMIENZAN A ENCAJAR Y LA VERDAD ESTA SALIENDO A LA LUZ"
 
     # EL PROMPT MAESTRO (Marketing Puro)
-    prompt_maestro = f"Actúa como un experto en retención de audiencia de TikTok. Escribe una historia impactante sobre: {tema}. REGLAS ESTRICTAS: 1. Empieza con una pregunta psicológica o dato perturbador (Gancho). 2. Cuenta una historia con datos lógicos y reales (Nudo). 3. Termina con una revelación brutal (Desenlace). MÁXIMO 65 PALABRAS. ESCRIBE TODO EN MAYÚSCULAS. NO USES PUNTOS NO USES COMAS NO USES TILDES NO USES SIGNOS DE INTERROGACIÓN. SOLO PALABRAS."
+    prompt_maestro = f"Actúa como un experto en retención de audiencia de TikTok. Escribe una historia impactante sobre: {tema}. REGLAS ESTRICTAS: 1. Empieza con una pregunta psicológica o dato perturbador (Gancho). 2. Cuenta una historia con datos lógicos y reales (Nudo). 3. Termina con una revelación brutal (Desenlace). MÁXIMO 65 PALABRAS. ESCRIBE TODO EN MAYÚSCULAS. NO USES PUNTOS NO USES COMAS NO USES TILDES NO USES TILDES NO USES SIGNOS DE INTERROGACIÓN. SOLO PALABRAS."
 
     try:
-        # ENVÍO SEGURO (Evita que el prompt se rompa en internet)
+        # ENVÍO SEGURO (Params)
         url = "https://sentence.fineshopdesign.com/api/ai"
         res = requests.get(url, params={"prompt": prompt_maestro}, timeout=12).json()
         guion = res.get("reply", "").upper()
         
-        # LIMPIEZA MILITAR (Por si la IA desobedece)
-        guion = re.sub(r'[^\w\s]', '', guion) # Borra cualquier símbolo raro
+        # LIMPIEZA MILITAR
+        guion = re.sub(r'[^\w\s]', '', guion)
         guion = guion.replace('\n', ' ').strip()
         
         if len(guion) < 40: raise Exception("IA generó respuesta corta")
@@ -71,7 +71,7 @@ if user_input := st.chat_input("Dime el tema (El bot exigirá una historia perfe
         subprocess.run(f'ffmpeg -y -f lavfi -i "sine=frequency={tono}:duration={dur_audio+2}" -f lavfi -i "anoisesrc=d={dur_audio+2}:c=pink:a=0.03" -filter_complex "[0:a]volume=0.5[t];[1:a]volume=0.1[n];[t][n]amix=inputs=2:duration=first" music.mp3', shell=True)
         subprocess.run(f'ffmpeg -y -i t.mp3 -i music.mp3 -filter_complex "[0:a]volume=3.0[v];[1:a]volume=0.2[m];[v][m]amix=inputs=2:duration=first" temp_a.mp3', shell=True)
 
-        # 2. SUBTÍTULOS MILIMÉTRICOS (1-2 Palabras)
+        # 2. SUBTÍTULOS DINÁMICOS (1-2 Palabras)
         drawtext_filters = []
         try:
             with open('t.vtt', 'r', encoding='utf-8') as f:
@@ -91,7 +91,8 @@ if user_input := st.chat_input("Dime el tema (El bot exigirá una historia perfe
                             for j, chunk in enumerate(chunks):
                                 c_start = start + (j * time_per_chunk)
                                 c_end = c_start + time_per_chunk
-                                drawtext_filters.append(f"drawtext=text='{chunk}':fontcolor={color_sub}:fontsize=55:fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:borderw=5:bordercolor=black:shadowcolor=black:shadowx=3:shadowy=3:x=(w-tw)/2:y=(h-th)/2:enable='between(t,{c_start},{c_end})'")
+                                # EL FIX: Bajamos fontsize de 55 a 38 para garantizar que quepa en 480px de ancho
+                                drawtext_filters.append(f"drawtext=text='{chunk}':fontcolor={color_sub}:fontsize=38:fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:borderw=5:bordercolor=black:shadowcolor=black:shadowx=3:shadowy=3:x=(w-tw)/2:y=(h-th)/2:enable='between(t,{c_start},{c_end})'")
             
             with open("subs_filter.txt", "w", encoding='utf-8') as f:
                 f.write(",\n".join(drawtext_filters))
