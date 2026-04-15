@@ -67,16 +67,17 @@ if st.button("🚀 INICIAR PRODUCCIÓN HD"):
         uid = int(time.time())
         os.makedirs("output", exist_ok=True)
         final_p = f"output/video_{uid}.mp4"
-        with st.status("💎 Fabricando Vídeo (Modo Seguro)...", expanded=True) as status:
+        with st.status("💎 Fabricando Vídeo (Pantalla Completa)...", expanded=True) as status:
             subprocess.run(f'edge-tts --voice {voz} --text "{guion_final}" --write-media "t.mp3" --write-subtitles "t.vtt"', shell=True)
             if transformar_srt("t.vtt", "t.srt"):
                 clips = glob.glob(f"{nicho}/*.mp4")
                 if clips:
                     clip = random.choice(clips)
-                    est = f"Fontname=Impact,FontSize=24,PrimaryColour={ass_color},Outline=2,Alignment=2,MarginV=80"
+                    # Bajamos un poco los subtítulos para que queden perfectos en el formato vertical
+                    est = f"Fontname=Impact,FontSize=26,PrimaryColour={ass_color},Outline=2,Alignment=2,MarginV=120"
                     
-                    # ESCUDO ANTI-CUELGUES: Escala a 480p, usa 1 hilo, limite de buffer
-                    cmd = f'ffmpeg -y -stream_loop -1 -i "{clip}" -i t.mp3 -vf "scale=480:854:force_original_aspect_ratio=decrease,pad=480:854:(ow-iw)/2:(oh-ih)/2,subtitles=t.srt:force_style=\'{est}\'" -c:v libx264 -preset superfast -crf 30 -threads 1 -max_muxing_queue_size 1024 -pix_fmt yuv420p -c:a aac -shortest "{final_p}"'
+                    # EFECTO ZOOM Y RECORTE: Llena toda la pantalla sin bordes negros (force_original_aspect_ratio=increase,crop=480:854)
+                    cmd = f'ffmpeg -y -stream_loop -1 -i "{clip}" -i t.mp3 -vf "scale=480:854:force_original_aspect_ratio=increase,crop=480:854,subtitles=t.srt:force_style=\'{est}\'" -c:v libx264 -preset superfast -crf 30 -threads 1 -max_muxing_queue_size 1024 -pix_fmt yuv420p -c:a aac -shortest "{final_p}"'
                     
                     subprocess.run(cmd, shell=True)
                     
