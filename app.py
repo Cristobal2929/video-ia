@@ -4,40 +4,36 @@ import os, time, random, subprocess, re, requests
 st.set_page_config(page_title="Fénix Studio Pro", layout="centered", page_icon="🎬")
 st.markdown("<style>.stApp {background: linear-gradient(135deg, #0f172a, #1e293b); color: white;}</style>", unsafe_allow_html=True)
 
-# --- HISTORIAS ACTUALIZADAS (MÁS DIVERTIDAS) ---
-HISTORIAS = {
-    "terror": "La noche caía pesada sobre la vieja mansión. Las sombras parecían cobrar vida propia en las esquinas de las habitaciones vacías. Cada crujido de la madera sonaba como un grito ahogado en el silencio. Algo se movía bajo la cama, esperando el momento exacto para arrastrarte hacia el abismo eterno.",
-    "coche": "La ingeniería perfecta se encuentra con la adrenalina pura. Imagina recorrer la carretera a toda velocidad, sintiendo el rugido de quinientos caballos de fuerza bajo el capó. Esto no es solo un vehículo, es una obra de arte en movimiento, una máquina diseñada para aquellos que no aceptan límites.",
-    "humor": "La vida es ese chiste que a veces no entiendes hasta que te pasa a ti. ¿Te has fijado que siempre que tienes prisa, el semáforo se pone rojo y la persona de delante camina como si estuviera en un museo? O cuando buscas algo por toda la casa, no lo encuentras, y en cuanto te rindes, aparece justo donde habías mirado mil veces. ¡Es como si los objetos tuvieran vida propia y se estuvieran riendo de nosotros en nuestra cara!",
-    "humor_largo": "Si la risa es el mejor remedio, ¡yo debería ser inmortal! ¿Habéis notado que los humanos somos expertos en complicarnos la vida? Compramos comida sana para que se pudra en la nevera mientras pedimos pizza. Vamos al gimnasio una vez al mes y esperamos salir como supermodelos. Y lo mejor de todo es cuando intentas parecer inteligente y te chocas con una puerta de cristal que estaba demasiado limpia. La vida no es perfecta, pero al menos es divertidísima si sabes de qué reírte. ¡Relájate y disfruta del caos!"
+# --- MATRIZ DE FRASES PARA VARIACIÓN INFINITA ---
+COMPONENTES = {
+    "humor": [
+        ["La vida es un chiste.", "Reír es gratis.", "El mundo está loco."],
+        ["¿Te has fijado que siempre pasa lo mismo?", "Lo peor es cuando intentas ser serio.", "Nada sale como uno planea."],
+        ["Es como cuando buscas las llaves y las tienes en la mano.", "O cuando saludas a alguien que no conoces por error.", "Incluso el GPS se ríe de nosotros a veces."],
+        ["¡Relájate y disfruta!", "Si no te ríes, pierdes.", "Mañana será más divertido."]
+    ],
+    "terror": [
+        ["La oscuridad te observa.", "Hay ruidos en el pasillo.", "El frío recorre tu espalda."],
+        ["Nunca deberías haber abierto esa puerta.", "Las sombras se mueven solas.", "El silencio es lo más peligroso."],
+        ["Sientes una mano en tu hombro.", "Una cara aparece en el cristal.", "Ya es demasiado tarde para huir."],
+        ["No cierres los ojos.", "Ellos ya están aquí.", "Dulces sueños."]
+    ]
 }
 
-def traducir_tema(tema):
+def generar_guion_unico(tema):
     tema = tema.lower()
-    diccionario = {
-        "motos": "motorcycles", "humor": "funny videos fails", "terror": "horror movie clips",
-        "coches": "sports car", "dinero": "luxury life money", "gatos": "funny cats",
-        "perros": "funny dogs", "espacio": "galaxy stars", "comida": "delicious food"
-    }
-    return diccionario.get(tema, tema)
-
-def generar_guion_universal(tema, largo=False):
-    t_key = tema.lower()
-    # Si el tema es humor, usamos el nuevo guion gracioso
-    if "humor" in t_key or "risa" in t_key:
-        return HISTORIAS["humor_largo"] if largo else HISTORIAS["humor"]
+    tipo = "humor" if "humor" in tema or "risa" in tema else "terror" if "terror" in tema or "miedo" in tema else "coche"
     
-    # Si es terror o coches, lo mismo
-    if "terror" in t_key or "miedo" in t_key:
-        return HISTORIAS["terror"]
-    if "coche" in t_key:
-        return HISTORIAS["coche"]
-    
-    # Para cualquier otro tema, un guion dinámico
-    if largo:
-        return f"Bienvenidos a este vídeo increíble sobre {tema}. Seguramente has pensado mucho en esto, pero hoy vamos a verlo desde una perspectiva totalmente diferente. Prepárate para descubrir detalles que te dejarán con la boca abierta y escenas que no verás en ningún otro sitio. ¡Vamos allá!"
+    if tipo in COMPONENTES:
+        # Mezcla una frase de cada grupo para crear un guion nuevo cada vez
+        guion = " ".join([random.choice(grupo) for grupo in COMPONENTES[tipo]])
+        return guion
     else:
-        return f"Hoy exploramos el mundo de {tema}. Un tema apasionante lleno de sorpresas y momentos únicos que no te puedes perder. ¡Mira esto!"
+        return f"Hablemos sobre {tema}. Es un mundo lleno de sorpresas y detalles que mucha gente ignora, pero que hoy vamos a descubrir juntos en este vídeo espectacular."
+
+def traducir_tema(tema):
+    dicc = {"motos": "motorcycles", "humor": "funny fails", "terror": "horror", "coches": "supercars"}
+    return dicc.get(tema.lower(), tema)
 
 def transformar_srt_profesional(vtt_path, srt_path):
     try:
@@ -63,10 +59,6 @@ def transformar_srt_profesional(vtt_path, srt_path):
         with open(srt_path, 'w', encoding='utf-8') as f: f.write("\n".join(srt_f))
         return True
     except: return False
-
-def obtener_duracion(archivo):
-    cmd = f"ffprobe -i {archivo} -show_entries format=duration -v quiet -of csv='p=0'"
-    return float(subprocess.check_output(cmd, shell=True))
 
 def buscar_y_descargar_dinamico(query, api_key, segundos_totales):
     tema_limpio = re.sub(r'quiero|un|video|de|sobre|hazme|haz|crea|largo|bastante|mide|dure', '', query.lower()).strip()
@@ -95,10 +87,10 @@ with st.sidebar:
     ass_color = f"&H00{hc[4:6]}{hc[2:4]}{hc[0:2]}"
     voz = st.selectbox("🗣️ Voz", ["es-ES-AlvaroNeural", "es-MX-JorgeNeural"])
 
-st.title("🎬 Fénix Studio Pro")
+st.title("🎬 Fénix Studio: Contenido Único")
 
 if "mensajes" not in st.session_state:
-    st.session_state.mensajes = [{"role": "assistant", "content": "¡Hola! Ahora mis vídeos de humor son mucho más divertidos. ¡Pruébame!"}]
+    st.session_state.mensajes = [{"role": "assistant", "content": "¡Hola! Cada vídeo que me pidas ahora será distinto al anterior."}]
 
 for msg in st.session_state.mensajes:
     with st.chat_message(msg["role"]):
@@ -111,14 +103,18 @@ if user_input := st.chat_input("Dime el tema..."):
     with st.chat_message("user"): st.markdown(user_input)
 
     with st.chat_message("assistant"):
-        es_largo = any(p in user_input.lower() for p in ["bastante", "largo", "minuto", "mucho"])
-        with st.status("🎬 Generando contenido...", expanded=True) as status:
+        guion_final = generar_guion_unico(user_input)
+        with st.status("🎬 Creando guion y montaje original...", expanded=True) as status:
             uid = int(time.time())
             v_final = f"output/v_{uid}.mp4"
-            clips, tema_det = buscar_y_descargar_dinamico(user_input, pexels_key, 60 if es_largo else 15)
-            guion_final = generar_guion_universal(tema_det, es_largo)
             subprocess.run(f'edge-tts --voice {voz} --text "{guion_final}" --write-media "t.mp3" --write-subtitles "t.vtt"', shell=True)
-            dur_audio = obtener_duracion("t.mp3")
+            
+            # Buscamos vídeos basados en el audio generado
+            cmd_dur = f"ffprobe -i t.mp3 -show_entries format=duration -v quiet -of csv='p=0'"
+            dur_audio = float(subprocess.check_output(cmd_dur, shell=True))
+            
+            clips, tema_det = buscar_y_descargar_dinamico(user_input, pexels_key, dur_audio)
+            
             if clips:
                 transformar_srt_profesional("t.vtt", "t.srt")
                 for i, c in enumerate(clips):
@@ -126,8 +122,10 @@ if user_input := st.chat_input("Dime el tema..."):
                 with open("lista.txt", "w") as f:
                     for i in range(len(clips)): f.write(f"file 'p_{i}.mp4'\n")
                 subprocess.run('ffmpeg -y -f concat -safe 0 -i lista.txt -c copy base.mp4', shell=True)
+                
                 est = f"Fontname=Impact,FontSize=28,PrimaryColour={ass_color},OutlineColour=&H00000000,BorderStyle=1,Outline=3,Shadow=1,Alignment=2,MarginV=140"
-                cmd = f'ffmpeg -y -i base.mp4 -i t.mp3 -vf "subtitles=t.srt:force_style=\'{est}\'" -c:v libx264 -preset superfast -shortest "{v_final}"'
+                cmd = f'ffmpeg -y -i base.mp4 -i t.mp3 -vf "subtitles=t.srt:force_style=\'{est}\'" -c:v libx264 -preset superfast -shortest -c:a aac -b:a 128k "{v_final}"'
                 subprocess.run(cmd, shell=True)
-                st.session_state.mensajes.append({"role": "assistant", "content": f"✅ ¡Vídeo de humor listo! Duración: {round(dur_audio)}s.", "video": v_final})
+                
+                st.session_state.mensajes.append({"role": "assistant", "content": f"✅ ¡Vídeo único listo! Guion: {guion_final[:40]}...", "video": v_final})
                 st.rerun()
