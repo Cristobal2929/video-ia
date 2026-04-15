@@ -15,8 +15,10 @@ def obtener_guion_pro(tema):
     except:
         return f"PRESTA MUCHA ATENCION PORQUE LO QUE TE VOY A CONTAR SOBRE {tema.upper()} ES UN SECRETO QUE HA SIDO GUARDADO DURANTE AÑOS. ESTO NO ES UNA COINCIDENCIA ES UN PLAN PERFECTO PARA OCULTAR LA VERDAD. SI TE QUEDAS HASTA EL FINAL DESCUBRIRAS ALGO QUE CAMBIARA TU FORMA DE VER EL MUNDO PARA SIEMPRE. SIGUENOS PARA MAS VERDADES."
 
-# Convierte el formato de tiempo de la IA a segundos
+# EL FIX ESTÁ AQUÍ: Blindamos la conversión de tiempo
 def time_to_sec(t_str):
+    # Cortamos cualquier texto extra que el VTT añada (ej: "00:00:01.500 align:start" -> "00:00:01.500")
+    t_str = t_str.strip().split(' ')[0]
     h, m, s = t_str.split(':')
     return float(h)*3600 + float(m)*60 + float(s)
 
@@ -29,25 +31,22 @@ with st.sidebar:
 
 if user_input := st.chat_input("Dime el tema y yo haré el resto..."):
     with st.status("🎬 Producción Profesional en curso...", expanded=True) as status:
-        # Limpieza absoluta de temporales
         subprocess.run("rm -f p_*.mp4 clip_*.mp4 base.mp4 t.mp3 t.vtt music.mp3 final.mp4 temp_a.mp3 lista.txt subs_filter.txt outro.mp4", shell=True)
         
         guion = obtener_guion_pro(user_input)
         status.write("✍️ Guion Maestro generado.")
         
-        # 1. AUDIO PRECISO Y SUBTÍTULOS EXACTOS
+        # 1. AUDIO Y TIEMPOS
         status.write("🎙️ Grabando voz y calculando tiempos al milisegundo...")
         subprocess.run(f'edge-tts --voice es-ES-AlvaroNeural --text "{guion}" --write-media "t.mp3" --write-subtitles "t.vtt"', shell=True)
         
-        # Extraemos la duración real garantizada
         dur_audio_str = subprocess.check_output("ffprobe -i t.mp3 -show_entries format=duration -v quiet -of csv='p=0'", shell=True).decode('utf-8').strip()
         dur_audio = float(dur_audio_str)
         
-        # Generamos la pista de tensión de fondo y la mezclamos
         subprocess.run(f'ffmpeg -y -f lavfi -i "sine=frequency=65:duration={dur_audio+2}" -f lavfi -i "anoisesrc=d={dur_audio+2}:c=pink:a=0.03" -filter_complex "[0:a]volume=0.5[t];[1:a]volume=0.1[n];[t][n]amix=inputs=2:duration=first" music.mp3', shell=True)
         subprocess.run(f'ffmpeg -y -i t.mp3 -i music.mp3 -filter_complex "[0:a]volume=3.0[v];[1:a]volume=0.3[m];[v][m]amix=inputs=2:duration=first" temp_a.mp3', shell=True)
 
-        # 2. CONSTRUCCIÓN DEL FILTRO DE SUBTÍTULOS (Sincronización Perfecta)
+        # 2. FILTRO DE SUBTÍTULOS (Ahora 100% a prueba de fallos)
         drawtext_filters = []
         try:
             with open('t.vtt', 'r', encoding='utf-8') as f:
@@ -57,20 +56,21 @@ if user_input := st.chat_input("Dime el tema y yo haré el resto..."):
                     tiempos = lines[i].strip().split(" --> ")
                     start = time_to_sec(tiempos[0])
                     end = time_to_sec(tiempos[1])
-                    texto = lines[i+1].strip().replace("'", "").replace('"', '')
-                    if texto:
-                        # Estilo ultra profesional: Fuente enorme, centrada, borde grueso y sombra 3D
-                        drawtext_filters.append(f"drawtext=text='{texto}':fontcolor={color_sub}:fontsize=50:fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:borderw=5:bordercolor=black:shadowcolor=black:shadowx=3:shadowy=3:x=(w-tw)/2:y=(h-th)/2:enable='between(t,{start},{end})'")
+                    # Comprobamos que haya una línea de texto después del tiempo
+                    if i + 1 < len(lines):
+                        texto = lines[i+1].strip().replace("'", "").replace('"', '')
+                        if texto:
+                            drawtext_filters.append(f"drawtext=text='{texto}':fontcolor={color_sub}:fontsize=50:fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:borderw=5:bordercolor=black:shadowcolor=black:shadowx=3:shadowy=3:x=(w-tw)/2:y=(h-th)/2:enable='between(t,{start},{end})'")
             
             with open("subs_filter.txt", "w", encoding='utf-8') as f:
                 f.write(",\n".join(drawtext_filters))
         except Exception as e:
-            st.error("Error al sincronizar subtítulos.")
+            st.error(f"Error detallado al leer subtítulos: {e}")
             st.stop()
 
-        # 3. ESCENAS MATEMÁTICAS (Nunca faltará vídeo)
-        clip_duration = 3.5 # Clips rápidos de 3.5 segundos para retención
-        num_clips = math.ceil(dur_audio / clip_duration) # Calculamos exactamente cuántos necesitamos
+        # 3. ESCENAS MATEMÁTICAS
+        clip_duration = 3.5 
+        num_clips = math.ceil(dur_audio / clip_duration) 
         processed_clips = []
         
         palabras_claves = [p for p in guion.split() if len(p) > 5]
@@ -88,31 +88,26 @@ if user_input := st.chat_input("Dime el tema y yo haré el resto..."):
                 subprocess.run(f'ffmpeg -y -i "clip_{i}.mp4" -vf "scale=1280:-1,zoompan=z=\'min(zoom+0.0015,1.4)\':d=125:x=iw/2-(iw/zoom/2):y=ih/2-(ih/zoom/2):s=480x854,fps=25" -an -c:v libx264 -preset superfast -t {clip_duration} "p_{i}.mp4"', shell=True)
                 last_valid_clip = f"p_{i}.mp4"
             except:
-                # SISTEMA ANTI-FALLOS: Si Pexels falla, clonamos el último clip válido para no perder duración
                 if last_valid_clip:
                     subprocess.run(f"cp {last_valid_clip} p_{i}.mp4", shell=True)
                 else:
-                    # Si falla el primero, creamos un clip negro de emergencia
                     subprocess.run(f'ffmpeg -y -f lavfi -i color=c=black:s=480x854:d={clip_duration}:r=25 -c:v libx264 -preset superfast p_{i}.mp4', shell=True)
             
             processed_clips.append(f"p_{i}.mp4")
 
-        # 4. EL CIERRE BLINDADO (Outro)
-        # Añadimos 3 segundos extra de cierre. Esto garantiza que la imagen viva más que el audio.
+        # 4. EL CIERRE
         subprocess.run('ffmpeg -y -f lavfi -i color=c=black:s=480x854:d=3:r=25 -vf "drawtext=text=\'FENIX STUDIO 🦅\':fontcolor=white:fontsize=45:x=(w-tw)/2:y=(h-th)/2" -c:v libx264 -preset ultrafast outro.mp4', shell=True)
 
         with open("lista.txt", "w") as f:
             for p in processed_clips: f.write(f"file '{p}'\n")
-            f.write("file 'outro.mp4'\n") # El buffer de seguridad
+            f.write("file 'outro.mp4'\n")
             
         subprocess.run('ffmpeg -y -f concat -safe 0 -i lista.txt -c copy base.mp4', shell=True)
 
-        # 5. RENDERIZADO FINAL PROFESIONAL
+        # 5. RENDERIZADO FINAL
         status.write("✨ Exportando Master...")
         v_final = f"output/v_{int(time.time())}.mp4"
         
-        # Al usar -filter_complex_script lee miles de palabras sin saturar la consola
-        # El -shortest cortará EXACTAMENTE cuando Álvaro diga la última sílaba.
         cmd = f'ffmpeg -y -i base.mp4 -i temp_a.mp3 -filter_complex_script subs_filter.txt -c:v libx264 -preset ultrafast -b:v 1500k -shortest "{v_final}"'
         subprocess.run(cmd, shell=True)
         
