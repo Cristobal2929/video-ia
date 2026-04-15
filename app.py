@@ -78,7 +78,7 @@ def buscar_y_descargar_dinamico(query, api_key, segundos_totales):
         videos = res.json().get('videos', [])
         random.shuffle(videos)
         for i, v in enumerate(videos):
-            if segundos_acum >= segundos_totales + 3: break
+            if segundos_acum >= segundos_totales + 10: break
             link = v['video_files'][0]['link']
             nombre = f"clip_{i}.mp4"
             with open(nombre, 'wb') as f: f.write(requests.get(link).content)
