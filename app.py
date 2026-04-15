@@ -2,7 +2,7 @@ import streamlit as st
 import os, time, random, subprocess, math, re, urllib.parse
 import requests
 
-st.set_page_config(page_title="Fénix Viral PRO | V20", layout="centered")
+st.set_page_config(page_title="Fénix Viral PRO | V21", layout="centered")
 
 st.markdown("""
 <style>
@@ -12,15 +12,14 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX AI STUDIO v20.0</div>', unsafe_allow_html=True)
-st.markdown('<div class="pro-subtitle" style="text-align:center; color:#94A3B8; margin-bottom: 30px;">Modo Ligero (Móvil) • Cero Colapsos • Lógica 100%</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX AI STUDIO v21.0</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-subtitle" style="text-align:center; color:#94A3B8; margin-bottom: 30px;">Edición Nube • Base de Datos Maestra • Cero Archivos Temporales</div>', unsafe_allow_html=True)
 
 TRADUCCION = {
     "ELEFANTE": "elephant", "AMOR": "love", "DINERO": "money", "ESTAFA": "scam",
     "GATO": "cat", "PERRO": "dog", "COCHE": "car", "CIUDAD": "city", "MIEDO": "scary",
     "LUNA": "moon", "ESPACIO": "space", "ORO": "gold", "COMIDA": "food", "HACKER": "hacker",
-    "FUEGO": "fire", "AGUA": "water", "BOSQUE": "forest", "TIEMPO": "clock", "MUNDO": "world",
-    "MISTERIO": "mystery", "VERDAD": "truth", "GOBIERNO": "government", "MILLONARIO": "wealth"
+    "FUEGO": "fire", "AGUA": "water", "BOSQUE": "forest", "TIEMPO": "clock", "MUNDO": "world"
 }
 
 def traducir(p): return TRADUCCION.get(p.upper(), p.lower())
@@ -66,7 +65,7 @@ def generar_guion_modular(tema, nicho):
         cierre = random.choice(["Este simple detalle cambia por completo la forma en la que deberiamos verlo. La proxima vez, no vas a poder ignorarlo. Siguenos para mas curiosidades.", "El {porcentaje} por ciento todavia se cree el cuento oficial, pero las pruebas no dejan lugar a dudas. Despierta de una vez. Siguenos para mas secretos."])
     
     guion_final = f"{gancho} {nudo} {giro} {cierre}".format(**v)
-    return guion_final.replace('"', '').replace("'", "")
+    return guion_final
 
 def time_to_sec(t_str):
     try:
@@ -83,10 +82,9 @@ with st.sidebar:
     pexels_key = st.text_input("🔑 API Pexels:", value="Ty0uFISh3APEAXIVcrFpSM7ZdwOeRElCuUgoG42EW6WVISRTEfqjm0BZ", type="password")
     color_sub = st.selectbox("🎨 Color de Letra", ["yellow", "white", "cyan"])
 
-if orden := st.chat_input("Dime tu tema (Versión Anti-Crashes para móvil):"):
-    with st.status(f"🚀 Procesando con cuidado '{orden}'...", expanded=True) as status:
-        # Limpieza segura
-        subprocess.run("rm -f p_*.mp4 clip_*.mp4 base.mp4 t.mp3 t.vtt music.mp3 final.mp4 temp_a.mp3 lista.txt subs_filter.txt temp_guion.txt", shell=True)
+if orden := st.chat_input("Dime tu tema (Versión Anti-Streamlit Cloud):"):
+    with st.status(f"🚀 Procesando '{orden}' de forma nativa...", expanded=True) as status:
+        subprocess.run("rm -f p_*.mp4 clip_*.mp4 base.mp4 t.mp3 t.vtt music.mp3 final.mp4 temp_a.mp3 lista.txt subs_filter.txt", shell=True)
         
         tema_limpio = limpiar_orden(orden)
         nicho = detectar_nicho(orden)
@@ -94,25 +92,24 @@ if orden := st.chat_input("Dime tu tema (Versión Anti-Crashes para móvil):"):
         guion_seguro = generar_guion_modular(tema_limpio, nicho)
         status.write("🧠 Guion generado con éxito.")
         
-        # Voz por archivo (Evita cuelgues de Terminal)
-        with open("temp_guion.txt", "w", encoding="utf-8") as f:
-            f.write(guion_seguro)
-            
+        # SÚPER LIMPIEZA DEL TEXTO PARA LA TERMINAL DE STREAMLIT
+        guion_escapado = guion_seguro.replace('"', '').replace("'", "").replace('`', '').replace('%', ' por ciento')
+        
         exito_voz = False
         for i in range(3):
-            subprocess.run('edge-tts --voice es-ES-AlvaroNeural --rate=0% -f temp_guion.txt --write-media "t.mp3" --write-subtitles "t.vtt"', shell=True)
+            # Inyección directa de texto sin usar archivos .txt temporales
+            subprocess.run(f'edge-tts --voice es-ES-AlvaroNeural --text "{guion_escapado}" --write-media t.mp3 --write-subtitles t.vtt', shell=True)
             if os.path.exists("t.vtt") and os.path.getsize("t.vtt") > 0:
                 exito_voz = True
                 break
             time.sleep(2)
             
         if not exito_voz:
-            st.error("Fallo de red. Dale al botón de enviar otra vez.")
+            st.error("🚨 Los servidores de Microsoft rechazaron la conexión. Por favor, dale al botón de enviar otra vez.")
             st.stop()
 
         status.write("🎙️ Audio procesado correctamente.")
 
-        # Extracción de escenas
         escenas = []
         with open('t.vtt', 'r', encoding='utf-8') as f:
             lines = f.readlines()
@@ -126,8 +123,7 @@ if orden := st.chat_input("Dime tu tema (Versión Anti-Crashes para móvil):"):
                     kw = palabras[-1] if palabras else tema_limpio
                     escenas.append({"start": start_sec, "end": end_sec, "text": txt_limpio.upper(), "kw": kw})
 
-        # Procesamiento UNO A UNO para no saturar la RAM del móvil
-        status.write("🎞️ Buscando y recortando vídeos (Modo Seguro)...")
+        status.write("🎞️ Buscando y recortando vídeos...")
         clips_finales = []
         sufijo_n = "creepy" if nicho == "TERROR" else ("money" if nicho == "NEGOCIOS" else "cinematic")
         last_clip = None
@@ -136,7 +132,6 @@ if orden := st.chat_input("Dime tu tema (Versión Anti-Crashes para móvil):"):
             dur = esc["end"] - esc["start"]
             if dur <= 0: continue
             
-            # Buscar
             intentos = [traducir(esc["kw"]), tema_limpio, sufijo_n, "cinematic"]
             v_url = None
             for q in intentos:
@@ -147,7 +142,6 @@ if orden := st.chat_input("Dime tu tema (Versión Anti-Crashes para móvil):"):
                         break
                 except: pass
             
-            # Procesar
             try:
                 if not v_url: raise Exception()
                 with open(f"clip_{i}.mp4", 'wb') as f: f.write(requests.get(v_url, timeout=10).content)
@@ -179,3 +173,4 @@ if orden := st.chat_input("Dime tu tema (Versión Anti-Crashes para móvil):"):
         if os.path.exists(v_final):
             st.success("✅ VÍDEO SEGURO CREADO.")
             st.video(v_final)
+            st.balloons()
