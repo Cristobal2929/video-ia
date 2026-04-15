@@ -2,7 +2,7 @@ import streamlit as st
 import os, time, random, subprocess, math, re, urllib.parse
 import requests
 
-st.set_page_config(page_title="Fénix Viral PRO | V23", layout="centered")
+st.set_page_config(page_title="Fénix Viral PRO | V24", layout="centered")
 
 st.markdown("""
 <style>
@@ -12,8 +12,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX AI STUDIO v23.0</div>', unsafe_allow_html=True)
-st.markdown('<div class="pro-subtitle" style="text-align:center; color:#94A3B8; margin-bottom: 30px;">Director Interno • Cero Caídas de Red • Imágenes Exactas</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX AI STUDIO v24.0</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-subtitle" style="text-align:center; color:#94A3B8; margin-bottom: 30px;">El Titán • Motor de Voz Blindado • Visuales Exactas</div>', unsafe_allow_html=True)
 
 def limpiar_orden(orden):
     basura = ["hazme", "haz", "arme", "asme", "dame", "dime", "un", "una", "el", "la", "los", "las", "video", "quiero", "sobre", "de", "del", "que", "hable", "como", "para"]
@@ -29,7 +29,7 @@ def detectar_nicho(tema):
     if any(w in t for w in ["ciencia", "espacio", "luna", "planeta", "curiosidad"]): return "CIENCIA"
     return "UNIVERSAL"
 
-# --- LA BASE DE DATOS DIRECTOR (Texto en Español + Búsqueda Pexels en Inglés) ---
+# --- LA BASE DE DATOS DIRECTOR (Búsqueda en Inglés Perfecta) ---
 def generar_base_director(tema, nicho):
     if nicho == "TERROR":
         return [
@@ -78,38 +78,38 @@ with st.sidebar:
     pexels_key = st.text_input("🔑 API Pexels:", value="Ty0uFISh3APEAXIVcrFpSM7ZdwOeRElCuUgoG42EW6WVISRTEfqjm0BZ", type="password")
     color_sub = st.selectbox("🎨 Color de Letra", ["yellow", "white", "cyan"])
 
-if orden := st.chat_input("Dime el tema (Lógica y Conexión 100% Asegurada):"):
-    with st.status(f"🚀 Produciendo '{orden}' de forma nativa...", expanded=True) as status:
+if orden := st.chat_input("Dime el tema (Motor de Voz Blindado):"):
+    with st.status(f"🚀 Produciendo '{orden}'...", expanded=True) as status:
         subprocess.run("rm -f p_*.mp4 clip_*.mp4 base.mp4 t.mp3 t.vtt music.mp3 final.mp4 temp_a.mp3 lista.txt subs_filter.txt", shell=True)
         
         tema_limpio = limpiar_orden(orden)
         nicho = detectar_nicho(orden)
         
-        # 1. Extraemos la base de datos pre-programada
         escenas_bd = generar_base_director(tema_limpio, nicho)
-        
-        # Unimos todo el texto para la voz
         texto_completo = " ".join([esc["t"] for esc in escenas_bd])
-        status.write("🧠 Guion y Dirección Visual cargados desde la base segura.")
+        status.write("🧠 Guion y Dirección Visual cargados.")
         
-        # 2. Generamos el audio global (BLINDADO CONTRA STREAMLIT CLOUD)
+        # 2. MOTOR DE VOZ BLINDADO (Sin shell=True, imposible que explote por comillas)
         texto_limpio = re.sub(r'[^A-Za-zÁÉÍÓÚáéíóúÑñ0-9\s.,]', '', texto_completo)
         
         exito_voz = False
         for i in range(3):
-            subprocess.run(f'edge-tts --voice es-ES-AlvaroNeural --rate=0% --text "{texto_limpio}" --write-media "t.mp3" --write-subtitles "t.vtt"', shell=True)
+            # Inyección directa por lista en Python. A prueba de fallos de Terminal.
+            comando = ["edge-tts", "--voice", "es-ES-AlvaroNeural", "--rate=-5%", "--text", texto_limpio, "--write-media", "t.mp3", "--write-subtitles", "t.vtt"]
+            subprocess.run(comando)
+            
             if os.path.exists("t.vtt") and os.path.getsize("t.vtt") > 0:
                 exito_voz = True
                 break
             time.sleep(2)
             
         if not exito_voz:
-            st.error("Error en el motor de voz de Microsoft. Intenta darle de nuevo.")
+            st.error("Error crítico de red. Refresca la página e inténtalo de nuevo.")
             st.stop()
 
-        status.write("🎙️ Audio procesado correctamente sin caídas.")
+        status.write("🎙️ Audio generado correctamente sin cuelgues.")
 
-        # 3. Sincronizamos los tiempos de las frases
+        # 3. Sincronizamos tiempos
         tiempos = []
         with open('t.vtt', 'r', encoding='utf-8') as f:
             lines = f.readlines()
@@ -120,17 +120,15 @@ if orden := st.chat_input("Dime el tema (Lógica y Conexión 100% Asegurada):"):
                     end = time_to_sec(lines[i].split(" --> ")[1])
                     txt = lines[i+1].strip()
                     
-                    # Si detecta punto, guardamos el bloque de tiempo
                     if current_start == -1: current_start = start
                     if "." in txt:
                         tiempos.append({"start": current_start, "end": end})
                         current_start = -1
 
-        # Ajuste de seguridad por si no coinciden exactos
         while len(tiempos) < len(escenas_bd):
             tiempos.append({"start": 0, "end": 2})
 
-        # 4. Motor Visual Pexels
+        # 4. Motor Visual Exacto (Imágenes perfectas)
         status.write("🎞️ Descargando imágenes cinematográficas exactas...")
         clips_finales = []
         last_clip = None
@@ -139,7 +137,7 @@ if orden := st.chat_input("Dime el tema (Lógica y Conexión 100% Asegurada):"):
             dur_clip = tiempos[i]["end"] - tiempos[i]["start"]
             if dur_clip <= 0: dur_clip = 3.0
             
-            query = esc["s"] # Búsqueda en inglés perfecta
+            query = esc["s"] # Esta es la búsqueda en INGLÉS perfecto (ej: "creepy dark shadows")
             v_url = None
             try:
                 r = requests.get(f"https://api.pexels.com/videos/search?query={urllib.parse.quote(query)}&per_page=5&orientation=portrait", headers={"Authorization": pexels_key.strip()}, timeout=5).json()
@@ -158,7 +156,7 @@ if orden := st.chat_input("Dime el tema (Lógica y Conexión 100% Asegurada):"):
             
             clips_finales.append(f"p_{i}.mp4")
 
-        # 5. Aplicar subtítulos Pro sincronizados
+        # 5. Subtítulos
         status.write("🎬 Renderizando subtítulos TikTok Pro...")
         subs_cmd = []
         with open('t.vtt', 'r', encoding='utf-8') as f:
@@ -185,5 +183,5 @@ if orden := st.chat_input("Dime el tema (Lógica y Conexión 100% Asegurada):"):
         subprocess.run(f'ffmpeg -y -i base.mp4 -i temp_a.mp3 -filter_complex_script subs_filter.txt -c:v libx264 -preset ultrafast -b:v 2500k -shortest "{v_final}"', shell=True)
         
         if os.path.exists(v_final):
-            st.success("✅ La Roca del Director: Cero Errores, Lógica Visual Perfecta.")
+            st.success("✅ VÍDEO TITÁN CREADO. Cero fallos, imágenes perfectas.")
             st.video(v_final)
