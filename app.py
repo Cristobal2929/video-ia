@@ -21,12 +21,12 @@ def buscar_y_descargar_pexels(nicho, api_key, output_filename="clip_base.mp4"):
     }
     query = terminos.get(nicho, "abstract")
     url = f"https://api.pexels.com/videos/search?query={query}&per_page=15&orientation=portrait"
-    headers = {"Authorization": api_key.strip()} # .strip() quita espacios accidentales
+    headers = {"Authorization": api_key.strip()}
 
     try:
         res = requests.get(url, headers=headers)
         if res.status_code != 200:
-            return f"Acceso denegado. Clave incorrecta o caducada. (Error {res.status_code})"
+            return f"Acceso denegado. Revisa la clave. (Error {res.status_code})"
             
         data = res.json()
         if not data.get('videos') or len(data['videos']) == 0:
@@ -82,8 +82,8 @@ st.markdown('<div class="stHeader"><h1>🎬 FÉNIX AI STUDIO</h1><p>Producción 
 with st.sidebar:
     st.header("⚙️ Configuración")
     
-    # ¡NUEVA CAJA PARA PEGAR LA CLAVE DIRECTAMENTE!
-    pexels_key = st.text_input("🔑 Tu Clave API de Pexels:", type="password", placeholder="Pega tu clave aquí...")
+    # AQUÍ ESTÁ TU CLAVE EXACTA PRECARGADA PARA SIEMPRE
+    pexels_key = st.text_input("🔑 Tu Clave API de Pexels:", value="Ty0uFISh3APEAXIVcrFpSM7ZdwOeRElCuUgoG42EW6WVISRTEfqjm0BZ", type="password")
     
     st.markdown("---")
     nicho = st.selectbox("Nicho", ["Negocio", "Dieta", "Historia"])
@@ -96,7 +96,7 @@ guion_final = st.text_area("✍️ Guion:", placeholder="Escribe o pega aquí el
 
 if st.button("🚀 INICIAR PRODUCCIÓN AUTOMÁTICA"):
     if not pexels_key:
-        st.error("⚠️ Falta la clave de Pexels. Pégala en el menú de la izquierda.")
+        st.error("⚠️ Falta la clave de Pexels.")
     elif not guion_final:
         st.warning("⚠️ Primero escribe un guion en la caja.")
     else:
@@ -111,7 +111,6 @@ if st.button("🚀 INICIAR PRODUCCIÓN AUTOMÁTICA"):
             
             status.write(f"🌍 Buscando vídeos de '{nicho}' en Pexels...")
             
-            # Usamos la clave que has pegado en la web
             resultado_pexels = buscar_y_descargar_pexels(nicho, pexels_key, clip_base)
             
             if resultado_pexels is True:
