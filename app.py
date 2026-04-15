@@ -13,13 +13,8 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-def buscar_y_descargar_pexels(nicho, api_key, output_filename="clip_base.mp4"):
-    terminos = {
-        "Negocio": "business",
-        "Dieta": "fitness",
-        "Historia": "history"
-    }
-    query = terminos.get(nicho, "abstract")
+def buscar_y_descargar_pexels(query, api_key, output_filename="clip_base.mp4"):
+    # Buscamos directamente lo que escribas en la caja (funciona mejor en inglés)
     url = f"https://api.pexels.com/videos/search?query={query}&per_page=15&orientation=portrait"
     headers = {"Authorization": api_key.strip()}
 
@@ -30,7 +25,7 @@ def buscar_y_descargar_pexels(nicho, api_key, output_filename="clip_base.mp4"):
             
         data = res.json()
         if not data.get('videos') or len(data['videos']) == 0:
-            return f"Pexels no encontró vídeos para: {query}"
+            return f"Pexels no encontró vídeos para la búsqueda: '{query}'"
             
         video_info = random.choice(data['videos'])
         archivos = video_info['video_files']
@@ -82,15 +77,17 @@ st.markdown('<div class="stHeader"><h1>🎬 FÉNIX AI STUDIO</h1><p>Producción 
 with st.sidebar:
     st.header("⚙️ Configuración")
     
-    # AQUÍ ESTÁ TU CLAVE EXACTA PRECARGADA PARA SIEMPRE
     pexels_key = st.text_input("🔑 Tu Clave API de Pexels:", value="Ty0uFISh3APEAXIVcrFpSM7ZdwOeRElCuUgoG42EW6WVISRTEfqjm0BZ", type="password")
     
     st.markdown("---")
-    nicho = st.selectbox("Nicho", ["Negocio", "Dieta", "Historia"])
-    color_sub = st.color_picker("Color Subtítulos", "#00FFFF")
+    
+    # NUEVA CAJA PARA BUSCAR CUALQUIER COSA
+    tema_fondo = st.text_input("🔍 ¿Qué vídeo quieres de fondo?", value="luxury car", help="Escribe en INGLÉS para obtener resultados mucho mejores (ej: sports car, money, gym...)")
+    
+    color_sub = st.color_picker("🎨 Color Subtítulos", "#00FFFF")
     hc = color_sub.lstrip('#')
     ass_color = f"&H00{hc[4:6]}{hc[2:4]}{hc[0:2]}"
-    voz = st.selectbox("Voz", ["es-ES-AlvaroNeural", "es-MX-JorgeNeural"])
+    voz = st.selectbox("🗣️ Voz", ["es-ES-AlvaroNeural", "es-MX-JorgeNeural"])
 
 guion_final = st.text_area("✍️ Guion:", placeholder="Escribe o pega aquí el guion para tu vídeo...", height=150)
 
@@ -99,6 +96,8 @@ if st.button("🚀 INICIAR PRODUCCIÓN AUTOMÁTICA"):
         st.error("⚠️ Falta la clave de Pexels.")
     elif not guion_final:
         st.warning("⚠️ Primero escribe un guion en la caja.")
+    elif not tema_fondo:
+        st.warning("⚠️ Escribe de qué quieres que trate el vídeo de fondo.")
     else:
         uid = int(time.time())
         os.makedirs("output", exist_ok=True)
@@ -109,9 +108,10 @@ if st.button("🚀 INICIAR PRODUCCIÓN AUTOMÁTICA"):
             status.write("🔊 Generando voz neural...")
             subprocess.run(f'edge-tts --voice {voz} --text "{guion_final}" --write-media "t.mp3" --write-subtitles "t.vtt"', shell=True)
             
-            status.write(f"🌍 Buscando vídeos de '{nicho}' en Pexels...")
+            # Ahora busca tu palabra clave exacta
+            status.write(f"🌍 Buscando vídeos de '{tema_fondo}' en Pexels...")
             
-            resultado_pexels = buscar_y_descargar_pexels(nicho, pexels_key, clip_base)
+            resultado_pexels = buscar_y_descargar_pexels(tema_fondo, pexels_key, clip_base)
             
             if resultado_pexels is True:
                 if transformar_srt("t.vtt", "t.srt"):
