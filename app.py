@@ -2,7 +2,8 @@ import streamlit as st
 import os, time, random, subprocess, math, re, urllib.parse
 import requests
 
-st.set_page_config(page_title="Fénix Viral PRO", layout="centered")
+# Configuración Enterprise
+st.set_page_config(page_title="Fénix Viral PRO | v15", layout="centered")
 
 st.markdown("""
 <style>
@@ -11,55 +12,58 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX AI STUDIO v14.0</div>', unsafe_allow_html=True)
-st.markdown('<div class="pro-subtitle">El Guardián del Idioma • Castellano Puro y Acción Real</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX AI STUDIO v15.0</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-subtitle">Lógica Gramatical Directa • Castellano Nativo e Infalible</div>', unsafe_allow_html=True)
 
-# FUNCIÓN MAESTRA DE LIMPIEZA: El bot hace el trabajo sucio, no la IA
-def procesar_guion_para_voz(texto):
-    # Quitamos tildes para evitar errores de pronunciación robótica
-    remplazos = {'Á':'A','É':'E','Í':'I','Ó':'O','Ú':'U','Ñ':'N','á':'a','é':'e','í':'i','ó':'o','ú':'u','ñ':'n'}
-    for original, nuevo in remplazos.items():
-        texto = texto.replace(original, nuevo)
-    # Ponemos todo en mayúsculas y quitamos puntuación
-    texto = texto.upper()
-    texto = re.sub(r'[^A-Z0-9\s]', '', texto)
-    return " ".join(texto.split())
+# Diccionario de traducción rápido para Pexels (Ampliado para más lógica visual)
+TRADUCTOR = {
+    "AMOR": "love", "ELEFANTE": "elephant", "DINERO": "money", "ESTAFA": "scam",
+    "HACKER": "hacker", "GOBIERNOS": "government", "MILLONARIOS": "success",
+    "GATO": "cat", "PERRO": "dog", "COCHE": "car", "CIUDAD": "city", "MIEDO": "scary",
+    "TRABAJO": "work", "MUNDO": "world", "ESPACIO": "space", "LUNA": "moon",
+    "SOL": "sun", "COMIDA": "food", "ORO": "gold", "MUERTE": "death", "VIDA": "life",
+    "FUEGO": "fire", "AGUA": "water", "BOSQUE": "forest", "TIEMPO": "time clock"
+}
+
+def traducir(palabra):
+    return TRADUCTOR.get(palabra.upper(), palabra.lower())
 
 def detectar_nicho(tema):
     t = tema.lower()
     if any(w in t for w in ["miedo", "terror", "fantasma", "horror"]): return "TERROR"
-    if any(w in t for w in ["dinero", "negocio", "invertir", "millonario"]): return "NEGOCIOS"
+    if any(w in t for w in ["dinero", "negocio", "invertir", "rico", "millonario"]): return "NEGOCIOS"
     return "MISTERIO"
 
-# --- EL NUEVO CEREBRO QUE PENSARÁ EN ESPAÑOL REAL ---
-def redactar_guion_maestro(orden_usuario, nicho):
+# --- EL CEREBRO DE LÓGICA HUMANA ---
+def redactar_guion_logico(orden_usuario, nicho):
     semilla = random.randint(1, 999999)
     
-    # Aquí le pedimos que escriba BIEN, con puntos y comas. Nosotros limpiaremos después.
+    # Prompt exigente: Puntuación perfecta, oraciones completas, castellano nativo.
     prompt_maestro = f"""
-    ERES UN GUIONISTA TOP DE TIKTOK NATIVO EN ESPAÑOL.
-    TAREA: Escribe un guion VIRAL y ESPECTACULAR sobre: '{orden_usuario}'.
+    ERES UN NARRADOR DE HISTORIAS PROFESIONAL NATIVO EN ESPAÑOL.
+    TAREA: Escribe una historia fascinante, logica y ESPECTACULAR sobre: '{orden_usuario}'.
     
     REGLAS DE ORO:
-    1. Escribe en CASTELLANO PURO Y PERFECTO. Usa un vocabulario rico.
-    2. Estructura: Gancho agresivo + Historia con datos reales y visuales + Final impactante.
-    3. El tono debe ser humano y carismatico.
-    4. Termina con la frase: 'SIGUENOS PARA MAS {nicho}'.
+    1. Escribe en CASTELLANO PURO Y PERFECTO. Usa un vocabulario rico y natural.
+    2. Usa PUNTUACION NORMAL (puntos, comas, interrogaciones). Las oraciones deben ser completas y logicas.
+    3. Estructura: Gancho agresivo + Historia intrigante con datos + Final potente.
+    4. El tono debe ser humano y carismatico. NO use jerga tecnica innecesaria.
+    5. Termina con la frase: 'Síguenos para más {nicho}'.
     
-    IMPORTANTE: Escribe con puntuacion normal (puntos y comas). NO USES OTROS IDIOMAS.
-    MINIMO 140 PALABRAS.
+    IMPORTANTE: Escribe con mayusculas y minusculas normales. NO USES OTROS IDIOMAS.
+    MINIMO 150 PALABRAS (NECESITO RETENCION LARGA).
     """
     
     try:
-        # Usamos el modelo más potente disponible gratis (OpenAI/GPT-4)
+        # Usamos GPT-4 de OpenAI como motor principal de lenguaje para máxima lógica.
         url = f"https://text.pollinations.ai/{urllib.parse.quote(prompt_maestro)}?seed={semilla}&model=openai"
         res = requests.get(url, timeout=25)
         if res.status_code == 200 and len(res.text) > 100:
-            return res.text # Devolvemos el texto tal cual, lo limpiaremos en el bot
+            # Quitamos comillas si las pone la IA
+            return res.text.replace('"', '').strip()
     except: pass
     
-    # Guion de emergencia ultra-lógico
-    return f"¿Sabías que el noventa y nueve por ciento de la gente está equivocada con {orden_usuario}? La realidad es mucho más impactante. Un grupo de expertos analizó los datos y lo que descubrieron cambió las reglas del juego para siempre. No se trata de suerte, se trata de entender el sistema oculto que maneja todo desde las sombras. Ahora que tienes esta información, el poder está en tus manos. Síguenos para más {nicho}."
+    return f"¿Alguna vez te has preguntado cuál es el verdadero secreto detrás de {orden_usuario}? Casi todo el mundo está equivocado. La realidad es mucho más impactante de lo que imaginas. Un grupo de expertos analizó los datos y lo que descubrieron cambió las reglas del juego para siempre. No se trata de suerte, se trata de entender el sistema oculto que maneja todo desde las sombras. Ahora que tienes esta información, el poder está en tus manos. Síguenos para más {nicho}."
 
 def time_to_sec(t_str):
     try:
@@ -71,51 +75,65 @@ def time_to_sec(t_str):
     except: return 0
 
 with st.sidebar:
-    st.header("⚙️ Configuración")
+    st.image("https://cdn-icons-png.flaticon.com/512/2111/2111432.png", width=50)
+    st.header("⚙️ Agencia Pro")
     pexels_key = st.text_input("🔑 Pexels API Key:", value="Ty0uFISh3APEAXIVcrFpSM7ZdwOeRElCuUgoG42EW6WVISRTEfqjm0BZ", type="password")
     color_sub = st.selectbox("🎨 Color Subtítulos", ["yellow", "white", "cyan"])
 
-if orden := st.chat_input("Dime el tema (Garantizo castellano perfecto):"):
-    with st.status(f"🚀 Creando obra maestra sobre '{orden}'...", expanded=True) as status:
+if orden := st.chat_input("Dime el tema (Lógica Infalible Garantizada):"):
+    with st.status(f"🚀 Creando obra maestra lógica sobre '{orden}'...", expanded=True) as status:
         subprocess.run("rm -f p_*.mp4 clip_*.mp4 base.mp4 t.mp3 t.vtt music.mp3 final.mp4 temp_a.mp3 lista.txt subs_filter.txt", shell=True)
         
         nicho = detectar_nicho(orden)
-        guion_sucio = redactar_guion_maestro(orden, nicho)
-        guion_limpio = procesar_guion_para_voz(guion_sucio)
+        # 1. Generar guion humano completo con puntuación
+        guion_raw = redactar_guion_logico(orden, nicho)
         
-        status.write("✍️ Guion redactado y verificado en castellano.")
+        status.write("✍️ Guion con lógica gramatical nativa redactado.")
         
-        # 1. Voz (Usamos el texto procesado para que Álvaro no se trabe)
-        subprocess.run(f'edge-tts --voice es-ES-AlvaroNeural --rate=-10% --text "{guion_limpio}" --write-media "t.mp3" --write-subtitles "t.vtt"', shell=True)
+        # 2. Voz (Usamos el texto crudo con puntuación para que Álvaro lea perfecto)
+        # rate=0% para un ritmo de narración natural
+        subprocess.run(f'edge-tts --voice es-ES-AlvaroNeural --rate=0% --text "{guion_raw}" --write-media "t.mp3" --write-subtitles "t.vtt"', shell=True)
         
-        # 2. Análisis de sincronización para Pexels
+        # 3. Análisis de sincronización para Pexels (Palabra por palabra, pero agrupando por "idea")
         escenas = []
+        full_text_for_voice = ""
         with open('t.vtt', 'r', encoding='utf-8') as f:
             lines = f.readlines()
             for i in range(len(lines)):
                 if "-->" in lines[i]:
                     start = time_to_sec(lines[i].split(" --> ")[0])
                     end = time_to_sec(lines[i].split(" --> ")[1])
-                    txt = lines[i+1].strip().upper()
-                    palabras = [p for p in txt.split() if len(p) > 4]
-                    keyword = palabras[-1] if palabras else orden
-                    escenas.append({"start": start, "end": end, "text": txt, "keyword": keyword})
+                    txt = lines[i+1].strip()
+                    full_text_for_voice += txt + " "
+                    # Extraer la palabra más importante de la frase corta
+                    palabras_limpias = re.sub(r'[^A-Z\s]', '', txt.upper()).split()
+                    palabras_utiles = [p for p in palabras_limpias if len(p) > 4 and p not in ["PORQUE", "CUANDO", "ENTONCES"]]
+                    keyword = palabras_utiles[-1] if palabras_utiles else orden
+                    # Formateamos el texto para los subtítulos (Todo en mayúsculas y sin acentos para Álvaro)
+                    subs_txt = re.sub(r'[^A-Z0-9\s]', '', txt.upper())
+                    remplazos_sub = {'Á':'A','É':'E','Í':'I','Ó':'O','Ú':'U','Ñ':'N'}
+                    for k, v in remplazos_sub.items(): subs_txt = subs_txt.replace(k, v)
+                    escenas.append({"start": start, "end": end, "text": subs_txt, "keyword": keyword})
 
-        # 3. Motor Visual Blindado
-        status.write("🎞️ Sincronizando imágenes palabra por palabra...")
+        # 4. Motor Visual Blindado y Sincronizado
+        status.write("🎞️ Sincronizando metraje HD con cada frase lógica...")
         clips_finales = []
         last_clip = None
         
+        # Prefijos de búsqueda según nicho
+        sufijo_nicho = "creepy" if nicho == "TERROR" else ("money" if nicho == "NEGOCIOS" else "cinematic")
+
         for i, escena in enumerate(escenas):
             dur = escena["end"] - escena["start"]
             if dur <= 0: continue
             
-            # Buscador inteligente en cascada
-            intentos = [escena["keyword"], orden, nicho.lower()]
+            # Buscador en cascada para garantizar imagen
+            query_palabra = traducir(escena["keyword"])
+            intentos = [f"{query_palabra} portrait", f"{orden} {sufijo_nicho}", sufijo_nicho]
             v_url = None
             for q in intentos:
                 try:
-                    r = requests.get(f"https://api.pexels.com/videos/search?query={urllib.parse.quote(q)}&per_page=3&orientation=portrait", headers={"Authorization": pexels_key.strip()}, timeout=5).json()
+                    r = requests.get(f"https://api.pexels.com/videos/search?query={urllib.parse.quote(q)}&per_page=10&orientation=portrait", headers={"Authorization": pexels_key.strip()}, timeout=5).json()
                     if r.get('videos'):
                         v_url = random.choice(r['videos'])['video_files'][0]['link']
                         break
@@ -124,20 +142,21 @@ if orden := st.chat_input("Dime el tema (Garantizo castellano perfecto):"):
             try:
                 if not v_url: raise Exception()
                 with open(f"clip_{i}.mp4", 'wb') as f: f.write(requests.get(v_url, timeout=10).content)
-                subprocess.run(f'ffmpeg -y -i "clip_{i}.mp4" -vf "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,fps=30" -an -c:v libx264 -preset ultrafast -t {dur + 0.2} "p_{i}.mp4"', shell=True)
+                subprocess.run(f'ffmpeg -y -i "clip_{i}.mp4" -vf "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,fps=30" -an -c:v libx264 -preset ultrafast -t {dur + 0.1} "p_{i}.mp4"', shell=True)
                 last_clip = f"p_{i}.mp4"
             except:
                 if last_clip: subprocess.run(f"cp {last_clip} p_{i}.mp4", shell=True)
                 else: subprocess.run(f'ffmpeg -y -f lavfi -i color=c=black:s=720x1280:d=2:r=30 -c:v libx264 -preset ultrafast p_{i}.mp4', shell=True)
             clips_finales.append(f"p_{i}.mp4")
 
-        # 4. Subtítulos
+        # 5. Subtítulos Cinematográficos Sincronizados
+        status.write("✨ Montando Master Final en HD...")
         subs_cmd = []
         for i, escena in enumerate(escenas):
             subs_cmd.append(f"drawtext=text='{escena['text']}':fontcolor={color_sub}:fontsize=32:fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:borderw=3:bordercolor=black:shadowcolor=black:shadowx=2:shadowy=2:x=(w-tw)/2:y=(h-th)/2:enable='between(t,{escena['start']},{escena['end']})'")
         with open("subs_filter.txt", "w") as f: f.write(",\n".join(subs_cmd))
 
-        # 5. Exportación
+        # 6. Exportación Final
         with open("lista.txt", "w") as f:
             for c in clips_finales: f.write(f"file '{c}'\n")
         
@@ -149,5 +168,6 @@ if orden := st.chat_input("Dime el tema (Garantizo castellano perfecto):"):
         subprocess.run(f'ffmpeg -y -i base.mp4 -i temp_a.mp3 -filter_complex_script subs_filter.txt -c:v libx264 -preset veryfast -b:v 3000k -shortest "{v_final}"', shell=True)
         
         if os.path.exists(v_final):
-            st.success("✅ Video Finalizado con Idioma Correcto.")
+            st.success("✅ Obra Maestra Lógica Finalizada con Éxito.")
             st.video(v_final)
+            st.balloons()
