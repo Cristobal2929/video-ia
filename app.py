@@ -14,7 +14,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 def buscar_y_descargar_pexels(query, api_key, output_filename="clip_base.mp4"):
-    # Buscamos directamente lo que escribas en la caja (funciona mejor en inglés)
+    # Búsqueda directa de lo que tú escribas
     url = f"https://api.pexels.com/videos/search?query={query}&per_page=15&orientation=portrait"
     headers = {"Authorization": api_key.strip()}
 
@@ -25,7 +25,7 @@ def buscar_y_descargar_pexels(query, api_key, output_filename="clip_base.mp4"):
             
         data = res.json()
         if not data.get('videos') or len(data['videos']) == 0:
-            return f"Pexels no encontró vídeos para la búsqueda: '{query}'"
+            return f"Pexels no encontró vídeos para: '{query}'"
             
         video_info = random.choice(data['videos'])
         archivos = video_info['video_files']
@@ -76,13 +76,11 @@ st.markdown('<div class="stHeader"><h1>🎬 FÉNIX AI STUDIO</h1><p>Producción 
 
 with st.sidebar:
     st.header("⚙️ Configuración")
-    
     pexels_key = st.text_input("🔑 Tu Clave API de Pexels:", value="Ty0uFISh3APEAXIVcrFpSM7ZdwOeRElCuUgoG42EW6WVISRTEfqjm0BZ", type="password")
-    
     st.markdown("---")
     
-    # NUEVA CAJA PARA BUSCAR CUALQUIER COSA
-    tema_fondo = st.text_input("🔍 ¿Qué vídeo quieres de fondo?", value="luxury car", help="Escribe en INGLÉS para obtener resultados mucho mejores (ej: sports car, money, gym...)")
+    # Única caja de búsqueda
+    tema_fondo = st.text_input("🔍 ¿Qué vídeo quieres de fondo?", value="luxury car", help="Escribe en INGLÉS (ej: sports car, nature, money)")
     
     color_sub = st.color_picker("🎨 Color Subtítulos", "#00FFFF")
     hc = color_sub.lstrip('#')
@@ -108,7 +106,6 @@ if st.button("🚀 INICIAR PRODUCCIÓN AUTOMÁTICA"):
             status.write("🔊 Generando voz neural...")
             subprocess.run(f'edge-tts --voice {voz} --text "{guion_final}" --write-media "t.mp3" --write-subtitles "t.vtt"', shell=True)
             
-            # Ahora busca tu palabra clave exacta
             status.write(f"🌍 Buscando vídeos de '{tema_fondo}' en Pexels...")
             
             resultado_pexels = buscar_y_descargar_pexels(tema_fondo, pexels_key, clip_base)
@@ -128,6 +125,6 @@ if st.button("🚀 INICIAR PRODUCCIÓN AUTOMÁTICA"):
                             st.download_button("📥 DESCARGAR VIDEO", f.read(), file_name=f"Fenix_Auto_{uid}.mp4")
                         status.update(label="✅ ¡Vídeo Creado con Éxito!", state="complete")
                     else:
-                        st.error("❌ Fallo en la edición. Inténtalo de nuevo.")
+                        st.error("❌ Fallo en la edición.")
             else:
                 st.error(f"❌ {resultado_pexels}")
