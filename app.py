@@ -2,28 +2,26 @@ import streamlit as st
 import os, time, random, subprocess, textwrap, re, urllib.parse
 import requests
 
-st.set_page_config(page_title="Fénix Viral PRO | V28", layout="centered")
+st.set_page_config(page_title="Fénix Viral PRO | V29", layout="centered")
 
 st.markdown("""
 <style>
     .stApp { background: linear-gradient(135deg, #09090b 0%, #111827 100%); color: #F8FAFC; }
-    .pro-title { font-size: 38px; font-weight: 900; background: -webkit-linear-gradient(45deg, #FF0000, #FF8C00); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: center; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 2px;}
-    .stTextInput>div>div>input { background-color: #1F2937; color: white; border: 1px solid #FF0000; border-radius: 8px; font-weight: bold; }
+    .pro-title { font-size: 38px; font-weight: 900; background: -webkit-linear-gradient(45deg, #00FF00, #00BFFF); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: center; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 2px;}
+    .stTextInput>div>div>input { background-color: #1F2937; color: white; border: 1px solid #00FF00; border-radius: 8px; font-weight: bold; }
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX AI STUDIO v28.0</div>', unsafe_allow_html=True)
-st.markdown('<div class="pro-subtitle" style="text-align:center; color:#94A3B8; margin-bottom: 30px;">Modo Dios • Fuente Integrada • Motor Infalible</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX AI STUDIO v29.0</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-subtitle" style="text-align:center; color:#94A3B8; margin-bottom: 30px;">Nube Blindada • Motor de Voz Anti-Bloqueos • Cero Errores</div>', unsafe_allow_html=True)
 
-# --- DESCARGA DE FUENTE SEGURA (La clave para evitar que Streamlit explote) ---
+# Descarga de fuente oficial para evitar fallos de renderizado
 font_path = "Arial.ttf"
 if not os.path.exists(font_path):
     try:
-        r_font = requests.get("https://github.com/matomo-org/travis-scripts/raw/master/fonts/Arial.ttf")
-        with open(font_path, "wb") as f:
-            f.write(r_font.content)
-    except:
-        pass # Si falla, FFmpeg intentará usar la que tenga por defecto
+        r_font = requests.get("https://github.com/matomo-org/travis-scripts/raw/master/fonts/Arial.ttf", timeout=5)
+        with open(font_path, "wb") as f: f.write(r_font.content)
+    except: pass
 
 def limpiar_orden(orden):
     basura = ["hazme", "haz", "arme", "asme", "dame", "dime", "un", "una", "el", "la", "los", "las", "video", "quiero", "sobre", "de", "del", "que", "hable", "como", "para"]
@@ -68,18 +66,18 @@ def generar_base_director(tema, nicho):
 with st.sidebar:
     st.header("⚙️ Configuración Pro")
     pexels_key = st.text_input("🔑 API Pexels:", value="Ty0uFISh3APEAXIVcrFpSM7ZdwOeRElCuUgoG42EW6WVISRTEfqjm0BZ", type="password")
-    color_sub = st.selectbox("🎨 Color de Letra", ["yellow", "white", "cyan", "#00FF87"])
+    color_sub = st.selectbox("🎨 Color de Letra", ["yellow", "white", "cyan", "#00FF00"])
 
-if orden := st.chat_input("Dime el tema (Modo Dios Activado):"):
-    with st.status(f"🚀 Renderizando '{orden}' sin excusas...", expanded=True) as status:
-        # Limpieza nuclear
-        subprocess.run("rm -f a_*.mp3 v_*.mp4 s_*.mp4 text_*.txt lista.txt music.mp3 final.mp4 base.mp4", shell=True)
+if orden := st.chat_input("Dime el tema (Motor de Voz Anti-Bloqueos):"):
+    with st.status(f"🚀 Renderizando '{orden}' sin fallos...", expanded=True) as status:
+        # Limpieza absoluta de temporales anteriores
+        subprocess.run("rm -f a_*.mp3 v_*.mp4 s_*.mp4 text_*.txt guion_*.txt lista.txt music.mp3 final.mp4 base.mp4", shell=True)
         
         tema_limpio = limpiar_orden(orden)
         nicho = detectar_nicho(orden)
         escenas = generar_base_director(tema_limpio, nicho)
         
-        status.write("🧠 Estructura cargada.")
+        status.write("🧠 Estructura cargada correctamente.")
         clips_finales = []
 
         for i, esc in enumerate(escenas):
@@ -87,32 +85,40 @@ if orden := st.chat_input("Dime el tema (Modo Dios Activado):"):
             busqueda_pexels = esc["s"]
             status.write(f"🎬 Forjando Escena {i+1}/5...")
 
-            # 1. AUDIO NATIVO Y BLINDADO
+            # 1. AUDIO BLINDADO (Sin shell=True, leyendo desde archivo de texto)
+            # Guardamos la frase en un archivo TXT físico
+            with open(f"guion_{i}.txt", "w", encoding="utf-8") as f:
+                f.write(texto_frase)
+                
             exito_voz = False
             for intento in range(3):
-                subprocess.run(f'edge-tts --voice es-ES-AlvaroNeural --rate=0% --text "{texto_frase}" --write-media "a_{i}.mp3"', shell=True)
+                # Llamada nativa de Python (imposible que el servidor bloquee caracteres)
+                comando_voz = ["python", "-m", "edge_tts", "--voice", "es-ES-AlvaroNeural", "--rate=0%", "-f", f"guion_{i}.txt", "--write-media", f"a_{i}.mp3"]
+                subprocess.run(comando_voz) # Aquí shell=False funciona por defecto
+                
                 if os.path.exists(f"a_{i}.mp3") and os.path.getsize(f"a_{i}.mp3") > 0:
                     exito_voz = True
                     break
-                time.sleep(1)
+                time.sleep(2)
             
             if not exito_voz:
-                st.error("Error en la voz. El servidor de Microsoft rechazó la conexión. Intenta de nuevo.")
+                st.error(f"Error crítico en la escena {i+1}. Los servidores de voz están caídos o bloqueados. Intenta de nuevo.")
                 st.stop()
             
+            # Obtener duración del audio
             try:
                 dur_str = subprocess.check_output(f"ffprobe -i a_{i}.mp3 -show_entries format=duration -v quiet -of csv='p=0'", shell=True).decode('utf-8').strip()
                 duracion_exacta = float(dur_str)
             except:
                 duracion_exacta = 3.5
                 
-            # 2. TEXTO LIMPIO PARA FFmpeg
+            # 2. TEXTO LIMPIO PARA SUBTÍTULOS
             texto_mayus = re.sub(r'[^A-Z0-9\s.,]', '', texto_frase.upper())
             texto_envuelto = textwrap.fill(texto_mayus, width=20)
             with open(f"text_{i}.txt", "w", encoding="utf-8") as f:
                 f.write(texto_envuelto)
 
-            # 3. VÍDEO SEGURO
+            # 3. VÍDEO PEXELS
             v_url = None
             try:
                 r = requests.get(f"https://api.pexels.com/videos/search?query={urllib.parse.quote(busqueda_pexels)}&per_page=5&orientation=portrait", headers={"Authorization": pexels_key.strip()}, timeout=5).json()
@@ -125,25 +131,22 @@ if orden := st.chat_input("Dime el tema (Modo Dios Activado):"):
             except:
                 subprocess.run(f'ffmpeg -y -f lavfi -i color=c=black:s=720x1280:d=1:r=30 -c:v libx264 -preset ultrafast v_{i}.mp4', shell=True)
 
-            # 4. EL RENDERIZADOR DIOS (Usamos la fuente descargada 'Arial.ttf' para evitar crashes en la nube)
+            # 4. PLANCHADO RENDERIZADO
             font_cmd = "fontfile='Arial.ttf':" if os.path.exists("Arial.ttf") else ""
-            
             cmd_planchado = f"""ffmpeg -y -stream_loop -1 -i v_{i}.mp4 -i a_{i}.mp3 -vf "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,format=yuv420p,drawtext=textfile='text_{i}.txt':fontcolor={color_sub}:fontsize=45:{font_cmd}box=1:boxcolor=black@0.6:boxborderw=15:borderw=2:bordercolor=black:line_spacing=12:x=(w-tw)/2:y=(h-th)/2" -c:v libx264 -preset ultrafast -r 30 -c:a aac -ar 44100 -ac 2 -t {duracion_exacta} s_{i}.mp4"""
             subprocess.run(cmd_planchado, shell=True)
             
-            # Verificación de que el clip no se ha roto
             if os.path.exists(f"s_{i}.mp4"):
                 clips_finales.append(f"s_{i}.mp4")
 
         # 5. UNIÓN INDESTRUCTIBLE
-        status.write("✨ Soldando el vídeo final...")
+        status.write("✨ Montando el Máster Final...")
         with open("lista.txt", "w") as f:
             for c in clips_finales: f.write(f"file '{c}'\n")
             
-        # Unimos asegurando compatibilidad de vídeo
         subprocess.run('ffmpeg -y -f concat -safe 0 -i lista.txt -c:v copy -c:a aac -ar 44100 -ac 2 base.mp4', shell=True)
         
-        # 6. AUDIO Y EMPAQUETADO FINAL
+        # 6. AUDIO MUSICAL Y EMPAQUETADO
         frecuencia = 60 if nicho == "TERROR" else 75
         v_final = f"output/v_{int(time.time())}.mp4"
         
@@ -151,8 +154,8 @@ if orden := st.chat_input("Dime el tema (Modo Dios Activado):"):
         subprocess.run(cmd_final, shell=True)
         
         if os.path.exists(v_final):
-            st.success("✅ VÍDEO CREADO. Cero errores garantizado.")
+            st.success("✅ VÍDEO COMERCIAL CREADO. Motor de Voz estabilizado.")
             st.video(v_final)
             st.balloons()
         else:
-            st.error("Ha ocurrido un error en el ensamblaje final. Revisa los permisos de la nube.")
+            st.error("Error en el renderizado final. Revisa Streamlit Cloud.")
