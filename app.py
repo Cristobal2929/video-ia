@@ -16,43 +16,45 @@ st.markdown("""
 PEXELS_API_KEY = "Ty0uFlSh3APEAXIVcrFpSM7ZdwOeRElCuUgoG42EW6WVISRTEfqjmOBZ"
 
 def buscar_y_descargar_pexels(nicho, output_filename="clip_base.mp4"):
-    # Traducimos a inglés para encontrar material de alta calidad
+    # Búsquedas más simples para asegurar que siempre haya resultados
     terminos = {
-        "Negocio": "business success money office",
-        "Dieta": "healthy food fitness workout",
-        "Historia": "ancient history vintage architecture"
+        "Negocio": "business",
+        "Dieta": "fitness",
+        "Historia": "history"
     }
     query = terminos.get(nicho, "abstract")
-    # Pedimos videos verticales (portrait)
     url = f"https://api.pexels.com/videos/search?query={query}&per_page=15&orientation=portrait"
     headers = {"Authorization": PEXELS_API_KEY}
 
     try:
         res = requests.get(url, headers=headers)
-        if res.status_code == 200:
-            data = res.json()
-            if data.get('videos'):
-                video_info = random.choice(data['videos'])
-                archivos = video_info['video_files']
-                link_descarga = None
+        if res.status_code != 200:
+            return f"Acceso denegado o error API: {res.status_code} - {res.text}"
+            
+        data = res.json()
+        if not data.get('videos') or len(data['videos']) == 0:
+            return f"Pexels no encontró ningún vídeo para la palabra: {query}"
+            
+        video_info = random.choice(data['videos'])
+        archivos = video_info['video_files']
+        link_descarga = None
+        
+        # Buscar el mejor formato mp4 ligero
+        for archivo in archivos:
+            if archivo['file_type'] == 'video/mp4' and 480 <= archivo['height'] <= 1920:
+                link_descarga = archivo['link']
+                break
                 
-                # Buscamos una calidad media (HD o SD) para no saturar el servidor
-                for archivo in archivos:
-                    if 480 <= archivo['height'] <= 1920:
-                        link_descarga = archivo['link']
-                        break
-                if not link_descarga:
-                    link_descarga = archivos[0]['link']
+        if not link_descarga:
+            link_descarga = archivos[0]['link']
 
-                # Descargamos el video
-                r = requests.get(link_descarga, stream=True)
-                with open(output_filename, 'wb') as f:
-                    for chunk in r.iter_content(chunk_size=1024*1024):
-                        if chunk: f.write(chunk)
-                return output_filename
+        r = requests.get(link_descarga, stream=True)
+        with open(output_filename, 'wb') as f:
+            for chunk in r.iter_content(chunk_size=1024*1024):
+                if chunk: f.write(chunk)
+        return True
     except Exception as e:
-        print(f"Error descargando de Pexels: {e}")
-    return None
+        return f"Error interno: {str(e)}"
 
 def transformar_srt(vtt_path, srt_path):
     try:
@@ -105,7 +107,11 @@ if st.button("🚀 INICIAR PRODUCCIÓN AUTOMÁTICA"):
             subprocess.run(f'edge-tts --voice {voz} --text "{guion_final}" --write-media "t.mp3" --write-subtitles "t.vtt"', shell=True)
             
             status.write(f"🌍 Buscando vídeos de '{nicho}' en Pexels...")
-            if buscar_y_descargar_pexels(nicho, clip_base):
+            
+            # Aquí controlamos si Pexels nos dio el vídeo o nos dio un error
+            resultado_pexels = buscar_y_descargar_pexels(nicho, clip_base)
+            
+            if resultado_pexels is True:
                 if transformar_srt("t.vtt", "t.srt"):
                     status.write("🎬 Editando y uniendo capas...")
                     est = f"Fontname=Impact,FontSize=26,PrimaryColour={ass_color},Outline=2,Alignment=2,MarginV=120"
@@ -122,4 +128,5 @@ if st.button("🚀 INICIAR PRODUCCIÓN AUTOMÁTICA"):
                     else:
                         st.error("❌ Fallo en la edición. Inténtalo de nuevo.")
             else:
-                st.error("❌ No se pudo descargar el vídeo de Pexels. Revisa la conexión.")
+                # Mostrará el texto rojo con el ERROR EXACTO
+                st.error(f"❌ Fallo al conectar con Pexels: {resultado_pexels}")
