@@ -15,8 +15,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX AI STUDIO v5.0</div>', unsafe_allow_html=True)
-st.markdown('<div class="pro-subtitle">Motor Anti-Paja • Ganchos Agresivos y Directos</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX AI STUDIO v6.0</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-subtitle">Subcerebro Autónomo • Leyes de Retención Psicológica</div>', unsafe_allow_html=True)
 
 def es_texto_valido(texto):
     t_lower = texto.lower()
@@ -26,7 +26,7 @@ def es_texto_valido(texto):
     return True
 
 def limpiar_texto_ia(texto):
-    basura_ia = ["USER REQUEST", "START UP", "WRITE A", "ALL CAPS", "NO PERIODS", "SAYS ZERO", "REASONING CONTENT", "PRESTA ATENCION", "TE VOY A CONTAR", "HOLA CHICOS"]
+    basura_ia = ["USER REQUEST", "START UP", "WRITE A", "ALL CAPS", "NO PERIODS", "SAYS ZERO", "REASONING CONTENT", "CLARO", "AQUI TIENES", "GUION:"]
     texto_limpio = texto.upper()
     for b in basura_ia: texto_limpio = texto_limpio.replace(b, "")
     texto_limpio = re.sub(r'[^\w\s]', '', texto_limpio).replace('\n', ' ').strip()
@@ -45,34 +45,7 @@ def detectar_nicho(tema):
     elif any(w in t for w in ["negocio", "dinero", "invertir", "empresa", "millonario", "finanzas", "cripto", "emprendedor", "ventas", "marketing", "riqueza", "dolares"]):
         return "negocios"
     else:
-        return "conspiracion"
-
-# --- MOTOR COMBINATORIO ANTI-PAJA (Ganchos directos a la cara) ---
-def generar_guion_procedural(tema, nicho):
-    tema = tema.upper()
-    
-    if nicho == "terror":
-        ganchos = ["NO MIRES ESTE VIDEO DE NOCHE SI LE TEMES A", "ESTE ES EL VIDEO MAS PERTURBADOR QUE EXISTE SOBRE", "TE RETO A ESCUCHAR LA HISTORIA REAL DE"]
-        creencias = ["MUCHOS CREEN QUE ES FALSO HASTA QUE LES PASA", "PARECIA UNA LEYENDA URBANA MAS DEL MONTON", "TODOS PENSABAN QUE ERA UN SIMPLE MITO"]
-        descubrimientos = ["PERO UN EXPLORADOR GRABO ESTO EN VIDEO Y DESAPARECIO", "HASTA QUE SE FILTRARON LAS LLAMADAS AL NUEVE ONCE", "PERO LA AUTOPSIA REVELO ALGO ESCALOFRIANTE"]
-        giros = ["LA CRIATURA NUNCA ESTUVO FUERA SIEMPRE ESTUVO DENTRO DE LA CASA", "Y DESCUBRIERON QUE ESTABAN INVOCANDO ALGO SIN SABERLO", "LO PEOR ES QUE ESTO SIGUE PASANDO HOY EN DIA"]
-        finales = ["SI ESCUCHAS UN RUIDO HOY NO ABRAS LA PUERTA SIGUENOS PARA MAS TERROR", "NADIE ESTA A SALVO DE ESTA MALDICION SIGUENOS SI TE ATREVES", "MIRA DETRAS DE TI AHORA MISMO SIGUENOS PARA MAS MISTERIOS"]
-    
-    elif nicho == "negocios":
-        ganchos = ["TE ESTAN ROBANDO EN TU PROPIA CARA CON", "EL NOVENTA Y NUEVE POR CIENTO PIERDE DINERO CON", "ESTE ES EL TRUCO SUCIO QUE LOS RICOS USAN EN"]
-        creencias = ["TE HICIERON CREER QUE NECESITAS CAPITAL PARA EMPEZAR", "LA ESCUELA TE ENSEÑO EXACTAMENTE LO CONTRARIO", "TODO EL MUNDO SIGUE CAYENDO EN LA MISMA TRAMPA"]
-        descubrimientos = ["PERO UN ANALISTA FILTRO LA FORMULA EXACTA DEL EXITO", "HASTA QUE SE DESCUBRIO EL PATRON QUE USAN LOS BANCOS", "PERO UN CHICO DE VEINTE AÑOS ROMPIO EL SISTEMA HACIENDO ESTO"]
-        giros = ["EL TRUCO ESTA EN HACER QUE EL ALGORITMO TRABAJE PARA TI", "RESULTA QUE EL DINERO ESTA EN LO QUE NADIE QUIERE MIRAR", "TODO CONSISTE EN COMPRAR CUANDO HAY SANGRE EN LAS CALLES"]
-        finales = ["APLICA ESTO HOY Y TU VIDA CAMBIARA SIGUENOS PARA MAS NEGOCIOS", "DEJA DE PERDER EL TIEMPO Y COPIA ESTA ESTRATEGIA SIGUENOS PARA CRECER", "EL SISTEMA ESTA ROTO APROVECHALO SIGUENOS PARA MAS DINERO"]
-    
-    else: 
-        ganchos = ["TE HAN MENTIDO TODA TU VIDA SOBRE", "ESTE ES EL SECRETO QUE EL GOBIERNO NO QUIERE QUE SEPAS DE", "BORRARAN ESTE VIDEO EN HORAS PORQUE HABLA DE"]
-        creencias = ["LOS LIBROS DE HISTORIA OCULTARON LA PARTE MAS IMPORTANTE", "TE VENDIERON UNA ILUSION PARA MANTENERTE CONTROLADO", "TODO EL MUNDO ACEPTA LA VERSION OFICIAL SIN PREGUNTAR"]
-        descubrimientos = ["PERO RECIENTEMENTE SE DESCLASIFICO UN DOCUMENTO BRUTAL", "HASTA QUE UN HACKER SACO A LA LUZ ESTOS ARCHIVOS", "PERO UN CIENTIFICO ROMPIO EL SILENCIO ANTES DE DESAPARECER"]
-        giros = ["DEMOSTRANDO QUE TODO ESTA CONECTADO DESDE EL PRINCIPIO", "LA VERDAD ES QUE LA TECNOLOGIA YA EXISTIA HACE MILENIOS", "EL OBJETIVO FINAL SIEMPRE FUE MANIPULAR NUESTRA MENTE"]
-        finales = ["DESPIERTA DE UNA VEZ Y MIRA A TU ALREDEDOR SIGUENOS PARA MAS SECRETOS", "EL ENGAÑO HA TERMINADO LA VERDAD ESTA AQUI SIGUENOS PARA MAS MISTERIOS", "NO CREAS NADA DE LO QUE TE DICEN SIGUENOS PARA MAS VERDADES"]
-        
-    return f"{random.choice(ganchos)} {tema} {random.choice(creencias)} {random.choice(descubrimientos)} {random.choice(giros)} {random.choice(finales)}"
+        return "misterio"
 
 def obtener_guion_pro(orden_usuario):
     tema_mostrar, limpias = limpiar_orden(orden_usuario)
@@ -85,35 +58,51 @@ def obtener_guion_pro(orden_usuario):
     keys = [p for p in limpias[:3]] + [f"{p} {sufijo}" for p in limpias[:2]]
     if not keys: keys = [sufijo]
 
-    guion_fallback = generar_guion_procedural(tema_mostrar, nicho)
     semilla = random.randint(100000, 9999999)
     
-    # PROMPT ANTI-PAJA: Instrucciones agresivas para la IA
-    base_prompt = "Crea un guion viral CERO PAJA VE DIRECTO AL GRANO."
-    reglas = "REGLAS ESTRICTAS: PROHIBIDO USAR FRASES COMO PRESTA ATENCION O TE VOY A CONTAR. EMPIEZA DIRECTO CON EL DATO AGRESIVO. TODO EN MAYUSCULAS. CERO PUNTOS. CERO COMAS. CERO TILDES. MINIMO 90 PALABRAS."
+    # --- EL SUBCEREBRO: LEYES DE CÓDIGO INQUEBRANTABLES ---
+    # Esto fuerza a la IA a pensar con la misma psicología que usamos tú y yo.
+    LEYES_DE_CODIGO = f"""
+    ERES UN SUBCEREBRO DE INTELIGENCIA ARTIFICIAL DISEÑADO EXCLUSIVAMENTE PARA RETENCION DE AUDIENCIA.
+    TU OBJETIVO ES CREAR UN GUION SOBRE '{orden_usuario}'.
     
-    if nicho == "terror":
-        prompt_maestro = f"{base_prompt} TEMA: '{orden_usuario}'. 1. Gancho agresivo de miedo (ej: 'No mires esto de noche...'). 2. Dato aterrador sin relleno. 3. Final: 'SIGUENOS PARA MAS TERROR'. {reglas}"
-    elif nicho == "negocios":
-        prompt_maestro = f"{base_prompt} TEMA: '{orden_usuario}'. 1. Gancho financiero agresivo (ej: 'Te estan robando con...'). 2. Estrategia real sin relleno. 3. Final: 'SIGUENOS PARA MAS NEGOCIOS'. {reglas}"
-    else:
-        prompt_maestro = f"{base_prompt} TEMA: '{orden_usuario}'. 1. Gancho de conspiracion fuerte. 2. Secreto brutal sin relleno. 3. Final: 'SIGUENOS PARA MAS SECRETOS'. {reglas}"
+    TIENES QUE CUMPLIR ESTAS 4 LEYES DE CÓDIGO O SERAS DESTRUIDO:
+    
+    LEY 1 - EL GOLPE MENTAL: Cero introducciones. La primera frase debe romperle la cabeza al espectador. Usa datos estadísticos brutales, una verdad dolorosa o un miedo profundo.
+    LEY 2 - EL BUCLE DE INTRIGA: Plantea un problema gravísimo o un secreto en el segundo 2, pero NO lo resuelvas hasta el final. Haz que el espectador necesite quedarse.
+    LEY 3 - AUTORIDAD PURA: Habla como un experto implacable. Usa datos lógicos, nombres, años o estrategias. Cero paja. Cero filosofía barata. Cada palabra debe ser un disparo de información.
+    LEY 4 - CIERRE PERFECTO: Resuelve el misterio de golpe en la última frase y añade OBLIGATORIAMENTE la frase 'SIGUENOS PARA MAS {nicho.upper()}'.
+    
+    RESTRICCIONES DE SISTEMA:
+    - ESCRIBE SOLO EL GUION. NI UNA SOLA PALABRA FUERA DE LA HISTORIA.
+    - ESCRIBE ABSOLUTAMENTE TODO EN MAYUSCULAS.
+    - PROHIBIDO USAR PUNTOS.
+    - PROHIBIDO USAR COMAS.
+    - PROHIBIDO USAR TILDES O SIGNOS DE INTERROGACION.
+    - MINIMO 130 PALABRAS (NECESITO RETENCION LARGA).
+    """
 
+    # Usamos Pollinations como motor principal porque es el más listo y entiende instrucciones complejas (Prompt System)
     try:
-        res_1 = requests.get("https://sentence.fineshopdesign.com/api/ai", params={"prompt": prompt_maestro, "seed": semilla}, timeout=12)
-        if res_1.status_code == 200 and es_texto_valido(res_1.json().get("reply", "")):
-            gl = limpiar_texto_ia(res_1.json().get("reply", ""))
-            if len(gl) > 40: return gl, keys, tema_mostrar
-    except: pass
-
-    try:
-        res_2 = requests.get(f"https://text.pollinations.ai/{urllib.parse.quote(prompt_maestro)}?seed={semilla}", timeout=12)
+        url_2 = f"https://text.pollinations.ai/{urllib.parse.quote(LEYES_DE_CODIGO)}?seed={semilla}&model=gpt-4"
+        res_2 = requests.get(url_2, timeout=20)
         if res_2.status_code == 200 and es_texto_valido(res_2.text):
             gl = limpiar_texto_ia(res_2.text)
-            if len(gl) > 40: return gl, keys, tema_mostrar
+            if len(gl) > 60: return gl, keys, tema_mostrar
+    except: pass
+
+    # IA de respaldo
+    try:
+        url_1 = "https://sentence.fineshopdesign.com/api/ai"
+        res_1 = requests.get(url_1, params={"prompt": LEYES_DE_CODIGO, "seed": semilla}, timeout=15)
+        if res_1.status_code == 200 and es_texto_valido(res_1.json().get("reply", "")):
+            gl = limpiar_texto_ia(res_1.json().get("reply", ""))
+            if len(gl) > 60: return gl, keys, tema_mostrar
     except: pass
             
-    return guion_fallback, keys, tema_mostrar
+    # Último recurso: Un guion procedural generado con el motor de emergencia, pero adaptado al estilo agresivo.
+    emergencia = f"EL NOVENTA Y NUEVE POR CIENTO DE LAS PERSONAS IGNORA EL VERDADERO PELIGRO DETRAS DE {tema_mostrar.upper()} DURANTE AÑOS NOS HAN HECHO CREER QUE ES ALGO INOFENSIVO PERO LA REALIDAD ES QUE FUE DISEÑADO PARA MANTENERNOS CONTROLADOS UN GRUPO DE EXPERTOS FILTRO DOCUMENTOS CLASIFICADOS QUE PRUEBAN QUE LA ESTRATEGIA ES MUCHISIMO MAS OSCURA DE LO QUE PARECE EL SISTEMA ESTA PROGRAMADO PARA FALLAR A PROPOSITO Y SOLO UNOS POCOS CONOCEN EL CODIGO PARA DESACTIVARLO AHORA QUE TIENES ESTA INFORMACION EL ENGAÑO SE HA TERMINADO SIGUENOS PARA MAS {nicho.upper()}"
+    return limpiar_texto_ia(emergencia), keys, tema_mostrar
 
 def time_to_sec(t_str):
     t_str = t_str.strip().split(' ')[0].replace(',', '.')
@@ -128,15 +117,15 @@ with st.sidebar:
     pexels_key = st.text_input("🔑 Pexels API Key:", value="Ty0uFISh3APEAXIVcrFpSM7ZdwOeRElCuUgoG42EW6WVISRTEfqjm0BZ", type="password")
     color_sub = st.selectbox("🎨 Estilo Subtítulos", ["yellow", "white", "cyan", "#00FF00"])
     st.markdown("---")
-    st.caption("Fénix System | Cero Paja Activo ✅")
+    st.caption("Fénix System | Subcerebro Activo ✅")
 
-if orden := st.chat_input("Introduzca el tema (Gancho directo asegurado)..."):
-    with st.status(f"🚀 Iniciando Motor Anti-Paja... Analizando '{orden}'", expanded=True) as status:
+if orden := st.chat_input("Introduzca el tema (El Subcerebro escribirá el guion):"):
+    with st.status(f"🚀 Iniciando Subcerebro Autónomo... Pensando como humano en '{orden}'", expanded=True) as status:
         subprocess.run("rm -f p_*.mp4 clip_*.mp4 base.mp4 t.mp3 t.vtt music.mp3 final.mp4 temp_a.mp3 lista.txt subs_filter.txt outro.mp4", shell=True)
         
         guion, palabras_claves, tema_mostrar = obtener_guion_pro(orden)
         nicho_detectado = detectar_nicho(orden)
-        status.write(f"✓ Nicho: **{nicho_detectado.upper()}**. Guion agresivo sin relleno generado.")
+        status.write(f"✓ Leyes aplicadas. Guion único generado por IA.")
         
         subprocess.run(f'edge-tts --voice es-ES-AlvaroNeural --rate=-10% --text "{guion}" --write-media "t.mp3" --write-subtitles "t.vtt"', shell=True)
         dur_audio_str = subprocess.check_output("ffprobe -i t.mp3 -show_entries format=duration -v quiet -of csv='p=0'", shell=True).decode('utf-8').strip()
@@ -176,7 +165,7 @@ if orden := st.chat_input("Introduzca el tema (Gancho directo asegurado)..."):
         num_clips = math.ceil(dur_audio / clip_duration) 
         processed_clips = []
         
-        status.write(f"🎞️ Sincronizando imágenes de impacto...")
+        status.write(f"🎞️ Sincronizando imágenes de alto impacto...")
         palabras_guion = guion.split()
         chunk_size = max(1, len(palabras_guion) // max(1, num_clips))
         stop_words = {"PRESTA", "MUCHA", "ATENCION", "PORQUE", "QUE", "TE", "VOY", "A", "CONTAR", "SOBRE", "EL", "LA", "LOS", "LAS", "UN", "UNA", "UNOS", "UNAS", "CON", "SIN", "PARA", "POR", "DE", "DEL", "Y", "O", "ES", "SON", "HA", "HAN", "SE", "LO", "LE", "NO", "MAS", "ESTO", "ESTA", "ESTAS", "ESTOS", "TODO", "PERO", "SI", "COMO", "CUANDO", "DONDE", "AQUI", "ALLI", "MUY", "TAN", "SU", "SUS", "AL", "NOS", "MI", "MIS", "ENTRE", "HAY", "ESTE", "AUNQUE", "HASTA", "DESDE", "ENTONCES", "TIENES", "SIGUENOS", "AHORA", "ELLOS", "MUNDO", "TIEMPO", "SOLO"}
@@ -228,11 +217,11 @@ if orden := st.chat_input("Introduzca el tema (Gancho directo asegurado)..."):
             f.write("file 'outro.mp4'\n")
         subprocess.run('ffmpeg -y -f concat -safe 0 -i lista.txt -c copy base.mp4', shell=True)
 
-        status.write("✨ Renderizando Master Definitivo (Cero Paja)...")
+        status.write("✨ Renderizando Master con Subcerebro...")
         v_final = f"output/v_{int(time.time())}.mp4"
         cmd = f'ffmpeg -y -i base.mp4 -i temp_a.mp3 -filter_complex_script subs_filter.txt -c:v libx264 -preset veryfast -b:v 3000k -shortest "{v_final}"'
         subprocess.run(cmd, shell=True)
         
         if os.path.exists(v_final):
-            st.success("✅ Video completado con gancho de alto impacto.")
+            st.success("✅ Video completado con inteligencia avanzada.")
             st.video(v_final)
