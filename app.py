@@ -1,10 +1,10 @@
 import streamlit as st
 import os, time, random, subprocess, requests, math, re
+import urllib.parse
 
 st.set_page_config(page_title="Fénix Viral PRO", layout="centered")
 st.markdown("<style>.stApp {background: #0d1117; color: white;}</style>", unsafe_allow_html=True)
 
-# 1. FILTRO DE PALABRAS BASURA
 def limpiar_orden(orden):
     basura = ["hazme", "haz", "arme", "asme", "un", "una", "el", "la", "los", "las", "video", "vídeo", "videos", "quiero", "sobre", "de", "del", "historia", "que", "hable"]
     palabras = orden.lower().split()
@@ -13,30 +13,38 @@ def limpiar_orden(orden):
 
 def obtener_guion_pro(orden_usuario):
     tema_limpio = limpiar_orden(orden_usuario)
-    
-    # Palabras clave para Pexels (mezcla español con modificadores épicos en inglés)
     keys = [f"{tema_limpio} cinematic", f"{tema_limpio} epic", "ancient mystery", "dark secret"]
     
-    prompt_maestro = f"Eres el mejor guionista de TikTok. TAREA: Escribe una historia fascinante sobre: {tema_limpio}. ESTRUCTURA: 1. Gancho brutal. 2. Desarrollo profundo con datos historicos o increibles reales. 3. Final impactante. REGLAS: MINIMO 120 PALABRAS. ESCRIBE TODO EN MAYUSCULAS. CERO PUNTOS. CERO COMAS. CERO TILDES. SOLO TEXTO."
+    prompt_maestro = f"Eres el mejor guionista de TikTok. TAREA: Escribe una historia fascinante sobre: {tema_limpio}. ESTRUCTURA: 1. Gancho brutal. 2. Desarrollo profundo con datos historicos o increibles reales. 3. Climax y la EXPLICACION LOGICA del misterio al final. REGLAS: MINIMO 100 PALABRAS. ESCRIBE TODO EN MAYUSCULAS. CERO PUNTOS. CERO COMAS. CERO TILDES. SOLO TEXTO."
 
-    # Guion de emergencia que SÍ suena a historia viral, no a robot
-    guion_fallback = f"HAY UN SECRETO OSCURO SOBRE {tema_limpio.upper()} QUE LA ELITE NO QUIERE QUE SEPAS DURANTE DECADAS NOS HAN ENSEÑADO UNA VERSION FALSA DE LA HISTORIA PERO RECIENTEMENTE SE HAN FILTRADO DATOS QUE PRUEBAN LO CONTRARIO LO QUE ANTES PARECIA IMPOSIBLE HOY TIENE SENTIDO LOGICO PRESTA MUCHA ATENCION PORQUE CUANDO DESCUBRAS LA VERDAD FINAL TU FORMA DE ENTENDER EL MUNDO CAMBIARA PARA SIEMPRE SIGUENOS"
+    guion_fallback = f"TODO LO QUE TE HAN ENSEÑADO SOBRE {tema_limpio.upper()} ES UNA COMPLETA MENTIRA DURANTE AÑOS LOS INVESTIGADORES NOTARON ALGO EXTRAÑO PERO FUERON SILENCIADOS POR LOS DE ARRIBA LA VERDADERA LOGICA DETRAS DE ESTE MISTERIO ES QUE EL GOBIERNO LO USO COMO UN EXPERIMENTO SOCIAL MASIVO PARA VER HASTA DONDE PODIAMOS CREER UNA ILUSION ABSOLUTA AHORA QUE SABES EL SECRETO FINAL EL SISTEMA YA NO PUEDE ENGAÑARTE DESPIERTA Y SIGUENOS"
 
-    # SISTEMA ANTI-CAÍDAS: Lo intenta hasta 2 veces si la IA falla
-    for intento in range(2):
-        try:
-            url = "https://sentence.fineshopdesign.com/api/ai"
-            res = requests.get(url, params={"prompt": prompt_maestro, "seed": random.randint(1, 999999)}, timeout=10).json()
-            guion = res.get("reply", "").upper()
+    # INTENTO 1: Motor IA Principal
+    try:
+        url_1 = "https://sentence.fineshopdesign.com/api/ai"
+        res_1 = requests.get(url_1, params={"prompt": prompt_maestro, "seed": random.randint(1, 999999)}, timeout=15).json()
+        guion = res_1.get("reply", "").upper()
+        guion = re.sub(r'[^\w\s]', '', guion).replace('\n', ' ').strip()
+        if len(guion) > 50:
+            return guion, keys, tema_limpio
+    except Exception as e:
+        print(f"IA Principal falló: {e}. Activando IA de respaldo...")
+        pass
+
+    # INTENTO 2: Motor IA de Respaldo (Pollinations) - Entra si la primera falla
+    try:
+        prompt_codificado = urllib.parse.quote(prompt_maestro)
+        url_2 = f"https://text.pollinations.ai/{prompt_codificado}?system=Eres%20un%20guionista%20experto"
+        res_2 = requests.get(url_2, timeout=20)
+        guion = res_2.text.upper()
+        guion = re.sub(r'[^\w\s]', '', guion).replace('\n', ' ').strip()
+        if len(guion) > 50:
+            return guion, keys, tema_limpio
+    except Exception as e:
+        print(f"IA Secundaria falló: {e}. Usando guion de emergencia...")
+        pass
             
-            guion = re.sub(r'[^\w\s]', '', guion)
-            guion = guion.replace('\n', ' ').strip()
-            
-            if len(guion) > 50:
-                return guion, keys, tema_limpio
-        except:
-            time.sleep(1) # Espera un segundo y reintenta
-            
+    # Solo llega aquí si se cae Internet o las dos IAs están muertas
     return guion_fallback, keys, tema_limpio
 
 def time_to_sec(t_str):
@@ -46,21 +54,20 @@ def time_to_sec(t_str):
     elif len(partes) == 2: return float(partes[0])*60 + float(partes[1])
     else: return float(partes[0])
 
-st.title("🦅 Fénix Studio: Anti-Fallos")
+st.title("🦅 Fénix Studio: Doble Motor IA")
 
 with st.sidebar:
     st.header("Motor de Renderizado")
     pexels_key = st.text_input("🔑 API Pexels:", value="Ty0uFISh3APEAXIVcrFpSM7ZdwOeRElCuUgoG42EW6WVISRTEfqjm0BZ", type="password")
     color_sub = st.selectbox("🎨 Color Subtítulos", ["yellow", "white", "cyan"])
 
-if orden := st.chat_input("Pídelo como quieras (Ej: 'arme un video de las pirámides'):"):
-    with st.status("🎬 Limpiando orden y procesando...", expanded=True) as status:
+if orden := st.chat_input("Pide tu tema (Las IAs se encargarán):"):
+    with st.status("🎬 Analizando y creando guion...", expanded=True) as status:
         subprocess.run("rm -f p_*.mp4 clip_*.mp4 base.mp4 t.mp3 t.vtt music.mp3 final.mp4 temp_a.mp3 lista.txt subs_filter.txt outro.mp4", shell=True)
         
         guion, palabras_claves, tema_limpio = obtener_guion_pro(orden)
-        status.write(f"✍️ Tema detectado: '{tema_limpio}'.")
+        status.write(f"✍️ Guion completado sobre: '{tema_limpio}'.")
         
-        # 1. AUDIO (-10% velocidad)
         subprocess.run(f'edge-tts --voice es-ES-AlvaroNeural --rate=-10% --text "{guion}" --write-media "t.mp3" --write-subtitles "t.vtt"', shell=True)
         dur_audio = float(subprocess.check_output("ffprobe -i t.mp3 -show_entries format=duration -v quiet -of csv='p=0'", shell=True).decode('utf-8').strip())
         
@@ -68,7 +75,6 @@ if orden := st.chat_input("Pídelo como quieras (Ej: 'arme un video de las pirá
         subprocess.run(f'ffmpeg -y -f lavfi -i "sine=frequency={tono}:duration={dur_audio+2}" -f lavfi -i "anoisesrc=d={dur_audio+2}:c=pink:a=0.03" -filter_complex "[0:a]volume=0.5[t];[1:a]volume=0.1[n];[t][n]amix=inputs=2:duration=first" music.mp3', shell=True)
         subprocess.run(f'ffmpeg -y -i t.mp3 -i music.mp3 -filter_complex "[0:a]volume=3.0[v];[1:a]volume=0.2[m];[v][m]amix=inputs=2:duration=first" temp_a.mp3', shell=True)
 
-        # 2. SUBTÍTULOS INTELIGENTES
         drawtext_filters = []
         try:
             with open('t.vtt', 'r', encoding='utf-8') as f:
@@ -95,7 +101,6 @@ if orden := st.chat_input("Pídelo como quieras (Ej: 'arme un video de las pirá
         except:
             pass
 
-        # 3. VÍDEOS EN BLOQUE (Ahora solo busca la esencia pura)
         clip_duration = 3.5 
         num_clips = math.ceil(dur_audio / clip_duration) 
         processed_clips = []
@@ -127,7 +132,6 @@ if orden := st.chat_input("Pídelo como quieras (Ej: 'arme un video de las pirá
                 else: subprocess.run(f'ffmpeg -y -f lavfi -i color=c=black:s=480x854:d={clip_duration}:r=25 -c:v libx264 -preset superfast p_{i}.mp4', shell=True)
             processed_clips.append(f"p_{i}.mp4")
 
-        # 4. CIERRE
         subprocess.run('ffmpeg -y -f lavfi -i color=c=black:s=480x854:d=3:r=25 -vf "drawtext=text=\'FENIX STUDIO 🦅\':fontcolor=white:fontsize=45:x=(w-tw)/2:y=(h-th)/2" -c:v libx264 -preset ultrafast outro.mp4', shell=True)
 
         with open("lista.txt", "w") as f:
@@ -135,7 +139,7 @@ if orden := st.chat_input("Pídelo como quieras (Ej: 'arme un video de las pirá
             f.write("file 'outro.mp4'\n")
         subprocess.run('ffmpeg -y -f concat -safe 0 -i lista.txt -c copy base.mp4', shell=True)
 
-        # 5. RENDER FINAL
+        status.write("✨ Exportando con doble IA...")
         v_final = f"output/v_{int(time.time())}.mp4"
         cmd = f'ffmpeg -y -i base.mp4 -i temp_a.mp3 -filter_complex_script subs_filter.txt -c:v libx264 -preset ultrafast -b:v 1500k -shortest "{v_final}"'
         subprocess.run(cmd, shell=True)
