@@ -15,12 +15,18 @@ def obtener_guion_pro(tema):
     except:
         return f"PRESTA MUCHA ATENCION PORQUE LO QUE TE VOY A CONTAR SOBRE {tema.upper()} ES UN SECRETO QUE HA SIDO GUARDADO DURANTE AÑOS. ESTO NO ES UNA COINCIDENCIA ES UN PLAN PERFECTO PARA OCULTAR LA VERDAD. SI TE QUEDAS HASTA EL FINAL DESCUBRIRAS ALGO QUE CAMBIARA TU FORMA DE VER EL MUNDO PARA SIEMPRE. SIGUENOS PARA MAS VERDADES."
 
-# EL FIX ESTÁ AQUÍ: Blindamos la conversión de tiempo
+# EL FIX DEFINITIVO: Función inteligente que lee cualquier formato de tiempo
 def time_to_sec(t_str):
-    # Cortamos cualquier texto extra que el VTT añada (ej: "00:00:01.500 align:start" -> "00:00:01.500")
-    t_str = t_str.strip().split(' ')[0]
-    h, m, s = t_str.split(':')
-    return float(h)*3600 + float(m)*60 + float(s)
+    t_str = t_str.strip().split(' ')[0] # Quita la basura extra
+    partes = t_str.split(':')
+    if len(partes) == 3: # Si tiene horas (HH:MM:SS.mmm)
+        h, m, s = partes
+        return float(h)*3600 + float(m)*60 + float(s)
+    elif len(partes) == 2: # Si solo tiene minutos y segundos (MM:SS.mmm)
+        m, s = partes
+        return float(m)*60 + float(s)
+    else: # Por si acaso
+        return float(partes[0])
 
 st.title("🦅 Fénix Studio: Sistema Profesional")
 
@@ -46,7 +52,7 @@ if user_input := st.chat_input("Dime el tema y yo haré el resto..."):
         subprocess.run(f'ffmpeg -y -f lavfi -i "sine=frequency=65:duration={dur_audio+2}" -f lavfi -i "anoisesrc=d={dur_audio+2}:c=pink:a=0.03" -filter_complex "[0:a]volume=0.5[t];[1:a]volume=0.1[n];[t][n]amix=inputs=2:duration=first" music.mp3', shell=True)
         subprocess.run(f'ffmpeg -y -i t.mp3 -i music.mp3 -filter_complex "[0:a]volume=3.0[v];[1:a]volume=0.3[m];[v][m]amix=inputs=2:duration=first" temp_a.mp3', shell=True)
 
-        # 2. FILTRO DE SUBTÍTULOS (Ahora 100% a prueba de fallos)
+        # 2. FILTRO DE SUBTÍTULOS BLINDADO
         drawtext_filters = []
         try:
             with open('t.vtt', 'r', encoding='utf-8') as f:
@@ -56,7 +62,6 @@ if user_input := st.chat_input("Dime el tema y yo haré el resto..."):
                     tiempos = lines[i].strip().split(" --> ")
                     start = time_to_sec(tiempos[0])
                     end = time_to_sec(tiempos[1])
-                    # Comprobamos que haya una línea de texto después del tiempo
                     if i + 1 < len(lines):
                         texto = lines[i+1].strip().replace("'", "").replace('"', '')
                         if texto:
@@ -65,10 +70,10 @@ if user_input := st.chat_input("Dime el tema y yo haré el resto..."):
             with open("subs_filter.txt", "w", encoding='utf-8') as f:
                 f.write(",\n".join(drawtext_filters))
         except Exception as e:
-            st.error(f"Error detallado al leer subtítulos: {e}")
+            st.error(f"Error detallado en subtítulos: {e}")
             st.stop()
 
-        # 3. ESCENAS MATEMÁTICAS
+        # 3. ESCENAS MATEMÁTICAS (Ritmo rápido y cero cortes)
         clip_duration = 3.5 
         num_clips = math.ceil(dur_audio / clip_duration) 
         processed_clips = []
@@ -95,7 +100,7 @@ if user_input := st.chat_input("Dime el tema y yo haré el resto..."):
             
             processed_clips.append(f"p_{i}.mp4")
 
-        # 4. EL CIERRE
+        # 4. EL CIERRE (El truco para que NO se corte el vídeo)
         subprocess.run('ffmpeg -y -f lavfi -i color=c=black:s=480x854:d=3:r=25 -vf "drawtext=text=\'FENIX STUDIO 🦅\':fontcolor=white:fontsize=45:x=(w-tw)/2:y=(h-th)/2" -c:v libx264 -preset ultrafast outro.mp4', shell=True)
 
         with open("lista.txt", "w") as f:
