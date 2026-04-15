@@ -4,43 +4,39 @@ import os, time, random, subprocess, requests, math, re
 st.set_page_config(page_title="Fénix Viral PRO", layout="centered")
 st.markdown("<style>.stApp {background: #0d1117; color: white;}</style>", unsafe_allow_html=True)
 
-# 1. GENERADOR DE GUIONES CON ENFOQUES ALEATORIOS
+# 1. CEREBRO DINÁMICO (Se adapta a CUALQUIER tema)
 def obtener_guion_pro(tema):
-    t = tema.lower()
+    t = tema.lower().strip()
     
-    # Lista de enfoques para que la IA no se repita
-    enfoques = [
-        "desde una perspectiva conspiranoica y secreta",
-        "enfocado en un misterio olvidado por la historia",
-        "con un tono de leyenda urbana aterradora",
-        "basado en un descubrimiento cientifico impactante",
-        "como si fuera un archivo clasificado que acaba de filtrarse"
+    # 1. Palabras clave auto-generadas (Busca la palabra exacta + contexto cinematográfico)
+    # Así, si pides "Pirámides", buscará "Pirámides cinematic", "Pirámides mystery", etc.
+    palabras_base = t.split()
+    keys = [f"{p} cinematic" for p in palabras_base] + [f"{t} mystery", f"{t} epic", "secret discovery", "dark history"]
+    
+    # 2. Asignación de Rol Dinámico
+    roles = [
+        f"el mayor investigador y documentalista experto en {tema}",
+        f"un periodista de investigacion que acaba de descubrir un secreto sobre {tema}",
+        f"un historiador revelando la verdad oculta de {tema}",
+        f"un experto en teorias conspirativas hablando sobre {tema}"
     ]
-    enfoque_hoy = random.choice(enfoques)
-    
-    if "terror" in t or "miedo" in t or "paranormal" in t:
-        keys = ["creepy shadow", "abandoned room", "scary dark", "horror movie", "nightmare"]
-        guion_fallback = "HAY UN EXPERIMENTO DE MIL NOVECIENTOS OCHENTA QUE EL GOBIERNO INTENTO BORRAR DE LA HISTORIA ENCERRARON A CINCO PERSONAS EN LA OSCURIDAD TOTAL DURANTE UN MES LO QUE ENCONTRARON AL ABRIR LA PUERTA TE DEJARA SIN DORMIR"
-    elif "coche" in t or "motor" in t:
-        keys = ["sports car", "engine", "fast racing", "luxury vehicle", "drifting"]
-        guion_fallback = "EN LOS AÑOS OCHENTA UN INGENIERO CREO UN MOTOR QUE FUNCIONABA SOLO CON AGUA DIAS ANTES DE PATENTARLO SU TALLER ARDIO HASTA LOS CIMIENTOS Y EL DESAPARECIO SIN DEJAR RASTRO LA TECNOLOGIA NUNCA SE RECUPERO"
-    else:
-        keys = [f"{t} cinematic", "epic discovery", "secret documents", "shocking truth"]
-        guion_fallback = f"LA HISTORIA OFICIAL DE {tema.upper()} ES UNA MENTIRA HACE DECADAS UN INVESTIGADOR DESCUBRIO DOCUMENTOS QUE PROBABAN LO CONTRARIO ANTES DE PODER PUBLICARLOS FUE SILENCIADO Y SU TRABAJO DESTRUIDO"
+    rol_elegido = random.choice(roles)
 
-    # El Prompt ahora incluye el ENFOQUE ALEATORIO
-    prompt_maestro = f"Eres un experto en retencion de TikTok. Escribe una historia UNICA y ORIGINAL sobre {tema} {enfoque_hoy}. REGLAS: 1. Gancho psicologico. 2. Desarrollo con datos logicos. 3. Final brutal. MAXIMO 65 PALABRAS. TODO EN MAYUSCULAS. SIN PUNTOS NI COMAS NI TILDES. SOLO PALABRAS."
+    # 3. Prompt Maestro Adaptativo
+    prompt_maestro = f"Actua como {rol_elegido}. Escribe una historia viral, INCREIBLE y poco conocida sobre {tema}. ESTRUCTURA EXACTA: 1. Gancho perturbador o dato chocante. 2. Desarrollo con un suceso real o misterioso sobre {tema}. 3. Final que explote la cabeza del espectador. REGLAS: MAXIMO 65 PALABRAS. ESCRIBE SOLO EN MAYUSCULAS. CERO PUNTOS. CERO COMAS. CERO TILDES. SOLO TEXTO LIMPIO."
+
+    guion_fallback = f"LO QUE ESTAS A PUNTO DE ESCUCHAR SOBRE {tema.upper()} HA SIDO CENSURADO DURANTE DECADAS LOS LIBROS DE HISTORIA MIENTEN Y LA VERDAD ESTA OCULTA A PLENA VISTA PRESTA ATENCION PORQUE CUANDO DESCUBRAS EL SECRETO TU FORMA DE VER EL MUNDO CAMBIARA PARA SIEMPRE SIGUENOS"
 
     try:
         url = "https://sentence.fineshopdesign.com/api/ai"
-        # Usamos una semilla aleatoria para romper el cache de la API
-        res = requests.get(url, params={"prompt": prompt_maestro, "seed": random.randint(1, 99999)}, timeout=12).json()
+        res = requests.get(url, params={"prompt": prompt_maestro, "seed": random.randint(1, 10000)}, timeout=12).json()
         guion = res.get("reply", "").upper()
         
+        # Limpiamos todo rastro de puntuación
         guion = re.sub(r'[^\w\s]', '', guion)
         guion = guion.replace('\n', ' ').strip()
         
-        if len(guion) < 40: raise Exception("IA corta")
+        if len(guion) < 40: raise Exception("IA generó texto muy corto")
         return guion, keys
     except:
         return guion_fallback, keys
@@ -57,21 +53,21 @@ def time_to_sec(t_str):
     else: 
         return float(partes[0])
 
-st.title("🦅 Fénix Studio: Historias Unicas")
+st.title("🦅 Fénix Studio: Cerebro Dinámico")
 
 with st.sidebar:
     st.header("Motor de Renderizado")
     pexels_key = st.text_input("🔑 API Pexels:", value="Ty0uFISh3APEAXIVcrFpSM7ZdwOeRElCuUgoG42EW6WVISRTEfqjm0BZ", type="password")
     color_sub = st.selectbox("🎨 Color Subtítulos", ["yellow", "white", "cyan"])
 
-if user_input := st.chat_input("Dime el tema (Cada vez sera una historia distinta):"):
-    with st.status("🎬 Generando historia original...", expanded=True) as status:
+if user_input := st.chat_input("Dime CUALQUIER tema y el bot se adaptará:"):
+    with st.status("🎬 Analizando tema y creando guion...", expanded=True) as status:
         subprocess.run("rm -f p_*.mp4 clip_*.mp4 base.mp4 t.mp3 t.vtt music.mp3 final.mp4 temp_a.mp3 lista.txt subs_filter.txt outro.mp4", shell=True)
         
         guion, palabras_claves = obtener_guion_pro(user_input)
-        status.write(f"✍️ Enfoque aplicado. Guion: {guion[:50]}...")
+        status.write(f"✍️ Rol adaptado a: {user_input}.")
         
-        # 1. AUDIO (-10% velocidad para mejor lectura)
+        # 1. AUDIO (-10% velocidad)
         subprocess.run(f'edge-tts --voice es-ES-AlvaroNeural --rate=-10% --text "{guion}" --write-media "t.mp3" --write-subtitles "t.vtt"', shell=True)
         dur_audio = float(subprocess.check_output("ffprobe -i t.mp3 -show_entries format=duration -v quiet -of csv='p=0'", shell=True).decode('utf-8').strip())
         
@@ -79,7 +75,7 @@ if user_input := st.chat_input("Dime el tema (Cada vez sera una historia distint
         subprocess.run(f'ffmpeg -y -f lavfi -i "sine=frequency={tono}:duration={dur_audio+2}" -f lavfi -i "anoisesrc=d={dur_audio+2}:c=pink:a=0.03" -filter_complex "[0:a]volume=0.5[t];[1:a]volume=0.1[n];[t][n]amix=inputs=2:duration=first" music.mp3', shell=True)
         subprocess.run(f'ffmpeg -y -i t.mp3 -i music.mp3 -filter_complex "[0:a]volume=3.0[v];[1:a]volume=0.2[m];[v][m]amix=inputs=2:duration=first" temp_a.mp3', shell=True)
 
-        # 2. SUBTÍTULOS DINÁMICOS (Tamaño 38 para evitar cortes)
+        # 2. SUBTÍTULOS (Tamaño 38, sincronización perfecta)
         drawtext_filters = []
         try:
             with open('t.vtt', 'r', encoding='utf-8') as f:
@@ -104,13 +100,14 @@ if user_input := st.chat_input("Dime el tema (Cada vez sera una historia distint
         except:
             st.stop()
 
-        # 3. IMÁGENES
+        # 3. IMÁGENES DINÁMICAS (Busca exactamente tu tema)
         clip_duration = 3.5 
         num_clips = math.ceil(dur_audio / clip_duration) 
         processed_clips = []
         random.shuffle(palabras_claves)
         last_valid_clip = None
         
+        status.write(f"🎞️ Buscando vídeos de '{user_input}'...")
         for i in range(num_clips): 
             k = palabras_claves[i % len(palabras_claves)]
             url = f"https://api.pexels.com/videos/search?query={k}&per_page=1&orientation=portrait"
@@ -134,6 +131,7 @@ if user_input := st.chat_input("Dime el tema (Cada vez sera una historia distint
         subprocess.run('ffmpeg -y -f concat -safe 0 -i lista.txt -c copy base.mp4', shell=True)
 
         # 5. RENDER FINAL
+        status.write("✨ Montando master...")
         v_final = f"output/v_{int(time.time())}.mp4"
         cmd = f'ffmpeg -y -i base.mp4 -i temp_a.mp3 -filter_complex_script subs_filter.txt -c:v libx264 -preset ultrafast -b:v 1500k -shortest "{v_final}"'
         subprocess.run(cmd, shell=True)
