@@ -1,5 +1,5 @@
 import streamlit as st
-import os, time, random, subprocess, glob, re
+import os, time, random, subprocess, re, requests
 
 st.set_page_config(page_title="Fénix Studio AI", layout="centered", page_icon="🎬")
 
@@ -12,6 +12,47 @@ st.markdown("""
     h1 {background: -webkit-linear-gradient(#fff, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent;}
     </style>
 """, unsafe_allow_html=True)
+
+PEXELS_API_KEY = "Ty0uFlSh3APEAXIVcrFpSM7ZdwOeRElCuUgoG42EW6WVISRTEfqjmOBZ"
+
+def buscar_y_descargar_pexels(nicho, output_filename="clip_base.mp4"):
+    # Traducimos a inglés para encontrar material de alta calidad
+    terminos = {
+        "Negocio": "business success money office",
+        "Dieta": "healthy food fitness workout",
+        "Historia": "ancient history vintage architecture"
+    }
+    query = terminos.get(nicho, "abstract")
+    # Pedimos videos verticales (portrait)
+    url = f"https://api.pexels.com/videos/search?query={query}&per_page=15&orientation=portrait"
+    headers = {"Authorization": PEXELS_API_KEY}
+
+    try:
+        res = requests.get(url, headers=headers)
+        if res.status_code == 200:
+            data = res.json()
+            if data.get('videos'):
+                video_info = random.choice(data['videos'])
+                archivos = video_info['video_files']
+                link_descarga = None
+                
+                # Buscamos una calidad media (HD o SD) para no saturar el servidor
+                for archivo in archivos:
+                    if 480 <= archivo['height'] <= 1920:
+                        link_descarga = archivo['link']
+                        break
+                if not link_descarga:
+                    link_descarga = archivos[0]['link']
+
+                # Descargamos el video
+                r = requests.get(link_descarga, stream=True)
+                with open(output_filename, 'wb') as f:
+                    for chunk in r.iter_content(chunk_size=1024*1024):
+                        if chunk: f.write(chunk)
+                return output_filename
+    except Exception as e:
+        print(f"Error descargando de Pexels: {e}")
+    return None
 
 def transformar_srt(vtt_path, srt_path):
     try:
@@ -38,55 +79,47 @@ def transformar_srt(vtt_path, srt_path):
         return True
     except: return False
 
-def generar_guion(prompt, nicho):
-    textos = {"Negocio": "El éxito se construye con disciplina.", "Dieta": "Tu cuerpo es tu templo.", "Historia": "Conocer el pasado es dominar el futuro."}
-    return f"{prompt.upper()}. {textos.get(nicho, '')} Toma acción hoy mismo."
-
-st.markdown('<div class="stHeader"><h1>🎬 FÉNIX AI STUDIO</h1></div>', unsafe_allow_html=True)
-if "guion_ia" not in st.session_state: st.session_state.guion_ia = ""
+st.markdown('<div class="stHeader"><h1>🎬 FÉNIX AI STUDIO</h1><p>Producción 100% Autónoma</p></div>', unsafe_allow_html=True)
 
 with st.sidebar:
+    st.header("⚙️ Configuración")
     nicho = st.selectbox("Nicho", ["Negocio", "Dieta", "Historia"])
     color_sub = st.color_picker("Color Subtítulos", "#00FFFF")
     hc = color_sub.lstrip('#')
     ass_color = f"&H00{hc[4:6]}{hc[2:4]}{hc[0:2]}"
     voz = st.selectbox("Voz", ["es-ES-AlvaroNeural", "es-MX-JorgeNeural"])
 
-col1, col2 = st.columns(2)
-with col1:
-    prompt = st.text_input("Idea Principal:", "El éxito online")
-    if st.button("🪄 REDACTAR GUION"): st.session_state.guion_ia = generar_guion(prompt, nicho)
-    guion_final = st.text_area("Guion:", value=st.session_state.guion_ia, height=100)
-with col2:
-    st.info(f"Nicho: {nicho} | Subs: {color_sub}")
+guion_final = st.text_area("✍️ Guion:", placeholder="Escribe o pega aquí el guion para tu vídeo...", height=150)
 
-if st.button("🚀 INICIAR PRODUCCIÓN HD"):
+if st.button("🚀 INICIAR PRODUCCIÓN AUTOMÁTICA"):
     if not guion_final:
-        st.warning("Primero genera un guion.")
+        st.warning("⚠️ Primero escribe un guion en la caja de arriba.")
     else:
         uid = int(time.time())
         os.makedirs("output", exist_ok=True)
         final_p = f"output/video_{uid}.mp4"
-        with st.status("💎 Fabricando Vídeo (Pantalla Completa)...", expanded=True) as status:
+        clip_base = "clip_base.mp4"
+        
+        with st.status("💎 Fabricando Vídeo Automático...", expanded=True) as status:
+            status.write("🔊 Generando voz neural...")
             subprocess.run(f'edge-tts --voice {voz} --text "{guion_final}" --write-media "t.mp3" --write-subtitles "t.vtt"', shell=True)
-            if transformar_srt("t.vtt", "t.srt"):
-                clips = glob.glob(f"{nicho}/*.mp4")
-                if clips:
-                    clip = random.choice(clips)
-                    # Bajamos un poco los subtítulos para que queden perfectos en el formato vertical
+            
+            status.write(f"🌍 Buscando vídeos de '{nicho}' en Pexels...")
+            if buscar_y_descargar_pexels(nicho, clip_base):
+                if transformar_srt("t.vtt", "t.srt"):
+                    status.write("🎬 Editando y uniendo capas...")
                     est = f"Fontname=Impact,FontSize=26,PrimaryColour={ass_color},Outline=2,Alignment=2,MarginV=120"
                     
-                    # EFECTO ZOOM Y RECORTE: Llena toda la pantalla sin bordes negros (force_original_aspect_ratio=increase,crop=480:854)
-                    cmd = f'ffmpeg -y -stream_loop -1 -i "{clip}" -i t.mp3 -vf "scale=480:854:force_original_aspect_ratio=increase,crop=480:854,subtitles=t.srt:force_style=\'{est}\'" -c:v libx264 -preset superfast -crf 30 -threads 1 -max_muxing_queue_size 1024 -pix_fmt yuv420p -c:a aac -shortest "{final_p}"'
+                    cmd = f'ffmpeg -y -stream_loop -1 -i "{clip_base}" -i t.mp3 -vf "scale=480:854:force_original_aspect_ratio=increase,crop=480:854,subtitles=t.srt:force_style=\'{est}\'" -c:v libx264 -preset superfast -crf 30 -threads 1 -max_muxing_queue_size 1024 -pix_fmt yuv420p -c:a aac -shortest "{final_p}"'
                     
                     subprocess.run(cmd, shell=True)
                     
                     if os.path.exists(final_p):
                         st.video(final_p)
                         with open(final_p, 'rb') as f:
-                            st.download_button("📥 DESCARGAR VIDEO", f.read(), file_name=f"Fenix_{uid}.mp4")
-                        status.update(label="✅ Vídeo Listo!", state="complete")
+                            st.download_button("📥 DESCARGAR VIDEO", f.read(), file_name=f"Fenix_Auto_{uid}.mp4")
+                        status.update(label="✅ ¡Vídeo Creado con Éxito!", state="complete")
                     else:
-                        st.error("❌ El servidor abortó. Sube clips más cortos o ligeros a tu GitHub.")
-                else:
-                    st.error("No hay clips en la carpeta.")
+                        st.error("❌ Fallo en la edición. Inténtalo de nuevo.")
+            else:
+                st.error("❌ No se pudo descargar el vídeo de Pexels. Revisa la conexión.")
