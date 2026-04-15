@@ -5,20 +5,6 @@ import urllib.parse
 st.set_page_config(page_title="Fénix Viral PRO", layout="centered")
 st.markdown("<style>.stApp {background: #0d1117; color: white;}</style>", unsafe_allow_html=True)
 
-# 1. FILTRO CONVERSACIONAL (Borra tus órdenes y se queda con el tema puro)
-def limpiar_conversacion(orden):
-    # Quitamos acentos para que detecte "créame" igual que "creame"
-    orden_limpia = orden.lower().replace('á','a').replace('é','e').replace('í','i').replace('ó','o').replace('ú','u')
-    basura_conversacional = [
-        "creame", "crea", "crear", "hazme", "haz", "hacer", "arme", "asme", "dame", "dime", 
-        "quiero", "necesito", "buscame", "busca", "un", "una", "unos", "unas", "el", "la", 
-        "los", "las", "video", "videos", "sobre", "de", "del", "historia", "que", "hable", 
-        "habla", "por", "favor", "tema", "algo"
-    ]
-    palabras = orden_limpia.split()
-    limpias = [p for p in palabras if p not in basura_conversacional]
-    return " ".join(limpias) if limpias else orden
-
 def limpiar_texto_ia(texto):
     basura_ia = [
         "USER REQUEST", "START UP", "WRITE A", "ALL CAPS", "NO PERIODS", "SAYS ZERO", 
@@ -64,55 +50,64 @@ def limpiar_texto_ia(texto):
         "STATEMENT 2", "3 REVEAL", "SECRET 4", "CLOSED FINAL", "WE CAN", "SEPARATE PARAGRAPHS", "LETS GENERATE",
         "FINAL ANSWER", "TOOL CALL", "REASONING CONTENT"
     ]
-    
     texto_limpio = texto.upper()
-    for b in basura_ia:
-        texto_limpio = texto_limpio.replace(b, "")
-    
+    for b in basura_ia: texto_limpio = texto_limpio.replace(b, "")
     texto_limpio = re.sub(r'[^\w\s]', '', texto_limpio).replace('\n', ' ').strip()
-    texto_limpio = re.sub(' +', ' ', texto_limpio)
-    return texto_limpio
+    return re.sub(' +', ' ', texto_limpio)
+
+def limpiar_orden(orden):
+    basura = ["hazme", "haz", "arme", "asme", "dame", "dime", "un", "una", "el", "la", "los", "las", "video", "vídeo", "videos", "quiero", "sobre", "de", "del", "historia", "que", "hable", "como", "mejor", "para", "sin", "con", "en", "año"]
+    palabras = orden.lower().split()
+    limpias = [p for p in palabras if p not in basura and len(p) > 3]
+    return " ".join(limpias) if limpias else orden, limpias
 
 def obtener_guion_pro(orden_usuario):
-    # Usamos el nuevo filtro inteligente para el guion
-    tema_limpio = limpiar_conversacion(orden_usuario)
-    
-    # 2. FILTRO VISUAL (Pexels odia las preposiciones y años)
-    basura_visual = ["sin", "con", "en", "para", "por", "año", "mejor", "peor", "mas", "menos", "2026", "2025", "2024"]
-    palabras_visuales = [p for p in tema_limpio.split() if p not in basura_visual and len(p) > 3]
-    
-    # Preparamos las keys para buscar videos
-    keys = [f"{p} cinematic" for p in palabras_visuales[:3]]
-    if not keys:
-        keys = ["business cinematic", "epic discovery", "money success"]
-    
-    prompt_maestro = f"Actua como un creador de contenido viral muy carismatico. TAREA: Cuentame una historia increible sobre: {tema_limpio}. ESTRUCTURA: 1. Empieza con un dato que te vuela la cabeza. 2. Cuenta el desarrollo como si se lo explicaras a un amigo con detalles que nadie conoce. 3. REVELA EL SECRETO Y DALE UN FINAL CERRADO Y LOGICO. REGLAS: ESCRIBE SOLO LA HISTORIA. NO AÑADAS TUS PENSAMIENTOS. NO JUSTIFIQUES TUS RESPUESTAS. ESCRIBE TODO EN MAYUSCULAS. CERO PUNTOS. CERO COMAS. CERO TILDES. TIENE QUE SONAR MUY NATURAL Y EXPLICAR TODO HASTA EL FINAL SIN DEJAR INTRIGA. MINIMO 100 PALABRAS."
+    tema_mostrar, limpias = limpiar_orden(orden_usuario)
+    keys = [p for p in limpias[:3]] + [f"{p} cinematic" for p in limpias[:2]]
+    if not keys: keys = ["cinematic", "epic", "viral"]
 
-    # Ahora el guion de emergencia leerá: SOBRE NEGOCIO SIN INVERTIR EN 2026 (suena perfecto)
-    guion_fallback = f"PRESTA ATENCION PORQUE LO QUE TE VOY A CONTAR SOBRE {tema_limpio.upper()} NO LO VAS A ESCUCHAR EN NINGUN OTRO LADO SIEMPRE NOS HAN DICHO QUE ERA ALGO COMPLETAMENTE NORMAL PERO HACE POCO UNOS INVESTIGADORES DESCUBRIERON ALGO QUE CAMBIA LAS REGLAS DEL JUEGO RESULTA QUE TODO ESTO FUE CREADO CON UNA TECNOLOGIA QUE AUN NO COMPRENDEMOS DEL TODO LOS QUE DESCUBRIERON ESTO INTENTARON AVISARNOS PERO FUERON SILENCIADOS RAPIDAMENTE POR SUERTE UNO DE ELLOS DEJO PRUEBAS OCULTAS Y AHORA EL MISTERIO ESTA RESUELTO YA NO PUEDEN SEGUIR ENGAÑANDONOS LA VERDAD POR FIN SALIO A LA LUZ"
+    # LA MAGIA DE LA CREATIVIDAD: Un ángulo distinto cada vez que le pidas algo
+    angulos = [
+        "como si fuera un secreto revelado en la Deep Web por un hacker",
+        "como si fuera un archivo desclasificado de una agencia de inteligencia",
+        "como una estrategia secreta que usan los millonarios a puerta cerrada",
+        "como un descubrimiento reciente que las grandes empresas intentan ocultar",
+        "como una historia increible y poco conocida de hace decadas"
+    ]
+    angulo_elegido = random.choice(angulos)
+    
+    prompt_maestro = f"Crea un guion viral UNICO Y ORIGINAL. TEMA: '{orden_usuario}'. ENFOQUE OBLIGATORIO: Cuentame la historia {angulo_elegido}. ESTRUCTURA: 1. Gancho explosivo. 2. Desarrollo con datos muy raros o desconocidos. 3. Final cerrado revelando el secreto. REGLAS: INVENTA UNA HISTORIA NUEVA, NO REPITAS. SOLO TEXTO, NADA DE EXPLICACIONES. TODO EN MAYUSCULAS. CERO PUNTOS. CERO COMAS. CERO TILDES. MINIMO 120 PALABRAS."
+
+    # RULETA DE GUIONES DE EMERGENCIA: Si falla la IA, tienes 4 salvavidas distintos
+    fallbacks = [
+        f"PRESTA ATENCION PORQUE LO QUE TE VOY A CONTAR SOBRE {tema_mostrar.upper()} FUE BORRADO DE INTERNET HACE HORAS UN HACKER LOGRO EXTRAER LOS DATOS ANTES DE QUE CERRARAN EL SERVIDOR Y DESCUBRIO QUE TODO ERA UNA ESTRATEGIA PARA MANTENERNOS DISTRAIDOS LA VERDADERA CLAVE DETRAS DE ESTO ES UNA TECNICA QUE SOLO EL UNO POR CIENTO CONOCE AHORA QUE SABES ESTO TIENES EL PODER EN TUS MANOS EL MISTERIO ESTA RESUELTO",
+        f"DURANTE AÑOS NOS HICIERON CREER UNA MENTIRA SOBRE {tema_mostrar.upper()} PERO HOY VAMOS A DESTAPAR LA VERDAD UN EX EMPLEADO DE UNA GRAN CORPORACION HA DECIDIDO ROMPER SU CONTRATO DE SILENCIO PARA CONTAR QUE ESTE SISTEMA FUE DISEÑADO ORIGINALMENTE PARA CONTROLAR EL MERCADO AL CAMBIAR LAS REGLAS ELLOS SE QUEDABAN CON TODA LA VENTAJA HOY EL SECRETO HA SALIDO A LA LUZ Y EL JUEGO HA CAMBIADO PARA SIEMPRE",
+        f"HAY UNA TEORIA OSCURA SOBRE {tema_mostrar.upper()} QUE LA ELITE NO QUIERE QUE ESCUCHES SIEMPRE PENSAMOS QUE FUNCIONABA DE FORMA NORMAL PERO LOS DOCUMENTOS RECIENTEMENTE DESCLASIFICADOS DEMUESTRAN LO CONTRARIO HABIA UN GRUPO DE EXPERTOS TRABAJANDO EN LA SOMBRA PARA ASEGURARSE DE QUE NADIE MAS PUDIERA REPLICAR EL METODO AHORA LAS PIEZAS ENCAJAN Y LA HISTORIA OFICIAL QUEDA DESTRUIDA",
+        f"ESTE ES EL SECRETO MEJOR GUARDADO SOBRE {tema_mostrar.upper()} EN TODO EL MUNDO MUCHOS INTENTARON LLEGAR AL FONDO DE ESTO Y FRACASARON PERO LA LOGICA ES MUCHO MAS SIMPLE DE LO QUE PARECE TODO SE BASA EN UNA PEQUEÑA FALLA DEL SISTEMA QUE ALGUIEN DESCUBRIO POR ACCIDENTE Y DECIDIO OCULTAR PARA BENEFICIARSE AL DESCUBRIR ESE FALLO EL MISTERIO DESAPARECE Y LA VERDAD BRILLA CON FUERZA"
+    ]
+    guion_fallback = random.choice(fallbacks)
+
+    # ANTI-CACHE: Usamos un número enorme al azar para que la IA piense que es una petición 100% nueva
+    semilla = random.randint(100000, 9999999)
 
     try:
         url_1 = "https://sentence.fineshopdesign.com/api/ai"
-        res_1 = requests.get(url_1, params={"prompt": prompt_maestro, "seed": random.randint(1, 999999)}, timeout=15).json()
-        guion = res_1.get("reply", "")
-        guion_limpio = limpiar_texto_ia(guion)
-        if len(guion_limpio) > 50:
-            return guion_limpio, keys, tema_limpio
+        res_1 = requests.get(url_1, params={"prompt": prompt_maestro, "seed": semilla}, timeout=15).json()
+        guion = limpiar_texto_ia(res_1.get("reply", ""))
+        if len(guion) > 50: return guion, keys, tema_mostrar
     except:
         pass
 
     try:
         prompt_codificado = urllib.parse.quote(prompt_maestro)
-        url_2 = f"https://text.pollinations.ai/{prompt_codificado}?system=Eres%20un%20guionista%20experto"
+        url_2 = f"https://text.pollinations.ai/{prompt_codificado}?seed={semilla}&system=Guionista%20experto"
         res_2 = requests.get(url_2, timeout=20)
-        guion = res_2.text
-        guion_limpio = limpiar_texto_ia(guion)
-        if len(guion_limpio) > 50:
-            return guion_limpio, keys, tema_limpio
+        guion = limpiar_texto_ia(res_2.text)
+        if len(guion) > 50: return guion, keys, tema_mostrar
     except:
         pass
             
-    return limpiar_texto_ia(guion_fallback), keys, tema_limpio
+    return limpiar_texto_ia(guion_fallback), keys, tema_mostrar
 
 def time_to_sec(t_str):
     t_str = t_str.strip().split(' ')[0].replace(',', '.')
@@ -121,27 +116,27 @@ def time_to_sec(t_str):
     elif len(partes) == 2: return float(partes[0])*60 + float(partes[1])
     else: return float(partes[0])
 
-st.title("🦅 Fénix Studio: Filtros Inteligentes")
+st.title("🦅 Fénix Studio: Universos Infinitos")
 
 with st.sidebar:
     st.header("Motor de Renderizado")
     pexels_key = st.text_input("🔑 API Pexels:", value="Ty0uFISh3APEAXIVcrFpSM7ZdwOeRElCuUgoG42EW6WVISRTEfqjm0BZ", type="password")
     color_sub = st.selectbox("🎨 Color Subtítulos", ["yellow", "white", "cyan"])
 
-if orden := st.chat_input("Dime tu idea (No repetiré órdenes robóticas):"):
-    with st.status("🎬 Entendiendo tu idea y limpiando texto...", expanded=True) as status:
+if orden := st.chat_input("Pídeme lo que sea (Cada vídeo será único):"):
+    with st.status("🎬 Pensando una historia 100% nueva...", expanded=True) as status:
         subprocess.run("rm -f p_*.mp4 clip_*.mp4 base.mp4 t.mp3 t.vtt music.mp3 final.mp4 temp_a.mp3 lista.txt subs_filter.txt outro.mp4", shell=True)
         
-        guion, palabras_claves, tema_limpio = obtener_guion_pro(orden)
-        status.write(f"✍️ Tema procesado: '{tema_limpio}'.")
-        status.write(f"🔍 Buscando imágenes usando: {', '.join(palabras_claves)}")
+        guion, palabras_claves, tema_mostrar = obtener_guion_pro(orden)
+        status.write(f"✍️ Guion creativo generado para: '{tema_mostrar}'.")
         
         subprocess.run(f'edge-tts --voice es-ES-AlvaroNeural --rate=-10% --text "{guion}" --write-media "t.mp3" --write-subtitles "t.vtt"', shell=True)
         dur_audio_str = subprocess.check_output("ffprobe -i t.mp3 -show_entries format=duration -v quiet -of csv='p=0'", shell=True).decode('utf-8').strip()
-        
         if not dur_audio_str:
-            st.error("Error al generar el audio. Reintentando...")
-            guion = limpiar_texto_ia(f"PRESTA ATENCION PORQUE LO QUE TE VOY A CONTAR SOBRE {tema_limpio.upper()} NO LO VAS A ESCUCHAR EN NINGUN OTRO LADO SIEMPRE NOS HAN DICHO QUE ERA ALGO COMPLETAMENTE NORMAL PERO HACE POCO UNOS INVESTIGADORES DESCUBRIERON ALGO QUE CAMBIA LAS REGLAS DEL JUEGO RESULTA QUE TODO ESTO FUE CREADO CON UNA TECNOLOGIA QUE AUN NO COMPRENDEMOS DEL TODO LOS QUE DESCUBRIERON ESTO INTENTARON AVISARNOS PERO FUERON SILENCIADOS RAPIDAMENTE POR SUERTE UNO DE ELLOS DEJO PRUEBAS OCULTAS Y AHORA EL MISTERIO ESTA RESUELTO YA NO PUEDEN SEGUIR ENGAÑANDONOS LA VERDAD POR FIN SALIO A LA LUZ")
+            st.error("Error en audio. Generando respaldo rápido...")
+            guion = limpiar_texto_ia(random.choice([
+                f"PRESTA ATENCION PORQUE LO QUE TE VOY A CONTAR SOBRE {tema_mostrar.upper()} NO LO VAS A ESCUCHAR EN NINGUN OTRO LADO SIEMPRE NOS HAN DICHO QUE ERA ALGO COMPLETAMENTE NORMAL PERO HACE POCO UNOS INVESTIGADORES DESCUBRIERON ALGO QUE CAMBIA LAS REGLAS DEL JUEGO RESULTA QUE TODO ESTO FUE CREADO CON UNA TECNOLOGIA QUE AUN NO COMPRENDEMOS DEL TODO LOS QUE DESCUBRIERON ESTO INTENTARON AVISARNOS PERO FUERON SILENCIADOS RAPIDAMENTE POR SUERTE UNO DE ELLOS DEJO PRUEBAS OCULTAS Y AHORA EL MISTERIO ESTA RESUELTO YA NO PUEDEN SEGUIR ENGAÑANDONOS LA VERDAD POR FIN SALIO A LA LUZ"
+            ]))
             subprocess.run(f'edge-tts --voice es-ES-AlvaroNeural --rate=-10% --text "{guion}" --write-media "t.mp3" --write-subtitles "t.vtt"', shell=True)
             dur_audio_str = subprocess.check_output("ffprobe -i t.mp3 -show_entries format=duration -v quiet -of csv='p=0'", shell=True).decode('utf-8').strip()
 
@@ -181,9 +176,10 @@ if orden := st.chat_input("Dime tu idea (No repetiré órdenes robóticas):"):
         num_clips = math.ceil(dur_audio / clip_duration) 
         processed_clips = []
         
+        status.write(f"🎞️ Buscando vídeos creativos para: {', '.join(palabras_claves[:2])}...")
         v_urls = []
         for k in palabras_claves:
-            url = f"https://api.pexels.com/videos/search?query={k}&per_page=15&orientation=portrait"
+            url = f"https://api.pexels.com/videos/search?query={k}&per_page=10&orientation=portrait"
             try:
                 res = requests.get(url, headers={"Authorization": pexels_key.strip()}, timeout=10).json()
                 for v in res.get('videos', []):
@@ -214,7 +210,7 @@ if orden := st.chat_input("Dime tu idea (No repetiré órdenes robóticas):"):
             f.write("file 'outro.mp4'\n")
         subprocess.run('ffmpeg -y -f concat -safe 0 -i lista.txt -c copy base.mp4', shell=True)
 
-        status.write("✨ Exportando historia inmaculada...")
+        status.write("✨ Quemando master único...")
         v_final = f"output/v_{int(time.time())}.mp4"
         cmd = f'ffmpeg -y -i base.mp4 -i temp_a.mp3 -filter_complex_script subs_filter.txt -c:v libx264 -preset ultrafast -b:v 1500k -shortest "{v_final}"'
         subprocess.run(cmd, shell=True)
