@@ -3,7 +3,7 @@ import os, time, subprocess, re, urllib.parse, shutil, math, random, gc
 import requests
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Fénix Studio V125", layout="centered")
+st.set_page_config(page_title="Fénix Studio V126", layout="centered")
 
 components.html("<script>if('wakeLock' in navigator){navigator.wakeLock.request('screen');}</script>", height=0)
 
@@ -12,12 +12,11 @@ st.markdown("""
     .stApp { background: #000000; color: #FFFFFF; }
     .pro-title { font-size: 42px; font-weight: 900; background: -webkit-linear-gradient(45deg, #00FFD1, #FFD700); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: center; text-transform: uppercase; margin-bottom: 20px;}
     .msg { color: #00FFD1; font-family: 'Courier New', monospace; font-size: 14px; margin-bottom: 8px; border-left: 3px solid #FFD700; padding-left: 12px; }
-    .info-card { padding: 15px; border-radius: 12px; background: #0f172a; border: 1px solid #00FFD1; text-align: center; color: #00FFD1; margin-top: 25px; font-weight: bold;}
     .stButton>button { width: 100%; background: linear-gradient(45deg, #00FFD1, #0088ff); color: white; border: none; font-weight: 900; height: 55px; border-radius: 12px; font-size: 18px;}
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V125 🚀</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V126 🛡️</div>', unsafe_allow_html=True)
 
 @st.cache_resource
 def get_font():
@@ -49,36 +48,35 @@ def preparar():
     os.makedirs("taller", exist_ok=True)
     subprocess.run("pkill ffmpeg", shell=True)
 
-tema = st.text_input("🧠 Tema del vídeo:", placeholder="Ej: Los 3 secretos del Bitcoin")
+tema = st.text_input("🧠 Tema del vídeo:", placeholder="Ej: Por qué Bitcoin es el futuro")
 color_sub = st.selectbox("🎨 Color de los Subtítulos:", ["yellow", "white", "#00FFD1"])
 
-if st.button("🚀 CREAR VÍDEO COMPLETO (SIN LÍMITES)"):
-    if not tema: st.error("⚠️ Escribe un tema, jefe.")
+if st.button("🚀 CREAR VÍDEO LIMPIO (V126)"):
+    if not tema: st.error("⚠️ Escribe un tema")
     else:
         preparar()
         log = st.container()
         
         with log:
-            # --- 1. GUION SIN LÍMITES ---
-            st.markdown('<div class="msg">📝 IA redactando guion completo y detallado...</div>', unsafe_allow_html=True)
-            prompt_g = f"Actua como experto en TikTok. Escribe un guion viral de alto impacto sobre {tema}. No te cortes con las palabras, asegúrate de que el mensaje sea completo, con un gancho brutal, desarrollo de los puntos clave y un cierre épico. Sin emojis. Solo el texto."
+            st.markdown('<div class="msg">📝 Redactando guion puro...</div>', unsafe_allow_html=True)
+            prompt_g = f"Actua como experto en TikTok. Escribe un guion viral completo sobre {tema}. Estructura: Gancho, Contenido, Cierre. IMPORTANTE: No incluyas ningun numero de tiempo, ni codigos, ni etiquetas. Solo texto fluido. Maximo 65 palabras."
             
             try:
-                guion = requests.get(f"https://text.pollinations.ai/{urllib.parse.quote(prompt_g)}", timeout=20).text
-                guion = re.sub(r'[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ.,! ]', '', guion).strip()
+                guion_raw = requests.get(f"https://text.pollinations.ai/{urllib.parse.quote(prompt_g)}", timeout=15).text
+                # FILTRO DE PUREZA: Borramos números y caracteres extraños que confunden a la voz
+                guion = re.sub(r'[0-9]+', '', guion_raw) # Borra todos los números
+                guion = re.sub(r'[^a-zA-ZáéíóúÁÉÍÓÚñÑ.,! ]', '', guion).strip()
             except:
-                guion = "El éxito no es para los que lo desean, es para los que trabajan por él. Empieza hoy mismo."
+                guion = "El éxito real no tiene atajos. Se construye con paciencia, disciplina y una mentalidad inquebrantable. Empieza hoy mismo."
             
-            # --- 2. VOZ HD ---
-            st.markdown('<div class="msg">🎙️ Grabando voz HD...</div>', unsafe_allow_html=True)
+            st.markdown('<div class="msg">🎙️ Grabando voz a ritmo humano...</div>', unsafe_allow_html=True)
             audio = "taller/audio.mp3"
-            subprocess.run(f'edge-tts --voice es-MX-JorgeNeural --rate=+10% --text "{guion}" --write-media "{audio}"', shell=True)
+            # Bajamos la velocidad a la normal (+0%) para que no hable deprisa
+            subprocess.run(f'edge-tts --voice es-MX-JorgeNeural --rate=+0% --text "{guion}" --write-media "{audio}"', shell=True)
             
-            try:
-                dur = float(subprocess.check_output(f'ffprobe -i "{audio}" -show_entries format=duration -v quiet -of csv="p=0"', shell=True))
+            try: dur = float(subprocess.check_output(f'ffprobe -i "{audio}" -show_entries format=duration -v quiet -of csv="p=0"', shell=True))
             except: dur = 15.0
-            
-            # --- 3. CAZADOR DE VÍDEOS V58 ---
+
             n_clips = math.ceil(dur / 3.5)
             t_clip = dur / n_clips
             clips = []
@@ -89,13 +87,13 @@ if st.button("🚀 CREAR VÍDEO COMPLETO (SIN LÍMITES)"):
             for i in range(n_clips):
                 txt_chunk = " ".join(palabras_guion[i*chunk_size:(i+1)*chunk_size])
                 kw_en = traducir_en(extraer_kw(txt_chunk))
-                st.markdown(f'<div class="msg">🎥 Escena {i+1}/{n_clips}: Recortando vídeo de "{kw_en.upper()}"...</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="msg">🎥 Escena {i+1}/{n_clips}: Recortando "{kw_en.upper()}"...</div>', unsafe_allow_html=True)
                 
                 raw_vid, vid = f"taller/raw_{i}.mp4", f"taller/v_{i}.mp4"
                 exito_vid = False
                 try:
                     headers = {"Authorization": PEXELS_API}
-                    url_p = f"https://api.pexels.com/videos/search?query={urllib.parse.quote(kw_en+' cinematic')}&orientation=portrait&per_page=5"
+                    url_p = f"https://api.pexels.com/videos/search?query={urllib.parse.quote(kw_en+' luxury')}&orientation=portrait&per_page=5"
                     r_p = requests.get(url_p, headers=headers, timeout=10).json()
                     if r_p.get('videos'):
                         v_url = r_p['videos'][0]['video_files'][0]['link']
@@ -116,8 +114,7 @@ if st.button("🚀 CREAR VÍDEO COMPLETO (SIN LÍMITES)"):
                 if os.path.exists(raw_vid): os.remove(raw_vid)
                 gc.collect()
 
-            # --- 4. ENSAMBLAJE Y SUBTÍTULOS V58 ---
-            st.markdown('<div class="msg">🎬 Ensamblando y tatuando subtítulos...</div>', unsafe_allow_html=True)
+            st.markdown('<div class="msg">🎬 Ensamblando y tatuando...</div>', unsafe_allow_html=True)
             with open("taller/lista.txt", "w") as f:
                 for c in clips: f.write(f"file '{c}'\n")
             
@@ -142,6 +139,5 @@ if st.button("🚀 CREAR VÍDEO COMPLETO (SIN LÍMITES)"):
             subprocess.run(f'ffmpeg -y -i "{mudo}" -i "{audio}" -filter_complex_script taller/s.txt -c:v libx264 -preset ultrafast -crf 28 -threads 1 -t {dur} "{final}"', shell=True)
             
             if os.path.exists(final):
-                st.markdown('<div class="info-card">🏆 VÍDEO COMPLETADO (SIN RECORTES)</div>', unsafe_allow_html=True)
+                st.markdown('<div class="info-card">🏆 VÍDEO COMPLETADO: VOZ Y TEXTO LIMPIOS</div>', unsafe_allow_html=True)
                 with open(final, "rb") as f: st.video(f.read())
-                st.balloons()
