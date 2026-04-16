@@ -3,7 +3,7 @@ import os, time, subprocess, re, urllib.parse, shutil, math, random, gc
 import requests
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Fénix Studio V122", layout="centered")
+st.set_page_config(page_title="Fénix Studio V123", layout="centered")
 
 components.html("<script>if('wakeLock' in navigator){navigator.wakeLock.request('screen');}</script>", height=0)
 
@@ -17,7 +17,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V122 🎬</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V123 📝</div>', unsafe_allow_html=True)
 
 @st.cache_resource
 def get_font():
@@ -49,28 +49,29 @@ def preparar():
     os.makedirs("taller", exist_ok=True)
     subprocess.run("pkill ffmpeg", shell=True)
 
-tema = st.text_input("🧠 Tema del vídeo:", placeholder="Ej: Hábitos de éxito")
+tema = st.text_input("🧠 Tema del vídeo:", placeholder="Ej: Secretos del dinero")
 color_sub = st.selectbox("🎨 Color de los Subtítulos:", ["yellow", "white", "#00FFD1"])
 
-if st.button("🚀 CREAR OBRA MAESTRA (VÍDEOS V58)"):
+if st.button("🚀 CREAR OBRA MAESTRA (GUION VIRAL)"):
     if not tema: st.error("⚠️ Escribe un tema, jefe.")
     else:
         preparar()
         log = st.container()
         
         with log:
-            # --- 1. GUION Y VOZ ---
-            st.markdown('<div class="msg">📝 IA redactando guion...</div>', unsafe_allow_html=True)
-            prompt_g = f"Escribe un guion motivador para TikTok sobre {tema}. Solo el texto, maximo 50 palabras, sin emojis."
+            # --- 1. GUION EXPERTO VIRAL ---
+            st.markdown('<div class="msg">📝 IA redactando guion con gancho viral...</div>', unsafe_allow_html=True)
+            prompt_g = f"Actua como un experto en marketing viral de TikTok. Escribe un guion super impactante sobre {tema}. Usa un gancho inicial muy agresivo para atrapar la atencion. Tono persuasivo, experto y al grano. Maximo 60 palabras, sin emojis, sin hashtags, solo el texto narrado."
             try:
                 guion_raw = requests.get(f"https://text.pollinations.ai/{urllib.parse.quote(prompt_g)}", timeout=15).text
                 guion = re.sub(r'[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ.,! ]', '', guion_raw).strip()
             except:
-                guion = "El éxito requiere disciplina y constancia. Nunca te rindas y sigue luchando por tus metas diarias."
+                guion = "Te están mintiendo. El éxito no es suerte, es pura estrategia. Si no cambias tus hábitos hoy, mañana estarás exactamente en el mismo lugar. Despierta."
             
             lista_palabras = guion.split()
-            if len(lista_palabras) > 60: guion = " ".join(lista_palabras[:60])
+            if len(lista_palabras) > 65: guion = " ".join(lista_palabras[:65])
             
+            # --- 2. VOZ HD ---
             st.markdown('<div class="msg">🎙️ Grabando voz HD...</div>', unsafe_allow_html=True)
             audio = "taller/audio.mp3"
             subprocess.run(f'edge-tts --voice es-MX-JorgeNeural --rate=+10% --text "{guion}" --write-media "{audio}"', shell=True)
@@ -79,7 +80,6 @@ if st.button("🚀 CREAR OBRA MAESTRA (VÍDEOS V58)"):
             try: dur = float(subprocess.check_output(f'ffprobe -i "{audio}" -show_entries format=duration -v quiet -of csv="p=0"', shell=True))
             except: pass
             
-            # Cortar en clips de ~3.5 segundos
             n_clips = math.ceil(dur / 3.5)
             t_clip = dur / n_clips
             clips = []
@@ -88,7 +88,7 @@ if st.button("🚀 CREAR OBRA MAESTRA (VÍDEOS V58)"):
 
             ultima_vid_exitosa = None
 
-            # --- 2. CAZADOR DE VÍDEOS (V58 ORIGINAL) ---
+            # --- 3. CAZADOR DE VÍDEOS (PEXELS V58) ---
             for i in range(n_clips):
                 txt_chunk = " ".join(palabras_guion_final[i*chunk_size:(i+1)*chunk_size])
                 kw_en = traducir_en(extraer_kw(txt_chunk))
@@ -99,10 +99,8 @@ if st.button("🚀 CREAR OBRA MAESTRA (VÍDEOS V58)"):
                 vid = f"taller/v_{i}.mp4"
                 exito_vid = False
 
-                # Buscar vídeo en Pexels
                 try:
                     headers = {"Authorization": PEXELS_API}
-                    # Buscamos vídeos preferiblemente en vertical (portrait)
                     url_p = f"https://api.pexels.com/videos/search?query={urllib.parse.quote(kw_en+' cinematic')}&orientation=portrait&per_page=5"
                     r_p = requests.get(url_p, headers=headers, timeout=10).json()
                     
@@ -111,7 +109,6 @@ if st.button("🚀 CREAR OBRA MAESTRA (VÍDEOS V58)"):
                         video_elegido = random.choice(r_p['videos'])
                         archivos = video_elegido.get('video_files', [])
                         
-                        # Buscar un archivo que no sea hiperpesado pero tenga buena calidad
                         for arch in archivos:
                             if arch['quality'] == 'hd' or arch['height'] >= 1280:
                                 video_url = arch['link']
@@ -119,20 +116,16 @@ if st.button("🚀 CREAR OBRA MAESTRA (VÍDEOS V58)"):
                         if not video_url and archivos:
                             video_url = archivos[0]['link']
                             
-                        # Descargar el vídeo
                         if video_url:
                             vid_data = requests.get(video_url, timeout=20).content
                             with open(raw_vid, 'wb') as f: f.write(vid_data)
                             exito_vid = True
                 except: pass
 
-                # Recortar y ajustar el vídeo al tamaño y tiempo exacto (Magia V58)
                 if exito_vid and os.path.exists(raw_vid):
-                    # scale + crop para asegurar que llene la pantalla 720x1280 sin deformarse, y stream_loop por si el vídeo es muy corto
                     vf_crop = "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,setsar=1,format=yuv420p"
                     subprocess.run(f'ffmpeg -y -stream_loop -1 -i "{raw_vid}" -t {t_clip} -vf "{vf_crop}" -c:v libx264 -preset ultrafast -r 24 "{vid}"', shell=True)
                 
-                # Respaldo por si Pexels falla (clona el anterior)
                 if not os.path.exists(vid) or os.path.getsize(vid) < 1000:
                     if ultima_vid_exitosa:
                         subprocess.run(f'cp "{ultima_vid_exitosa}" "{vid}"', shell=True)
@@ -146,7 +139,7 @@ if st.button("🚀 CREAR OBRA MAESTRA (VÍDEOS V58)"):
                 if os.path.exists(raw_vid): os.remove(raw_vid)
                 gc.collect()
 
-            # --- 3. ENSAMBLAJE V58 ---
+            # --- 4. ENSAMBLAJE V58 ---
             st.markdown('<div class="msg">🎬 Ensamblando los recortes...</div>', unsafe_allow_html=True)
             with open("taller/lista.txt", "w") as f:
                 for c in clips: f.write(f"file '{c}'\n")
@@ -154,7 +147,7 @@ if st.button("🚀 CREAR OBRA MAESTRA (VÍDEOS V58)"):
             mudo = "taller/mudo.mp4"
             subprocess.run(f'ffmpeg -y -f concat -safe 0 -i taller/lista.txt -c copy "{mudo}"', shell=True)
             
-            # --- 4. SUBTÍTULOS V58 ---
+            # --- 5. SUBTÍTULOS V58 ---
             st.markdown('<div class="msg">✨ Tatuando subtítulos V58...</div>', unsafe_allow_html=True)
             palabras_sub = re.sub(r'[^\w\s]', '', guion.upper()).split()
             chunks_sub = [palabras_sub[j:j+2] for j in range(0, len(palabras_sub), 2)]
@@ -178,7 +171,7 @@ if st.button("🚀 CREAR OBRA MAESTRA (VÍDEOS V58)"):
             subprocess.run(f'ffmpeg -y -i "{mudo}" -i "{audio}" -filter_complex_script taller/subs_filter.txt -c:v libx264 -preset ultrafast -crf 28 -threads 1 -t {dur} "{final}"', shell=True)
             
             if os.path.exists(final):
-                st.markdown('<div class="info-card">🏆 VÍDEO COMPLETADO: EL V58 ORIGINAL HA VUELTO</div>', unsafe_allow_html=True)
+                st.markdown('<div class="info-card">🏆 VÍDEO COMPLETADO: GUION VIRAL + V58</div>', unsafe_allow_html=True)
                 with open(final, "rb") as f: st.video(f.read())
                 st.balloons()
             else:
