@@ -4,7 +4,7 @@ import requests
 import tempfile
 import concurrent.futures
 
-st.set_page_config(page_title="Fénix Estudio PRO | V65", layout="centered")
+st.set_page_config(page_title="Fénix Estudio PRO | V66", layout="centered")
 
 st.markdown("""
 <style>
@@ -14,8 +14,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V65</div>', unsafe_allow_html=True)
-st.markdown('<div class="pro-subtitle" style="text-align:center; color:#94A3B8; margin-bottom: 30px;">IA Total • Estimador de Tiempo Real • Multi-Thread</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V66</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-subtitle" style="text-align:center; color:#94A3B8; margin-bottom: 30px;">IA Generativa • Blindaje Anti-Errores • Sincronización Total</div>', unsafe_allow_html=True)
 
 @st.cache_resource
 def descargar_fuente():
@@ -30,164 +30,114 @@ def descargar_fuente():
 font_abs = descargar_fuente()
 
 IDIOMAS = {
-    "🇪🇸 Español": {"tl": "es", "voces": {"Jorge (Latino)": "es-MX-JorgeNeural", "Elvira (España)": "es-ES-ElviraNeural", "Alvaro (España)": "es-ES-AlvaroNeural"}},
-    "🇺🇸 English": {"tl": "en", "voces": {"Guy (Masculino US)": "en-US-GuyNeural", "Aria (Femenina US)": "en-US-AriaNeural", "Christopher (Masculino US)": "en-US-ChristopherNeural"}},
-    "🇫🇷 Français": {"tl": "fr", "voces": {"Henri (Masculino)": "fr-FR-HenriNeural", "Denise (Femenina)": "fr-FR-DeniseNeural"}}
+    "🇪🇸 Español": {"tl": "es", "voces": {"Jorge": "es-MX-JorgeNeural", "Elvira": "es-ES-ElviraNeural"}},
+    "🇺🇸 English": {"tl": "en", "voces": {"Guy": "en-US-GuyNeural", "Aria": "en-US-AriaNeural"}}
 }
 
+def limpiar_texto(t):
+    # Eliminar emojis y símbolos raros que rompen el TTS
+    return re.sub(r'[^\w\s.,!?]', '', t).strip()
+
 def generar_guion_ia(tema, idioma):
-    prompt = f"Escribe un guion corto y viral de 40 palabras para TikTok sobre: {tema}. Idioma: {idioma}. Ve directo al grano, sin saludos ni introducciones, usa un tono persuasivo."
+    prompt = f"Escribe un guion viral de 35 palabras para TikTok sobre: {tema}. Idioma: {idioma}. Sin introducciones, directo al contenido."
     url = f"https://text.pollinations.ai/{urllib.parse.quote(prompt)}"
     try:
         r = requests.get(url, timeout=15)
-        return re.sub(r'[\*\[\]]', '', r.text).strip()
-    except:
-        return ""
+        return limpiar_texto(r.text)
+    except: return ""
 
-def extraer_palabra_clave(texto_chunk):
-    palabras = re.sub(r'[^\w\s]', '', texto_chunk).split()
-    palabras_utiles = [p for p in palabras if len(p) > 4 and not p.lower().endswith("mente")]
-    if palabras_utiles: return max(palabras_utiles, key=len)
-    return "cinematic"
-
-def traducir_a_ingles(palabra, tl_code):
-    if tl_code == "en": return palabra
-    try:
-        url = f"https://api.mymemory.translated.net/get?q={urllib.parse.quote(palabra)}&langpair={tl_code}|en"
-        respuesta = requests.get(url, timeout=5).json()
-        return respuesta['responseData']['translatedText']
-    except:
-        return palabra
-
-def generar_voz_inmortal(texto, codigo_voz, tl_code, dir_trabajo):
-    texto_limpio = re.sub(r'[^\w\s.,;?!]', '', texto.replace('\n', ' ')).replace('_', '')
-    txt_path = os.path.join(dir_trabajo, "temp_txt.txt")
+def generar_voz_inmortal(texto, codigo_voz, dir_trabajo):
     mp3_path = os.path.join(dir_trabajo, "t.mp3")
     vtt_path = os.path.join(dir_trabajo, "subs.vtt")
-    with open(txt_path, "w", encoding="utf-8") as f: f.write(texto_limpio)
-    subprocess.run(["python", "-m", "edge_tts", "--voice", codigo_voz, "--rate=+15%", "-f", txt_path, "--write-media", mp3_path, "--write-subtitles", vtt_path])
+    # Comando blindado
+    cmd = f'python -m edge_tts --voice {codigo_voz} --rate=+15% --text "{texto}" --write-media "{mp3_path}" --write-subtitles "{vtt_path}"'
+    subprocess.run(cmd, shell=True, capture_output=True)
     return os.path.exists(mp3_path)
 
 def leer_vtt(vtt_path):
     subs = []
-    try:
-        with open(vtt_path, 'r', encoding='utf-8') as f: content = f.read()
-        blocks = re.findall(r'(\d{2}:\d{2}:\d{2}\.\d{3})\s-->\s(\d{2}:\d{2}:\d{2}\.\d{3})\n(.*?)(?=\n\n|\Z)', content, re.DOTALL)
-        for start, end, text in blocks:
-            def to_sec(t):
-                h, m, s = t.split(':')
-                return float(h)*3600 + float(m)*60 + float(s)
-            txt_clean = re.sub(r'[^\w\s]', '', text.strip()).upper()
-            if txt_clean: subs.append((to_sec(start), to_sec(end), txt_clean))
-    except: pass
+    if not os.path.exists(vtt_path): return subs
+    with open(vtt_path, 'r', encoding='utf-8') as f: content = f.read()
+    blocks = re.findall(r'(\d{2}:\d{2}:\d{2}\.\d{3})\s-->\s(\d{2}:\d{2}:\d{2}\.\d{3})\n(.*?)(?=\n\n|\Z)', content, re.DOTALL)
+    for start, end, text in blocks:
+        def to_sec(t):
+            h, m, s = t.split(':')
+            return float(h)*3600 + float(m)*60 + float(s)
+        subs.append((to_sec(start), to_sec(end), text.strip().upper()))
     return subs
 
 def procesar_escena_ia(args):
-    i, texto_del_clip, t_clip, tema_broll, tl_code, dir_trabajo = args
-    palabra_es = extraer_palabra_clave(texto_del_clip)
-    palabra_en = traducir_a_ingles(palabra_es, tl_code)
-    prompt_ia = f"{palabra_en}, {tema_broll}, masterpiece, 4k, vertical"
-    img_url = f"https://image.pollinations.ai/prompt/{urllib.parse.quote(prompt_ia)}?width=720&height=1280&nologo=true"
+    i, palabra, t_clip, tema_broll, dir_trabajo = args
     img_path = os.path.join(dir_trabajo, f"img_{i}.jpg")
     p_path = os.path.join(dir_trabajo, f"p_{i}.mp4")
+    prompt_ia = f"{palabra}, {tema_broll}, masterpiece, vertical"
+    url = f"https://image.pollinations.ai/prompt/{urllib.parse.quote(prompt_ia)}?width=720&height=1280&nologo=true"
     try:
-        img_data = requests.get(img_url, timeout=20).content
-        with open(img_path, 'wb') as f: f.write(img_data)
-        frames = int(t_clip * 30)
-        vf = f"scale=800:1422,zoompan=z='min(zoom+0.0015,1.2)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={frames}:s=720x1280:fps=30,colorchannelmixer=rr=0.7:gg=0.7:bb=0.7,vignette=PI/3,format=yuv420p"
+        r = requests.get(url, timeout=25)
+        with open(img_path, 'wb') as f: f.write(r.content)
+        # Animación Ken Burns
+        vf = f"scale=800:1422,zoompan=z='min(zoom+0.001,1.2)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={int(t_clip*30)}:s=720x1280,format=yuv420p"
         subprocess.run(f'ffmpeg -y -loop 1 -i "{img_path}" -vf "{vf}" -c:v libx264 -preset ultrafast -t {t_clip} "{p_path}"', shell=True)
-        return (i, p_path)
-    except:
-        return (i, None)
+        return p_path
+    except: return None
 
 with st.sidebar:
-    st.header("🌍 Mercado Global")
-    idioma_elegido = st.selectbox("🌐 Idioma del Vídeo", list(IDIOMAS.keys()))
-    voces_disponibles = IDIOMAS[idioma_elegido]["voces"]
-    nombre_voz = st.selectbox("🗣️ Voz del Locutor", list(voces_disponibles.keys()))
-    codigo_voz = voces_disponibles[nombre_voz]
-    tl_code = IDIOMAS[idioma_elegido]["tl"]
-    color_sub = st.selectbox("🎨 Color Subtítulos", ["yellow", "white", "#00FFD1"])
-    musica_tipo = st.selectbox("🎵 Música", ["Misterio (60Hz)", "Negocios (75Hz)"])
+    idioma = st.selectbox("Idioma", list(IDIOMAS.keys()))
+    voz = st.selectbox("Voz", list(IDIOMAS[idioma]["voces"].keys()))
+    codigo_voz = IDIOMAS[idioma]["voces"][voz]
+    color_sub = st.selectbox("Color Subs", ["yellow", "white", "cyan"])
 
-st.markdown("### 1. El Cerebro")
-tema_usuario = st.text_input("💡 ¿De qué quieres que trate el vídeo?", placeholder="Ej: Curiosidades del espacio")
-st.markdown("### 2. Estilo Visual")
-tema_broll = st.text_input("🎨 Estilo IA:", value="Dark cinematic, hyperrealistic")
+st.markdown("### 🤖 Generador Automático")
+tema = st.text_input("Tema del vídeo:")
+estilo = st.text_input("Estilo visual:", value="Cinematic, detailed")
 
-if st.button("🚀 GENERAR MAGIA (V65)"):
-    if len(tema_usuario.strip()) < 3:
-        st.warning("⚠️ Escribe un tema.")
+if st.button("🚀 CREAR VÍDEO V66"):
+    if not tema: st.warning("Escribe un tema.")
     else:
         with tempfile.TemporaryDirectory() as dir_trabajo:
-            # INICIO DE ESTIMACIÓN
-            with st.status("🎬 Calculando tiempos...", expanded=True) as status:
-                
-                status.write("🧠 IA redactando guion...")
-                guion = generar_guion_ia(tema_usuario, idioma_elegido)
-                if not guion: st.stop()
+            with st.status("🎬 Procesando...", expanded=True) as status:
+                status.write("🧠 Redactando guion...")
+                guion = generar_guion_ia(tema, idioma)
+                if not guion: st.error("Error IA texto"); st.stop()
                 
                 status.write("🎙️ Grabando voz...")
-                generar_voz_inmortal(guion, codigo_voz, tl_code, dir_trabajo)
+                if not generar_voz_inmortal(guion, codigo_voz, dir_trabajo):
+                    st.error("Error al generar audio. Reintenta."); st.stop()
                 
                 mp3_path = os.path.join(dir_trabajo, "t.mp3")
-                vtt_path = os.path.join(dir_trabajo, "subs.vtt")
-                dur_audio = float(subprocess.check_output(f'ffprobe -i "{mp3_path}" -show_entries format=duration -v quiet -of csv="p=0"', shell=True).decode('utf-8').strip())
+                dur = float(subprocess.check_output(f'ffprobe -i "{mp3_path}" -show_entries format=duration -v quiet -of csv="p=0"', shell=True))
                 
-                num_clips = math.ceil(dur_audio / 3.5)
+                num_escenas = 5
+                status.write(f"🎨 Creando {num_escenas} imágenes IA...")
+                palabras = guion.split()[:num_escenas]
+                tareas = [(i, p, dur/num_escenas, estilo, dir_trabajo) for i, p in enumerate(palabras)]
                 
-                # CÁLCULO DE TIEMPO APROXIMADO
-                tiempo_estimado = (num_clips * 8) + 20 
-                st.info(f"⏳ **Tiempo estimado total:** {tiempo_estimado} segundos.")
-                progreso = st.progress(0)
+                clips = []
+                with concurrent.futures.ThreadPoolExecutor(max_workers=2) as ex:
+                    clips = list(ex.map(procesar_escena_ia, tareas))
                 
-                status.write(f"🎨 Pintando {num_clips} escenas IA (Este es el paso más largo)...")
+                clips = [c for c in clips if c]
+                status.write("✨ Mezclando todo...")
                 
-                # PROCESAMIENTO
-                tareas = []
-                for i in range(num_clips):
-                    t_clip = 3.5 if i < num_clips - 1 else (dur_audio - (i * 3.5)) + 1.0
-                    txt_part = " ".join(guion.split()[i*5:(i+1)*5])
-                    tareas.append((i, txt_part, t_clip, tema_broll, tl_code, dir_trabajo))
-
-                clips_finales = []
-                with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
-                    futuros = [executor.submit(procesar_escena_ia, arg) for arg in tareas]
-                    for idx, future in enumerate(concurrent.futures.as_completed(futuros)):
-                        clips_finales.append(future.result())
-                        # Actualizar barra de progreso
-                        porcentaje = int(((idx + 1) / num_clips) * 80)
-                        progreso.progress(porcentaje)
+                lista = os.path.join(dir_trabajo, "l.txt")
+                with open(lista, "w") as f:
+                    for c in clips: f.write(f"file '{c}'\n")
                 
-                clips_finales.sort(key=lambda x: x[0])
+                v_mudo = os.path.join(dir_trabajo, "m.mp4")
+                subprocess.run(f'ffmpeg -y -f concat -safe 0 -i "{lista}" -c copy "{v_mudo}"', shell=True)
                 
-                status.write("✨ Renderizando máster final...")
-                video_mudo = os.path.join(dir_trabajo, "video_mudo.mp4")
-                lista_video_path = os.path.join(dir_trabajo, "lista.txt")
-                with open(lista_video_path, "w") as f:
-                    for c in clips_finales: 
-                        if c[1]: f.write(f"file '{c[1]}'\n")
-                
-                subprocess.run(f'ffmpeg -y -f concat -safe 0 -i "{lista_video_path}" -c copy "{video_mudo}"', shell=True)
-                
-                # AUDIO Y SUBS
-                audio_final = os.path.join(dir_trabajo, "audio_final.m4a")
-                freq = 60 if "Misterio" in musica_tipo else 75
-                subprocess.run(f'ffmpeg -y -i "{mp3_path}" -f lavfi -i "sine=f={freq}:d={dur_audio}" -filter_complex "[0:a]bass=g=5,treble=g=3,acompressor[v]; [1:a]volume=0.03[m]; [v][m]amix=inputs=2:duration=first" -c:a aac "{audio_final}"', shell=True)
-                
-                vtt_data = leer_vtt(vtt_path)
-                subs_cmd = []
+                vtt = os.path.join(dir_trabajo, "subs.vtt")
+                vtt_data = leer_vtt(vtt)
+                draw = []
                 for v in vtt_data:
-                    subs_cmd.append(f"drawtext=text='{v[2]}':fontcolor={color_sub}:fontsize=65:fontfile='{font_abs}':borderw=5:bordercolor=black:x=(w-tw)/2:y=(h-th)/2:enable='between(t,{v[0]},{v[1]})'")
+                    draw.append(f"drawtext=text='{v[2]}':fontcolor={color_sub}:fontsize=60:fontfile='{font_abs}':x=(w-tw)/2:y=(h-th)/2:borderw=4:enable='between(t,{v[0]},{v[1]})'")
                 
-                filt_path = os.path.join(dir_trabajo, "f.txt")
-                with open(filt_path, "w", encoding="utf-8") as f: f.write(",\n".join(subs_cmd))
+                f_txt = os.path.join(dir_trabajo, "f.txt")
+                with open(f_txt, "w", encoding="utf-8") as f: f.write(",".join(draw))
                 
-                v_final = f"output/v_{int(time.time())}.mp4"
                 os.makedirs("output", exist_ok=True)
-                subprocess.run(f'ffmpeg -y -i "{video_mudo}" -i "{audio_final}" -filter_complex_script "{filt_path}" -c:v libx264 -preset fast -t {dur_audio} "{v_final}"', shell=True)
+                v_final = f"output/v_{int(time.time())}.mp4"
+                subprocess.run(f'ffmpeg -y -i "{v_mudo}" -i "{mp3_path}" -filter_complex_script "{f_txt}" -c:v libx264 -preset fast -t {dur} "{v_final}"', shell=True)
                 
-                progreso.progress(100)
-                st.success("🔥 ¡VÍDEO LISTO!")
+                st.success("✅ ¡Listo!")
                 st.video(v_final)
-                st.balloons()
