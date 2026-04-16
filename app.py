@@ -1,152 +1,170 @@
 import streamlit as st
-import os, time, random, subprocess, textwrap, re, urllib.parse
+import os, time, random, subprocess, math, re, urllib.parse
 import requests
 
-st.set_page_config(page_title="Fénix Viral PRO | V31", layout="centered")
+# Configuración Enterprise
+st.set_page_config(page_title="Fénix Viral PRO | v15", layout="centered")
 
 st.markdown("""
 <style>
-    .stApp { background: linear-gradient(135deg, #09090b 0%, #111827 100%); color: #F8FAFC; }
-    .pro-title { font-size: 38px; font-weight: 900; background: -webkit-linear-gradient(45deg, #FFD700, #FF4500); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: center; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 2px;}
+    .stApp { background: linear-gradient(135deg, #0B0F19 0%, #1A2235 100%); color: #F8FAFC; }
+    .pro-title { font-size: 38px; font-weight: 900; background: -webkit-linear-gradient(45deg, #00C6FF, #0072FF); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: center; margin-bottom: 5px; letter-spacing: -1px; }
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX AI STUDIO v31.0</div>', unsafe_allow_html=True)
-st.markdown('<div class="pro-subtitle" style="text-align:center; color:#94A3B8; margin-bottom: 30px;">La Locomotora • Anti-Congelamientos • Vídeos Garantizados</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX AI STUDIO v15.0</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-subtitle">Lógica Gramatical Directa • Castellano Nativo e Infalible</div>', unsafe_allow_html=True)
 
-# Descarga de fuente oficial (Anti-errores de letras)
-font_path = "Arial.ttf"
-if not os.path.exists(font_path):
-    try:
-        r_font = requests.get("https://github.com/matomo-org/travis-scripts/raw/master/fonts/Arial.ttf", timeout=5)
-        with open(font_path, "wb") as f: f.write(r_font.content)
-    except: pass
+# Diccionario de traducción rápido para Pexels (Ampliado para más lógica visual)
+TRADUCTOR = {
+    "AMOR": "love", "ELEFANTE": "elephant", "DINERO": "money", "ESTAFA": "scam",
+    "HACKER": "hacker", "GOBIERNOS": "government", "MILLONARIOS": "success",
+    "GATO": "cat", "PERRO": "dog", "COCHE": "car", "CIUDAD": "city", "MIEDO": "scary",
+    "TRABAJO": "work", "MUNDO": "world", "ESPACIO": "space", "LUNA": "moon",
+    "SOL": "sun", "COMIDA": "food", "ORO": "gold", "MUERTE": "death", "VIDA": "life",
+    "FUEGO": "fire", "AGUA": "water", "BOSQUE": "forest", "TIEMPO": "time clock"
+}
 
-def limpiar_orden(orden):
-    orden_limpia = re.sub(r'[^A-Za-zÁÉÍÓÚáéíóúÑñ0-9\s]', '', orden)
-    return orden_limpia.strip()
+def traducir(palabra):
+    return TRADUCTOR.get(palabra.upper(), palabra.lower())
 
 def detectar_nicho(tema):
     t = tema.lower()
-    if any(w in t for w in ["miedo", "terror", "fantasma", "paranormal", "horror", "misterio", "oscuro"]): return "TERROR"
-    if any(w in t for w in ["dinero", "negocio", "invertir", "rico", "millonario", "cripto", "empresa"]): return "NEGOCIOS"
-    return "UNIVERSAL"
+    if any(w in t for w in ["miedo", "terror", "fantasma", "horror"]): return "TERROR"
+    if any(w in t for w in ["dinero", "negocio", "invertir", "rico", "millonario"]): return "NEGOCIOS"
+    return "MISTERIO"
 
-def generar_guion_seguro(tema, nicho):
-    tema = tema.upper()
-    if nicho == "TERROR":
-        return [
-            {"t": f"No mires este video de noche si le temes a {tema}.", "s": "creepy dark forest"},
-            {"t": "Todo el mundo piensa que es un invento, pero la policia encontro algo macabro.", "s": "scary abandoned house"},
-            {"t": "Las grabaciones de seguridad mostraron algo que rompe la logica humana.", "s": "creepy ghost camera"},
-            {"t": "El gobierno intento ocultarlo, pero un informante filtro los videos.", "s": "hacker computer dark"},
-            {"t": "Si escuchas un ruido extraño hoy, no abras la puerta. Siguenos para mas.", "s": "scary monster eyes"}
-        ]
-    elif nicho == "NEGOCIOS":
-        return [
-            {"t": f"Te estan robando el dinero con {tema} y ni siquiera te has dado cuenta.", "s": "money counting wealth"},
-            {"t": "Las grandes elites diseñaron un sistema para que fracases desde el principio.", "s": "corporate business office"},
-            {"t": "Pero un analista financiero acaba de filtrar el patron exacto para ganar.", "s": "trading chart screen"},
-            {"t": "La clave es buscar donde nadie mas mira y adelantarse al resto.", "s": "success luxury rich"},
-            {"t": "El sistema esta roto, es tu momento de aprovecharlo. Siguenos para mas.", "s": "luxury car lifestyle"}
-        ]
-    else: 
-        return [
-            {"t": f"Te apuesto lo que quieras a que no sabias la verdad sobre {tema}.", "s": "curious mystery cinematic"},
-            {"t": "La gran mayoria de la gente vive engañada aceptando la version oficial.", "s": "crowd of people walking"},
-            {"t": "Pero hace poco tiempo se revelo un detalle oculto que lo cambia todo.", "s": "secret documents investigation"},
-            {"t": "Si prestas atencion a los pequeños detalles, veras la inmensa mentira.", "s": "shocked face dramatic"},
-            {"t": "Abre los ojos y no te dejes manipular nunca mas. Siguenos para mas secretos.", "s": "epic cinematic lighting"}
-        ]
+# --- EL CEREBRO DE LÓGICA HUMANA ---
+def redactar_guion_logico(orden_usuario, nicho):
+    semilla = random.randint(1, 999999)
+    
+    # Prompt exigente: Puntuación perfecta, oraciones completas, castellano nativo.
+    prompt_maestro = f"""
+    ERES UN NARRADOR DE HISTORIAS PROFESIONAL NATIVO EN ESPAÑOL.
+    TAREA: Escribe una historia fascinante, logica y ESPECTACULAR sobre: '{orden_usuario}'.
+    
+    REGLAS DE ORO:
+    1. Escribe en CASTELLANO PURO Y PERFECTO. Usa un vocabulario rico y natural.
+    2. Usa PUNTUACION NORMAL (puntos, comas, interrogaciones). Las oraciones deben ser completas y logicas.
+    3. Estructura: Gancho agresivo + Historia intrigante con datos + Final potente.
+    4. El tono debe ser humano y carismatico. NO use jerga tecnica innecesaria.
+    5. Termina con la frase: 'Síguenos para más {nicho}'.
+    
+    IMPORTANTE: Escribe con mayusculas y minusculas normales. NO USES OTROS IDIOMAS.
+    MINIMO 150 PALABRAS (NECESITO RETENCION LARGA).
+    """
+    
+    try:
+        url = f"https://text.pollinations.ai/{urllib.parse.quote(prompt_maestro)}?seed={semilla}&model=openai"
+        res = requests.get(url, timeout=25)
+        if res.status_code == 200 and len(res.text) > 100:
+            return res.text.replace('"', '').replace("'", "").strip()
+    except: pass
+    
+    return f"¿Alguna vez te has preguntado cuál es el verdadero secreto detrás de {orden_usuario}? Casi todo el mundo está equivocado. La realidad es mucho más impactante de lo que imaginas. Un grupo de expertos analizó los datos y lo que descubrieron cambió las reglas del juego para siempre. No se trata de suerte, se trata de entender el sistema oculto que maneja todo desde las sombras. Ahora que tienes esta información, el poder está en tus manos. Síguenos para más {nicho}."
+
+def time_to_sec(t_str):
+    try:
+        t_str = t_str.strip().split(' ')[0].replace(',', '.')
+        partes = t_str.split(':')
+        if len(partes) == 3: return float(partes[0])*3600 + float(partes[1])*60 + float(partes[2])
+        elif len(partes) == 2: return float(partes[0])*60 + float(partes[1])
+        else: return float(partes[0])
+    except: return 0
 
 with st.sidebar:
-    st.header("⚙️ Configuración")
-    pexels_key = st.text_input("🔑 API Pexels:", value="Ty0uFISh3APEAXIVcrFpSM7ZdwOeRElCuUgoG42EW6WVISRTEfqjm0BZ", type="password")
-    color_sub = st.selectbox("🎨 Color de Letra", ["yellow", "white", "cyan"])
+    st.image("https://cdn-icons-png.flaticon.com/512/2111/2111432.png", width=50)
+    st.header("⚙️ Agencia Pro")
+    pexels_key = st.text_input("🔑 Pexels API Key:", value="Ty0uFISh3APEAXIVcrFpSM7ZdwOeRElCuUgoG42EW6WVISRTEfqjm0BZ", type="password")
+    color_sub = st.selectbox("🎨 Color Subtítulos", ["yellow", "white", "cyan"])
 
-if orden := st.chat_input("Dime el tema (Esta versión HACE LOS VÍDEOS):"):
-    with st.status(f"🚀 Encendiendo Locomotora para '{orden}'...", expanded=True) as status:
-        # 1. Limpieza absoluta (vital para que no se congele)
-        subprocess.run("rm -f a_*.mp3 v_*.mp4 s_*.mp4 text_*.txt lista.txt music.mp3 final.mp4 base.mp4", shell=True)
+if orden := st.chat_input("Dime el tema (Lógica Infalible Garantizada):"):
+    with st.status(f"🚀 Creando obra maestra lógica sobre '{orden}'...", expanded=True) as status:
+        subprocess.run("rm -f p_*.mp4 clip_*.mp4 base.mp4 t.mp3 t.vtt music.mp3 final.mp4 temp_a.mp3 lista.txt subs_filter.txt", shell=True)
         
-        tema_limpio = limpiar_orden(orden)
         nicho = detectar_nicho(orden)
-        escenas = generar_guion_seguro(tema_limpio, nicho)
+        guion_raw = redactar_guion_logico(orden, nicho)
         
-        status.write("🧠 Guion en español cargado.")
+        status.write("✍️ Guion con lógica gramatical nativa redactado.")
+        
+        # Guardamos en txt para que el comando de voz sea seguro
+        with open("temp_guion.txt", "w", encoding="utf-8") as f:
+            f.write(guion_raw)
+            
+        subprocess.run('edge-tts --voice es-ES-AlvaroNeural --rate=0% -f temp_guion.txt --write-media "t.mp3" --write-subtitles "t.vtt"', shell=True)
+        
+        escenas = []
+        full_text_for_voice = ""
+        try:
+            with open('t.vtt', 'r', encoding='utf-8') as f:
+                lines = f.readlines()
+                for i in range(len(lines)):
+                    if "-->" in lines[i]:
+                        start = time_to_sec(lines[i].split(" --> ")[0])
+                        end = time_to_sec(lines[i].split(" --> ")[1])
+                        txt = lines[i+1].strip()
+                        full_text_for_voice += txt + " "
+                        # Extraer la palabra más importante de la frase corta
+                        palabras_limpias = re.sub(r'[^A-Z\s]', '', txt.upper()).split()
+                        palabras_utiles = [p for p in palabras_limpias if len(p) > 4 and p not in ["PORQUE", "CUANDO", "ENTONCES"]]
+                        keyword = palabras_utiles[-1] if palabras_utiles else orden
+                        # Formateamos el texto para los subtítulos
+                        subs_txt = re.sub(r'[^A-Z0-9\s]', '', txt.upper())
+                        remplazos_sub = {'Á':'A','É':'E','Í':'I','Ó':'O','Ú':'U','Ñ':'N'}
+                        for k, v in remplazos_sub.items(): subs_txt = subs_txt.replace(k, v)
+                        escenas.append({"start": start, "end": end, "text": subs_txt, "keyword": keyword})
+        except Exception as e:
+            st.error("Error al generar la voz. Por favor, dale de nuevo.")
+            st.stop()
+
+        status.write("🎞️ Sincronizando metraje HD con cada frase lógica...")
         clips_finales = []
+        last_clip = None
+        
+        sufijo_nicho = "creepy" if nicho == "TERROR" else ("money" if nicho == "NEGOCIOS" else "cinematic")
 
-        for i, esc in enumerate(escenas):
-            texto_frase = esc["t"]
-            status.write(f"🎬 Procesando Escena {i+1}/5...")
-
-            # 2. Voz a prueba de balas
-            texto_voz = re.sub(r'[^A-Za-zÁÉÍÓÚáéíóúÑñ0-9\s.,]', '', texto_frase)
-            # Usamos el comando directo de terminal que no falla en Streamlit
-            subprocess.run(f'edge-tts --voice es-ES-AlvaroNeural --text "{texto_voz}" --write-media "a_{i}.mp3"', shell=True)
+        for i, escena in enumerate(escenas):
+            dur = escena["end"] - escena["start"]
+            if dur <= 0: continue
             
-            # CONTROL DE ERRORES: Si no se crea el audio, paramos aquí y avisamos, no nos congelamos al final
-            if not os.path.exists(f"a_{i}.mp3"):
-                st.error(f"❌ Fallo de red de Microsoft al crear el audio {i+1}. Dale al botón de enviar otra vez.")
-                st.stop()
-            
-            try:
-                dur_str = subprocess.check_output(f"ffprobe -i a_{i}.mp3 -show_entries format=duration -v quiet -of csv='p=0'", shell=True).decode('utf-8').strip()
-                duracion = float(dur_str)
-            except: duracion = 3.5
-
-            # 3. Texto Subtitulado
-            texto_mayus = texto_frase.upper().replace('Á','A').replace('É','E').replace('Í','I').replace('Ó','O').replace('Ú','U').replace('Ñ','N')
-            texto_mayus = re.sub(r'[^A-Z0-9\s.,]', '', texto_mayus)
-            texto_envuelto = textwrap.fill(texto_mayus, width=22)
-            with open(f"text_{i}.txt", "w", encoding="utf-8") as f: f.write(texto_envuelto)
-
-            # 4. Vídeo de Pexels
+            query_palabra = traducir(escena["keyword"])
+            intentos = [f"{query_palabra} portrait", f"{orden} {sufijo_nicho}", sufijo_nicho]
             v_url = None
-            try:
-                r = requests.get(f"https://api.pexels.com/videos/search?query={urllib.parse.quote(esc['s'])}&per_page=3&orientation=portrait", headers={"Authorization": pexels_key.strip()}, timeout=5).json()
-                if r.get('videos'): v_url = r['videos'][0]['video_files'][0]['link']
-            except: pass
+            for q in intentos:
+                try:
+                    r = requests.get(f"https://api.pexels.com/videos/search?query={urllib.parse.quote(q)}&per_page=10&orientation=portrait", headers={"Authorization": pexels_key.strip()}, timeout=5).json()
+                    if r.get('videos'):
+                        v_url = random.choice(r['videos'])['video_files'][0]['link']
+                        break
+                except: pass
             
             try:
                 if not v_url: raise Exception()
-                with open(f"v_{i}.mp4", 'wb') as f: f.write(requests.get(v_url, timeout=10).content)
+                with open(f"clip_{i}.mp4", 'wb') as f: f.write(requests.get(v_url, timeout=10).content)
+                subprocess.run(f'ffmpeg -y -i "clip_{i}.mp4" -vf "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,fps=30" -an -c:v libx264 -preset ultrafast -t {dur + 0.1} "p_{i}.mp4"', shell=True)
+                last_clip = f"p_{i}.mp4"
             except:
-                subprocess.run(f'ffmpeg -y -f lavfi -i color=c=black:s=720x1280:d=1:r=30 -c:v libx264 -preset ultrafast v_{i}.mp4', shell=True)
+                if last_clip: subprocess.run(f"cp {last_clip} p_{i}.mp4", shell=True)
+                else: subprocess.run(f'ffmpeg -y -f lavfi -i color=c=black:s=720x1280:d=2:r=30 -c:v libx264 -preset ultrafast p_{i}.mp4', shell=True)
+            clips_finales.append(f"p_{i}.mp4")
 
-            # 5. Renderizado Seguro
-            font_cmd = f"fontfile='{font_path}':" if os.path.exists(font_path) else ""
-            cmd_scene = f"""ffmpeg -y -stream_loop -1 -i v_{i}.mp4 -i a_{i}.mp3 -vf "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,format=yuv420p,drawtext=textfile='text_{i}.txt':fontcolor={color_sub}:fontsize=45:{font_cmd}box=1:boxcolor=black@0.6:boxborderw=15:borderw=2:bordercolor=black:line_spacing=12:x=(w-tw)/2:y=(h-th)/2,fps=30" -c:v libx264 -preset ultrafast -c:a aac -ar 44100 -ac 2 -t {duracion} s_{i}.mp4"""
-            subprocess.run(cmd_scene, shell=True)
-            
-            if os.path.exists(f"s_{i}.mp4"): 
-                clips_finales.append(f"s_{i}.mp4")
-            else:
-                st.error(f"❌ Error al procesar el vídeo {i+1}. La memoria de la nube puede estar llena.")
-                st.stop()
+        status.write("✨ Montando Master Final en HD...")
+        subs_cmd = []
+        for i, escena in enumerate(escenas):
+            subs_cmd.append(f"drawtext=text='{escena['text']}':fontcolor={color_sub}:fontsize=32:fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:borderw=3:bordercolor=black:shadowcolor=black:shadowx=2:shadowy=2:x=(w-tw)/2:y=(h-th)/2:enable='between(t,{escena['start']},{escena['end']})'")
+        with open("subs_filter.txt", "w") as f: f.write(",\n".join(subs_cmd))
 
-        # 6. Unión Final Blindada
-        status.write("✨ Uniendo Máster Final (Fase Segura)...")
         with open("lista.txt", "w") as f:
             for c in clips_finales: f.write(f"file '{c}'\n")
-            
-        # Unimos solo si la lista se ha creado bien
+        
         subprocess.run('ffmpeg -y -f concat -safe 0 -i lista.txt -c copy base.mp4', shell=True)
+        subprocess.run(f'ffmpeg -y -f lavfi -i "sine=f=75:d=120" -filter_complex "[0:a]volume=0.1" music.mp3', shell=True)
+        subprocess.run(f'ffmpeg -y -i t.mp3 -i music.mp3 -filter_complex "[0:a]volume=3.0[v];[1:a]volume=0.15[m];[v][m]amix=inputs=2:duration=first" temp_a.mp3', shell=True)
         
-        if not os.path.exists("base.mp4"):
-            st.error("❌ Fallo crítico al unir los clips.")
-            st.stop()
-            
         v_final = f"output/v_{int(time.time())}.mp4"
-        frecuencia = 60 if nicho == "TERROR" else 75
-        
-        # Último paso: mezclar música con el vídeo
-        cmd_final = f"""ffmpeg -y -i base.mp4 -f lavfi -i "sine=f={frecuencia}:d=120" -filter_complex "[1:a]volume=0.03[m];[0:a][m]amix=inputs=2:duration=first" -c:v copy -c:a aac -ar 44100 -ac 2 "{v_final}" """
-        subprocess.run(cmd_final, shell=True)
+        subprocess.run(f'ffmpeg -y -i base.mp4 -i temp_a.mp3 -filter_complex_script subs_filter.txt -c:v libx264 -preset veryfast -b:v 3000k -shortest "{v_final}"', shell=True)
         
         if os.path.exists(v_final):
-            st.success("✅ VÍDEO FABRICADO CON ÉXITO.")
+            st.success("✅ Obra Maestra Lógica Finalizada con Éxito (Versión 15 Original).")
             st.video(v_final)
             st.balloons()
-        else:
-            st.error("❌ Fallo en el último paso de renderizado.")
