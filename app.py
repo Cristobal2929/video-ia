@@ -3,7 +3,7 @@ import os, time, subprocess, re, urllib.parse, shutil, math, random
 import requests
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Fénix Studio V90", layout="centered")
+st.set_page_config(page_title="Fénix Studio V91", layout="centered")
 
 components.html("""
 <script>
@@ -26,8 +26,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V90 🎥</div>', unsafe_allow_html=True)
-st.markdown('<div style="text-align:center; color:#94A3B8; margin-bottom: 30px;">IA 8K • Zoom Cinemático • Subs Inmortales (V58)</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V91 🎥</div>', unsafe_allow_html=True)
+st.markdown('<div style="text-align:center; color:#94A3B8; margin-bottom: 30px;">IA 8K • Ultrafast RAM • Chivato Forense Activado</div>', unsafe_allow_html=True)
 
 @st.cache_resource
 def descargar_fuente():
@@ -35,9 +35,13 @@ def descargar_fuente():
     if not os.path.exists(font_path):
         try:
             r = requests.get("https://github.com/matomo-org/travis-scripts/raw/master/fonts/Arial.ttf", timeout=10)
-            with open(font_path, "wb") as f: f.write(r.content)
+            # Solo la guardamos si es un archivo real y no una web de error corrupta
+            if r.status_code == 200 and len(r.content) > 10000:
+                with open(font_path, "wb") as f: f.write(r.content)
         except: pass
-    return os.path.abspath(font_path).replace('\\', '/')
+    if os.path.exists(font_path) and os.path.getsize(font_path) > 10000:
+        return os.path.abspath(font_path).replace('\\', '/')
+    return "" # Si falla, que FFmpeg use la suya por defecto para que no explote
 
 font_abs = descargar_fuente()
 
@@ -78,7 +82,7 @@ duracion_opcion = st.selectbox("⏱️ Duración del Vídeo:", [
     "Largo (~60 segundos)"
 ])
 
-if st.button("🚀 CREAR VÍDEO 8K (V90)"):
+if st.button("🚀 CREAR VÍDEO 8K (V91)"):
     if not tema: st.warning("⚠️ Escribe un tema para la IA.")
     else:
         preparar_entorno()
@@ -100,10 +104,9 @@ if st.button("🚀 CREAR VÍDEO 8K (V90)"):
             try: dur = float(subprocess.check_output(f'ffprobe -i "{audio}" -show_entries format=duration -v quiet -of csv="p=0"', shell=True))
             except: pass
             
-            # Cortamos a un tamaño estándar de 3.5s para no hacer escenas aburridas
             num_clips = math.ceil(dur / 3.5)
             t_por_escena = dur / num_clips
-            dur_frames = int(t_por_escena * 24) # 24 FPS de cine
+            dur_frames = int(t_por_escena * 24)
             
             status.write(f"🎨 Dibujando {num_clips} escenas en 8K Hiperrealista...")
             clips_finales = []
@@ -119,12 +122,12 @@ if st.button("🚀 CREAR VÍDEO 8K (V90)"):
                 palabra_en = traducir_a_ingles(palabra_es)
                 
                 status.write(f"⏳ Escena {i+1}/{num_clips}: '{palabra_en}' (Anti-bloqueo 🤫)...")
-                time.sleep(3.5) # Evasión del filtro de spam
+                time.sleep(3.5)
                 
                 img = f"taller/img_{i}.jpg"
                 vid = f"taller/vid_{i}.mp4"
                 
-                prompt_ia = f"{palabra_en} {estilo_visual}, 8k resolution, Unreal Engine 5 render, hyperrealistic photograph, masterpiece, cinematic lighting, extremely detailed, depth of field"
+                prompt_ia = f"{palabra_en} {estilo_visual}, 8k resolution, Unreal Engine 5 render, hyperrealistic photograph, masterpiece, cinematic lighting, extremely detailed"
                 url = f"https://image.pollinations.ai/prompt/{urllib.parse.quote(prompt_ia)}?width=720&height=1280&nologo=true"
                 
                 exito = False
@@ -134,7 +137,7 @@ if st.button("🚀 CREAR VÍDEO 8K (V90)"):
                         with open(img, 'wb') as f: f.write(r.content)
                         
                         vf = f"scale=800:1422,zoompan=z='min(zoom+0.0015,1.2)':d={dur_frames}:s=720x1280:fps=24,format=yuv420p" 
-                        subprocess.run(f'ffmpeg -y -loop 1 -i "{img}" -vf "{vf}" -c:v libx264 -preset ultrafast -crf 26 -threads 1 -t {t_por_escena} "{vid}"', shell=True)
+                        subprocess.run(f'ffmpeg -y -loop 1 -i "{img}" -vf "{vf}" -c:v libx264 -preset ultrafast -crf 28 -threads 1 -t {t_por_escena} "{vid}"', shell=True)
                         
                         if os.path.exists(vid): exito = True
                         if os.path.exists(img): os.remove(img)
@@ -148,19 +151,19 @@ if st.button("🚀 CREAR VÍDEO 8K (V90)"):
                 
                 clips_finales.append(f"vid_{i}.mp4")
 
-            status.write("🎬 Uniendo secuencias...")
+            status.write("🎬 Uniendo secuencias fluidas...")
             with open("taller/lista.txt", "w") as f:
                 for c in clips_finales: f.write(f"file '{c}'\n")
             
             v_mudo = "taller/mudo.mp4"
             subprocess.run(f'ffmpeg -y -f concat -safe 0 -i taller/lista.txt -c copy "{v_mudo}"', shell=True)
 
-            status.write("✨ Mapeando Subtítulos Inmortales...")
+            status.write("✨ Mapeando Subtítulos Seguros...")
             texto_seguro = re.sub(r'[^\w\s]', '', guion.replace('\n', ' ').upper()).replace('_', '')
             palabras = texto_seguro.split()
             
             subs_cmd = []
-            font_cmd = f"fontfile='{font_abs}':" if os.path.exists(font_abs) else ""
+            font_cmd = f"fontfile='{font_abs}':" if font_abs else ""
             chunks_raw = [palabras[j:j+2] for j in range(0, len(palabras), 2)]
             tiempo_por_chunk = dur / max(len(chunks_raw), 1)
             
@@ -168,7 +171,6 @@ if st.button("🚀 CREAR VÍDEO 8K (V90)"):
                 t_start = j * tiempo_por_chunk
                 t_end = t_start + tiempo_por_chunk
                 
-                # ADIÓS AL ERROR: Tamaño FIJO 65 como en la V58. Sin fórmulas matemáticas que rompan FFmpeg.
                 if len(p_list) == 2 and (len(p_list[0]) + len(p_list[1]) > 12):
                     w1, w2 = p_list[0], p_list[1]
                     subs_cmd.append(f"drawtext=text='{w1}':fontcolor={color_sub}:fontsize=65:{font_cmd}borderw=5:bordercolor=black:shadowcolor=black@0.8:shadowx=4:shadowy=4:x=(w-tw)/2:y=(h-th)/2-40:enable='between(t,{t_start},{t_end})'")
@@ -179,15 +181,18 @@ if st.button("🚀 CREAR VÍDEO 8K (V90)"):
             
             with open("taller/subs_filter.txt", "w") as f: f.write(",\n".join(subs_cmd))
 
-            status.write("✨ Renderizando Máster Final HD...")
+            status.write("✨ Renderizando Máster Final (Modo Ultrafast)...")
             final_path = "taller/master.mp4"
-            cmd_f = f"""ffmpeg -y -i "{v_mudo}" -i "{audio}" -filter_complex_script taller/subs_filter.txt -c:v libx264 -preset fast -crf 25 -c:a copy -threads 1 -t {dur} "{final_path}" """
-            subprocess.run(cmd_f, shell=True)
+            cmd_f = f"""ffmpeg -y -i "{v_mudo}" -i "{audio}" -filter_complex_script taller/subs_filter.txt -c:v libx264 -preset ultrafast -crf 28 -c:a copy -threads 1 -t {dur} "{final_path}" """
+            
+            # EL CHIVATO: Capturamos el error si FFmpeg explota
+            proceso = subprocess.run(cmd_f, shell=True, capture_output=True, text=True)
             
             if os.path.exists(final_path) and os.path.getsize(final_path) > 1000:
                 status.update(label="✅ ¡Proceso 100% Completado!", state="complete")
             else:
-                st.error("❌ Error crítico en el renderizado.")
+                st.error("❌ Error crítico en el renderizado. Aquí tienes el reporte forense:")
+                st.code(proceso.stderr[-1500:]) # Muestra los últimos fallos exactos
                 st.stop()
         
         st.markdown('<div class="info-card">🎉 VÍDEO EXPORTADO. Haz clic derecho o pulsa para descargar.</div>', unsafe_allow_html=True)
