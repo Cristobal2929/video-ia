@@ -13,6 +13,7 @@ st.markdown("""
     .msg { color: #00FFD1; font-family: 'Courier New', monospace; font-size: 14px; margin-bottom: 8px; border-left: 3px solid #FFD700; padding-left: 12px; }
     .stButton>button { width: 100%; background: linear-gradient(45deg, #00FFD1, #0088ff); color: white; border: none; font-weight: 900; height: 55px; border-radius: 12px; font-size: 18px;}
     .video-container { border: 3px solid #00FFD1; border-radius: 15px; padding: 10px; background: #111; }
+    .error-log { background: #330000; color: #FF6666; padding: 10px; border-radius: 8px; font-family: monospace; font-size: 13px; white-space: pre-wrap; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -35,10 +36,17 @@ def limpiar_texto(t):
     t = re.sub(r'tool_calls|recalc|words|assistant|reasoning|thought|count|slightly|above|remove|piece|adjust|instruction|spanish|user|wants|script', '', t, flags=re.I)
     return re.sub(r'[^a-zA-ZáéíóúÁÉÍÓÚñÑ.,! ]', '', t).strip()
 
+def check_ffmpeg():
+    try:
+        result = subprocess.run(["which", "ffmpeg"], capture_output=True, text=True)
+        return result.stdout.strip() != ""
+    except:
+        return False
+
 def preparar():
     if os.path.exists("taller"): shutil.rmtree("taller")
     os.makedirs("taller", exist_ok=True)
-    subprocess.run("pkill ffmpeg", shell=True)
+    subprocess.run("pkill ffmpeg", shell=True, stderr=subprocess.DEVNULL)
     gc.collect()
 
 tema = st.text_input("🧠 Tema del vídeo:", placeholder="Ej: La mentalidad del 1%")
@@ -51,6 +59,11 @@ if st.button("🚀 CREAR VÍDEO (VÍDEOS REALES + MÚSICA)"):
         preparar()
         log = st.container()
         with log:
+            st.info("Verificando FFmpeg...")
+            if not check_ffmpeg():
+                st.error("❌ FFmpeg no encontrado. Asegúrate de tener un archivo **packages.txt** en la raíz de tu repositorio con la palabra `ffmpeg` dentro.")
+                st.stop()
+
             # 1. GUION Y VOZ
             st.markdown('<div class="msg">📝 Redactando guion viral...</div>', unsafe_allow_html=True)
             p = f"Escribe UNICAMENTE el guion para TikTok sobre {tema}. Estructura: Gancho con historia, pasos y cierre. Maximo 90 palabras."
@@ -80,8 +93,8 @@ if st.button("🚀 CREAR VÍDEO (VÍDEOS REALES + MÚSICA)"):
             except: 
                 dur = 25.0
 
-            # 3. VÍDEOS REALES DE PEXELS
-            n_clips = min(math.ceil(dur / 3.5), 15)
+            # 3. VÍDEOS REALES
+            n_clips = min(math.ceil(dur / 3.5), 12)  # reducido un poco para ahorrar RAM
             t_clip = dur / n_clips
             clips = []
             palabras = guion.split()
@@ -90,18 +103,20 @@ if st.button("🚀 CREAR VÍDEO (VÍDEOS REALES + MÚSICA)"):
 
             for i in range(n_clips):
                 txt_part = " ".join(palabras[i*chunk:(i+1)*chunk])
-                st.markdown(f'<div class="msg">🎥 Escena {i+1}/{n_clips}: Vídeo real de "{txt_part[:15]}..."</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="msg">🎥 Escena {i+1}/{n_clips}: Vídeo real de "{txt_part[:20]}..."</div>', unsafe_allow_html=True)
                 raw = f"taller/r_{i}.mp4"
                 vid = f"taller/v_{i}.mp4"
                 try:
                     h = {"Authorization": PEXELS_API}
-                    url_p = f"https://api.pexels.com/videos/search?query={urllib.parse.quote(txt_part[:15]+' luxury')}&orientation=portrait&per_page=1"
-                    v_link = requests.get(url_p, headers=h, timeout=10).json()['videos'][0]['video_files'][0]['link']
+                    url_p = f"https://api.pexels.com/videos/search?query={urllib.parse.quote(txt_part[:20]+' luxury')}&orientation=portrait&per_page=1"
+                    data = requests.get(url_p, headers=h, timeout=10).json()
+                    v_link = data['videos'][0]['video_files'][0]['link']
                     with open(raw, 'wb') as f: 
-                        f.write(requests.get(v_link, timeout=15).content)
+                        f.write(requests.get(v_link, timeout=20).content)
                     vf = "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,setsar=1,format=yuv420p"
                     subprocess.run(f'ffmpeg -y -stream_loop -1 -i "{raw}" -t {t_clip} -vf "{vf}" -c:v libx264 -preset superfast "{vid}"', shell=True)
-                except:
+                except Exception as e:
+                    st.warning(f"Clip {i+1} falló, usando fallback.")
                     if ultima:
                         subprocess.run(f'cp "{ultima}" "{vid}"', shell=True)
                     else:
@@ -112,8 +127,8 @@ if st.button("🚀 CREAR VÍDEO (VÍDEOS REALES + MÚSICA)"):
                 if os.path.exists(raw): os.remove(raw)
                 gc.collect()
 
-            # 4. ENSAMBLADO FINAL (OPTIMIZADO PARA BAJA RAM + REPRODUCCIÓN CORRECTA)
-            st.markdown('<div class="msg">🎬 Masterizando con música y subtítulos (bajo consumo RAM)...</div>', unsafe_allow_html=True)
+            # 4. ENSAMBLADO FINAL CON DEPURACIÓN
+            st.markdown('<div class="msg">🎬 Masterizando con música (bajo consumo RAM)...</div>', unsafe_allow_html=True)
             
             with open("taller/lista.txt", "w") as f:
                 for c in clips: 
@@ -137,25 +152,27 @@ if st.button("🚀 CREAR VÍDEO (VÍDEOS REALES + MÚSICA)"):
                 f'-filter_complex "[1:a]volume=0.12,afade=t=out:st={fade_st}:d=2[music];'
                 f'[0:a][music]amix=inputs=2:duration=first:dropout_transition=2[aout]" '
                 f'-map 0:v -map "[aout]" -c:v libx264 -preset veryfast -threads 2 '
-                f'-tune fastdecode -crf 23 -pix_fmt yuv420p -c:a aac -b:a 160k -shortest "{final}"'
+                f'-tune fastdecode -crf 23 -pix_fmt yuv420p -c:a aac -b:a 160k -shortest "{final}" 2>&1'
             )
-            subprocess.run(cmd, shell=True)
+            
+            result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
 
-            # Limpieza de archivos temporales
-            for f in ["taller/mudo.mp4", "taller/voz_temp.mp4"] + [f"taller/v_{i}.mp4" for i in range(n_clips)]:
-                if os.path.exists(f):
-                    try: os.remove(f)
-                    except: pass
-            gc.collect()
+            if result.returncode != 0:
+                st.markdown('<div class="error-log">❌ ERROR EN FFmpeg:\n' + result.stderr[-1500:] + '</div>', unsafe_allow_html=True)
+                st.error("Error al generar el vídeo final. Revisa el log arriba.")
+            else:
+                # Limpieza
+                for f in ["taller/mudo.mp4", "taller/voz_temp.mp4"] + [f"taller/v_{i}.mp4" for i in range(n_clips)]:
+                    if os.path.exists(f):
+                        try: os.remove(f)
+                        except: pass
+                gc.collect()
 
-            # Mostrar el vídeo correctamente en la página
-            if os.path.exists(final):
                 st.markdown('<div class="msg">🏆 ¡VÍDEO COMPLETADO CON ÉXITO!</div>', unsafe_allow_html=True)
                 st.markdown('<div class="video-container">', unsafe_allow_html=True)
-                st.video(final)   # ← Ahora se reproduce correctamente en la página
+                st.video(final)
                 st.markdown('</div>', unsafe_allow_html=True)
                 
-                # Botón para descargar
                 with open(final, "rb") as file:
                     st.download_button(
                         label="⬇️ Descargar vídeo MP4",
@@ -163,7 +180,5 @@ if st.button("🚀 CREAR VÍDEO (VÍDEOS REALES + MÚSICA)"):
                         file_name=f"fenix_{tema.replace(' ', '_')[:30]}.mp4",
                         mime="video/mp4"
                     )
-            else:
-                st.error("Error al generar el vídeo final.")
 
-            st.success("Proceso terminado. ¡Disfruta tu vídeo!")
+            st.success("Proceso terminado.")
