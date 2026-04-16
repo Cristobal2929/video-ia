@@ -3,7 +3,7 @@ import os, time, subprocess, re, urllib.parse, shutil, math, random, gc
 import requests
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Fénix Studio V130", layout="centered")
+st.set_page_config(page_title="Fénix Studio V131", layout="centered")
 
 components.html("<script>if('wakeLock' in navigator){navigator.wakeLock.request('screen');}</script>", height=0)
 
@@ -16,7 +16,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V130 🎭</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V131 🎭🔥</div>', unsafe_allow_html=True)
 
 @st.cache_resource
 def get_font():
@@ -48,35 +48,36 @@ def preparar():
     os.makedirs("taller", exist_ok=True)
     subprocess.run("pkill ffmpeg", shell=True)
 
-tema = st.text_input("🧠 Tema del vídeo:", placeholder="Ej: La historia de un millonario")
+tema = st.text_input("🧠 Tema del vídeo:", placeholder="Ej: Superación desde cero")
 color_sub = st.selectbox("🎨 Color de los Subtítulos:", ["yellow", "white", "#00FFD1"])
 
-if st.button("🚀 CREAR HISTORIA ÉPICA (V130)"):
+if st.button("🚀 CREAR HISTORIA CON GANCHO (V131)"):
     if not tema: st.error("⚠️ Escribe un tema")
     else:
         preparar()
         log = st.container()
         
         with log:
-            st.markdown('<div class="msg">📝 IA redactando historia con principio y fin...</div>', unsafe_allow_html=True)
-            # Prompt para forzar una narrativa completa
-            prompt_g = f"Actua como un experto narrador de TikTok. Escribe un guion sobre {tema}. Estructura obligatoria: 1) Empieza con una breve historia o escenario real que enganche, 2) Desarrolla el mensaje principal con puntos claros, 3) Termina con una conclusion potente. Usa unas 100 palabras. Solo texto fluido, sin numeros ni etiquetas."
+            st.markdown('<div class="msg">📝 IA creando historia con gancho maestro...</div>', unsafe_allow_html=True)
+            # Prompt mejorado para forzar un inicio narrativo
+            prompt_g = f"Actua como un experto en storytelling de TikTok. Escribe un guion épico sobre {tema}. Estructura obligatoria: 1) Gancho inicial de 5-7 segundos planteando un problema o una historia intrigante, 2) Desarrollo con 3 pasos clave, 3) Cierre con un mensaje de poder. Usa unas 110 palabras para que el video dure. No incluyas números ni etiquetas."
             
             try:
                 guion_raw = requests.get(f"https://text.pollinations.ai/{urllib.parse.quote(prompt_g)}", timeout=20).text
                 guion = re.sub(r'[0-9]+', '', guion_raw)
+                guion = re.sub(r'Assistant|Reasoning|Thought|Context', '', guion, flags=re.I)
                 guion = re.sub(r'[^a-zA-ZáéíóúÁÉÍÓÚñÑ.,! ]', '', guion).strip()
             except:
-                guion = "Imagina despertar sin nada en tu cuenta bancaria. Esa fue la realidad de muchos que hoy dominan el mundo. No empezaron con dinero, empezaron con una idea y una disciplina inquebrantable. El camino es duro, pero la recompensa es eterna. Haz que cada segundo cuente."
+                guion = "Él no tenía nada, solo una vieja laptop y un sueño. Se despertó un lunes y decidió que su realidad iba a cambiar. No fue fácil, hubo noches de duda y cansancio, pero la persistencia fue su mejor aliada. Hoy, mira atrás y sabe que el esfuerzo valió cada segundo de lucha."
             
-            st.markdown('<div class="msg">🎙️ Grabando voz narrativa...</div>', unsafe_allow_html=True)
+            st.markdown('<div class="msg">🎙️ Grabando voz Jorge (Ritmo Narrativo)...</div>', unsafe_allow_html=True)
             audio = "taller/audio.mp3"
             subprocess.run(f'edge-tts --voice es-MX-JorgeNeural --rate=+0% --text "{guion}" --write-media "{audio}"', shell=True)
             
             try: dur = float(subprocess.check_output(f'ffprobe -i "{audio}" -show_entries format=duration -v quiet -of csv="p=0"', shell=True))
             except: dur = 30.0
 
-            n_clips = math.ceil(dur / 3.2) 
+            n_clips = min(math.ceil(dur / 3.2), 25) 
             t_clip = dur / n_clips
             clips = []
             palabras_guion = guion.split()
@@ -86,13 +87,14 @@ if st.button("🚀 CREAR HISTORIA ÉPICA (V130)"):
             for i in range(n_clips):
                 txt_chunk = " ".join(palabras_guion[i*chunk_size:(i+1)*chunk_size])
                 kw_en = traducir_en(extraer_kw(txt_chunk))
-                st.markdown(f'<div class="msg">🎥 Escena {i+1}/{n_clips}: Narrando "{kw_en.upper()}"...</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="msg">🎥 Escena {i+1}/{n_clips}: Recortando "{kw_en.upper()}"...</div>', unsafe_allow_html=True)
                 
                 raw_vid, vid = f"taller/raw_{i}.mp4", f"taller/v_{i}.mp4"
                 exito_vid = False
                 try:
                     headers = {"Authorization": PEXELS_API}
-                    url_p = f"https://api.pexels.com/videos/search?query={urllib.parse.quote(kw_en+' cinematic luxury')}&orientation=portrait&per_page=5"
+                    # Busqueda de lujo 8k para mejorar la imagen
+                    url_p = f"https://api.pexels.com/videos/search?query={urllib.parse.quote(kw_en+' luxury 8k cinematic')}&orientation=portrait&per_page=3"
                     r_p = requests.get(url_p, headers=headers, timeout=12).json()
                     if r_p.get('videos'):
                         v_url = r_p['videos'][0]['video_files'][0]['link']
@@ -113,7 +115,7 @@ if st.button("🚀 CREAR HISTORIA ÉPICA (V130)"):
                 if os.path.exists(raw_vid): os.remove(raw_vid)
                 gc.collect()
 
-            st.markdown('<div class="msg">🎬 Ensamblando la historia...</div>', unsafe_allow_html=True)
+            st.markdown('<div class="msg">🎬 Ensamblado y Tatuado V131...</div>', unsafe_allow_html=True)
             with open("taller/lista.txt", "w") as f:
                 for c in clips: f.write(f"file '{c}'\n")
             
@@ -138,6 +140,6 @@ if st.button("🚀 CREAR HISTORIA ÉPICA (V130)"):
             subprocess.run(f'ffmpeg -y -i "{mudo}" -i "{audio}" -filter_complex_script taller/s.txt -c:v libx264 -preset ultrafast -crf 28 -threads 1 -t {dur} "{final}"', shell=True)
             
             if os.path.exists(final):
-                st.markdown(f'<div class="info-card">🏆 HISTORIA COMPLETADA CON ÉXITO</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="info-card">🏆 HISTORIA ÉPICA COMPLETADA (DURACIÓN {int(dur)}s)</div>', unsafe_allow_html=True)
                 with open(final, "rb") as f: st.video(f.read())
                 st.balloons()
