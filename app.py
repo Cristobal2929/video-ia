@@ -3,7 +3,7 @@ import os, time, subprocess, re, urllib.parse, shutil, math, random, gc
 import requests
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Fénix Studio V128", layout="centered")
+st.set_page_config(page_title="Fénix Studio V129", layout="centered")
 
 components.html("<script>if('wakeLock' in navigator){navigator.wakeLock.request('screen');}</script>", height=0)
 
@@ -16,7 +16,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V128 ⏳</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V129 🧠🛡️</div>', unsafe_allow_html=True)
 
 @st.cache_resource
 def get_font():
@@ -39,45 +39,49 @@ def traducir_en(palabra):
     except: return palabra
 
 def extraer_kw(texto):
+    # Evitar palabras técnicas de la IA
+    prohibidas = ["assistant", "reasoning", "thought", "content", "write", "exactly"]
     palabras = re.sub(r'[^\w\s]', '', texto).split()
-    utiles = [p for p in palabras if len(p) > 4]
-    return max(utiles, key=len) if utiles else "success"
+    utiles = [p for p in palabras if len(p) > 4 and p.lower() not in prohibidas]
+    return max(utiles, key=len) if utiles else "luxury"
 
 def preparar():
     if os.path.exists("taller"): shutil.rmtree("taller")
     os.makedirs("taller", exist_ok=True)
     subprocess.run("pkill ffmpeg", shell=True)
 
-tema = st.text_input("🧠 Tema del vídeo:", placeholder="Ej: Los secretos del éxito")
+tema = st.text_input("🧠 Tema del vídeo:", placeholder="Ej: Superación personal")
 color_sub = st.selectbox("🎨 Color de los Subtítulos:", ["yellow", "white", "#00FFD1"])
 
-if st.button("🚀 CREAR VÍDEO LARGO (V128)"):
+if st.button("🚀 CREAR VÍDEO (FILTRO CORDURA)"):
     if not tema: st.error("⚠️ Escribe un tema")
     else:
         preparar()
         log = st.container()
         
         with log:
-            st.markdown('<div class="msg">📝 Redactando guion extendido...</div>', unsafe_allow_html=True)
-            # Pedimos más palabras para aumentar la duración
-            prompt_g = f"Actua como experto en TikTok. Escribe un guion viral DETALLADO y EXTENSO sobre {tema}. Estructura: Gancho agresivo, desarrollo profundo con varios puntos, y cierre épico. Usa unas 90 a 100 palabras. No incluyas numeros ni etiquetas. Solo texto fluido."
+            st.markdown('<div class="msg">📝 IA redactando guion (Solo voz)...</div>', unsafe_allow_html=True)
+            # Prompt ultra-específico para que no delire
+            p = f"Escribe UNICAMENTE el guion de locucion para un video de TikTok sobre {tema}. No añadas explicaciones, ni notas, ni pensamientos. Solo el texto que debe ser leido. Usa un tono motivador y directo. Maximo 90 palabras."
             
             try:
-                guion_raw = requests.get(f"https://text.pollinations.ai/{urllib.parse.quote(prompt_g)}", timeout=20).text
+                guion_raw = requests.get(f"https://text.pollinations.ai/{urllib.parse.quote(p)}", timeout=20).text
+                # Limpieza de seguridad
                 guion = re.sub(r'[0-9]+', '', guion_raw)
+                guion = re.sub(r'Assistant|Reasoning|Thought|Context', '', guion, flags=re.I)
                 guion = re.sub(r'[^a-zA-ZáéíóúÁÉÍÓÚñÑ.,! ]', '', guion).strip()
             except:
-                guion = "El éxito real no se construye en un día, requiere paciencia y una estrategia clara que pocos están dispuestos a seguir. Tienes que aprender a dominar tu mente antes de dominar tus finanzas. Empieza hoy mismo."
+                guion = "El éxito se construye paso a paso. No te detengas hasta que te sientas orgulloso."
             
-            st.markdown('<div class="msg">🎙️ Grabando voz Jorge...</div>', unsafe_allow_html=True)
+            st.markdown('<div class="msg">🎙️ Grabando voz de Jorge...</div>', unsafe_allow_html=True)
             audio = "taller/audio.mp3"
             subprocess.run(f'edge-tts --voice es-MX-JorgeNeural --rate=+0% --text "{guion}" --write-media "{audio}"', shell=True)
             
             try: dur = float(subprocess.check_output(f'ffprobe -i "{audio}" -show_entries format=duration -v quiet -of csv="p=0"', shell=True))
-            except: dur = 30.0
+            except: dur = 20.0
 
-            # Calculamos más clips para que el vídeo sea dinámico
-            n_clips = math.ceil(dur / 3.0) 
+            # Límite máximo de 20 clips para evitar locuras de 80 escenas
+            n_clips = min(math.ceil(dur / 3.0), 20) 
             t_clip = dur / n_clips
             clips = []
             palabras_guion = guion.split()
@@ -93,10 +97,8 @@ if st.button("🚀 CREAR VÍDEO LARGO (V128)"):
                 exito_vid = False
                 try:
                     headers = {"Authorization": PEXELS_API}
-                    # Buscamos con etiquetas de lujo 8K
-                    q = f"{kw_en} luxury 8k cinematic"
-                    url_p = f"https://api.pexels.com/videos/search?query={urllib.parse.quote(q)}&orientation=portrait&per_page=5"
-                    r_p = requests.get(url_p, headers=headers, timeout=12).json()
+                    url_p = f"https://api.pexels.com/videos/search?query={urllib.parse.quote(kw_en+' luxury 8k')}&orientation=portrait&per_page=3"
+                    r_p = requests.get(url_p, headers=headers, timeout=10).json()
                     if r_p.get('videos'):
                         v_url = r_p['videos'][0]['video_files'][0]['link']
                         with open(raw_vid, 'wb') as f: f.write(requests.get(v_url, timeout=15).content)
@@ -116,7 +118,7 @@ if st.button("🚀 CREAR VÍDEO LARGO (V128)"):
                 if os.path.exists(raw_vid): os.remove(raw_vid)
                 gc.collect()
 
-            st.markdown('<div class="msg">🎬 Ensamblando y tatuando subtítulos V58...</div>', unsafe_allow_html=True)
+            st.markdown('<div class="msg">🎬 Ensamblado final V58...</div>', unsafe_allow_html=True)
             with open("taller/lista.txt", "w") as f:
                 for c in clips: f.write(f"file '{c}'\n")
             
@@ -141,5 +143,5 @@ if st.button("🚀 CREAR VÍDEO LARGO (V128)"):
             subprocess.run(f'ffmpeg -y -i "{mudo}" -i "{audio}" -filter_complex_script taller/s.txt -c:v libx264 -preset ultrafast -crf 28 -threads 1 -t {dur} "{final}"', shell=True)
             
             if os.path.exists(final):
-                st.markdown(f'<div class="info-card">🏆 VÍDEO COMPLETADO: DURACIÓN {int(dur)} SEGUNDOS</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="info-card">🏆 VÍDEO COMPLETADO (SISTEMA ESTABLE)</div>', unsafe_allow_html=True)
                 with open(final, "rb") as f: st.video(f.read())
