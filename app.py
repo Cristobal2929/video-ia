@@ -4,7 +4,7 @@ import requests
 import tempfile
 import concurrent.futures
 
-st.set_page_config(page_title="Fénix Estudio PRO | V59", layout="centered")
+st.set_page_config(page_title="Fénix Estudio PRO | V60", layout="centered")
 
 st.markdown("""
 <style>
@@ -14,7 +14,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V59</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V60</div>', unsafe_allow_html=True)
 st.markdown('<div class="pro-subtitle" style="text-align:center; color:#94A3B8; margin-bottom: 30px;">Multi-Thread • Cerebro Bilingüe Avanzado • Entorno Aislado</div>', unsafe_allow_html=True)
 
 # Descarga de fuente con caché para no descargarla en cada ejecución
@@ -38,7 +38,7 @@ IDIOMAS = {
 
 def extraer_palabra_clave(texto_chunk):
     palabras = re.sub(r'[^\w\s]', '', texto_chunk).split()
-    # MEJORA 1: Filtramos palabras cortas Y adverbios terminados en "mente"
+    # Filtramos palabras cortas Y adverbios terminados en "mente"
     palabras_utiles = [p for p in palabras if len(p) > 4 and not p.lower().endswith("mente")]
     if palabras_utiles: return max(palabras_utiles, key=len)
     return "cinematic"
@@ -46,7 +46,6 @@ def extraer_palabra_clave(texto_chunk):
 def traducir_a_ingles(palabra, tl_code):
     if tl_code == "en": return palabra
     try:
-        # MEJORA 4: El langpair ahora es dinámico (ej. fr|en, es|en)
         url = f"https://api.mymemory.translated.net/get?q={urllib.parse.quote(palabra)}&langpair={tl_code}|en"
         respuesta = requests.get(url, timeout=5).json()
         return respuesta['responseData']['translatedText']
@@ -85,7 +84,6 @@ def generar_voz_inmortal(texto, codigo_voz, tl_code, dir_trabajo):
         if os.path.exists(mp3_path) and os.path.getsize(mp3_path) > 1000: return True
     return False
 
-# MEJORA 2: Función aislada para ser ejecutada en paralelo
 def procesar_escena(args):
     i, texto_del_clip, t_clip, tema_broll, pexels_key, tl_code, dir_trabajo = args
     palabra_es = extraer_palabra_clave(texto_del_clip)
@@ -126,8 +124,8 @@ def procesar_escena(args):
 
 with st.sidebar:
     st.header("🌍 Mercado Global")
-    # MEJORA 3: Limpiamos la key por defecto para seguridad (usar st.secrets en el futuro)
-    pexels_key = st.text_input("🔑 API Pexels:", value="", type="password", help="Pega tu token de Pexels. ¡No lo dejes en el código fuente!")
+    # API de Pexels reintegrada para mayor comodidad
+    pexels_key = st.text_input("🔑 API Pexels:", value="Ty0uFISh3APEAXIVcrFpSM7ZdwOeRElCuUgoG42EW6WVISRTEfqjm0BZ", type="password")
     
     idioma_elegido = st.selectbox("🌐 Idioma del Vídeo", list(IDIOMAS.keys()))
     voces_disponibles = IDIOMAS[idioma_elegido]["voces"]
@@ -143,15 +141,14 @@ guion_usuario = st.text_area("📝 Pega tu Guion aquí:", height=150)
 st.markdown("### 2. Estilo Visual")
 tema_broll = st.text_input("🎨 Estilo General (Ej: Dark, Luxury, Cinematic...):", placeholder="Luxury")
 
-if st.button("🚀 CREAR VÍDEO (CEREBRO BILINGÜE V59)"):
+if st.button("🚀 CREAR VÍDEO (CEREBRO BILINGÜE V60)"):
     if len(guion_usuario.strip()) < 20 or len(tema_broll.strip()) < 2:
         st.warning("⚠️ Rellena el guion y el estilo visual.")
     elif not pexels_key:
         st.error("⚠️ Falta la API Key de Pexels en la barra lateral.")
     else:
-        # MEJORA 3: Directorio temporal único. Aísla a cada usuario y se borra al terminar.
         with tempfile.TemporaryDirectory() as dir_trabajo:
-            with st.status(f"🎬 Iniciando Motor V59 en entorno aislado...", expanded=True) as status:
+            with st.status(f"🎬 Iniciando Motor V60 en entorno aislado...", expanded=True) as status:
                 
                 status.write("🎙️ Grabando locución...")
                 if not generar_voz_inmortal(guion_usuario, codigo_voz, tl_code, dir_trabajo):
@@ -174,7 +171,6 @@ if st.button("🚀 CREAR VÍDEO (CEREBRO BILINGÜE V59)"):
                 tareas = []
                 status.write(f"⚡ Descargando y procesando {num_clips} escenas en paralelo...")
                 
-                # PREPARAMOS TAREAS PARALELAS
                 for i in range(num_clips):
                     start_idx = i * chunk_size
                     end_idx = start_idx + chunk_size if i < num_clips - 1 else len(palabras_guion)
@@ -185,7 +181,6 @@ if st.button("🚀 CREAR VÍDEO (CEREBRO BILINGÜE V59)"):
                     
                     tareas.append((i, texto_del_clip, t_clip, tema_broll, pexels_key, tl_code, dir_trabajo))
 
-                # EJECUCIÓN MULTI-THREAD (3 workers para no saturar CPU)
                 resultados = []
                 with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
                     futuros = [executor.submit(procesar_escena, arg) for arg in tareas]
@@ -194,7 +189,6 @@ if st.button("🚀 CREAR VÍDEO (CEREBRO BILINGÜE V59)"):
                         resultados.append(res)
                         status.write(f"✔️ Escena {res[0]+1} lista ('{res[2]}' -> '{res[3]}')")
 
-                # ORDENAMOS LOS RESULTADOS (ya que el as_completed los devuelve desordenados)
                 resultados.sort(key=lambda x: x[0])
                 clips_finales = [res[1] for res in resultados]
                 
@@ -235,7 +229,7 @@ if st.button("🚀 CREAR VÍDEO (CEREBRO BILINGÜE V59)"):
                 subprocess.run(cmd_f, shell=True)
 
             if os.path.exists(v_final):
-                st.success("🔥 ¡VÍDEO V59 LISTO! Procesamiento Paralelo y Seguro completado.")
+                st.success("🔥 ¡VÍDEO V60 LISTO! Procesamiento Paralelo y Seguro completado.")
                 st.video(v_final)
                 st.balloons()
             else:
