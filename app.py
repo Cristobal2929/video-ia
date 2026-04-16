@@ -3,7 +3,7 @@ import os, time, subprocess, re, urllib.parse, shutil, math, random, gc
 import requests
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Fénix Studio V139", layout="centered")
+st.set_page_config(page_title="Fénix Studio V141", layout="centered")
 components.html("<script>if('wakeLock' in navigator){navigator.wakeLock.request('screen');}</script>", height=0)
 
 st.markdown("""
@@ -15,7 +15,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V139 🛡️🔥</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V141 🛡️🎸</div>', unsafe_allow_html=True)
 
 @st.cache_resource
 def get_font():
@@ -28,7 +28,6 @@ def get_font():
     return os.path.abspath(p).replace('\\', '/')
 
 f_abs = get_font()
-PEXELS_API = "Ty0uFISh3APEAXIVcrFpSM7ZdwOeRElCuUgoG42EW6WVISRTEfqjm0BZ"
 
 def limpiar_texto(t):
     t = re.sub(r'tool_calls|recalc|words|assistant|reasoning|thought|count|slightly|above|remove|piece|adjust|instruction|spanish|user|wants|script', '', t, flags=re.I)
@@ -39,77 +38,61 @@ def preparar():
     os.makedirs("taller", exist_ok=True)
     subprocess.run("pkill ffmpeg", shell=True)
 
-tema = st.text_input("🧠 Tema del vídeo:", placeholder="Ej: Hábitos millonarios")
-estilo_m = st.selectbox("🎵 Estilo de Música:", ["Epic", "Cinematic", "Motivation", "Dark", "Lo-fi"])
+tema = st.text_input("🧠 Tema del vídeo:", placeholder="Ej: Éxito financiero")
 
-if st.button("🚀 CREAR VÍDEO (VERSIÓN BLINDADA)"):
+if st.button("🚀 CREAR VÍDEO (SIN FALLOS DE MÚSICA)"):
     if not tema: st.error("Escribe un tema")
     else:
         preparar()
         log = st.container()
         with log:
-            # 1. GUION Y AUDIO
-            st.markdown('<div class="msg">📝 Creando guion maestro...</div>', unsafe_allow_html=True)
-            p = f"Escribe UNICAMENTE el texto para TikTok sobre {tema}. Sin notas. Solo español fluido. Maximo 95 palabras."
+            # 1. GUION Y VOZ
+            st.markdown('<div class="msg">📝 Redactando guion fluido...</div>', unsafe_allow_html=True)
+            p = f"Escribe UNICAMENTE el texto para TikTok sobre {tema}. Sin notas. Solo español. Maximo 80 palabras."
             try:
                 g_raw = requests.get(f"https://text.pollinations.ai/{urllib.parse.quote(p)}", timeout=15).text
                 guion = limpiar_texto(g_raw)
-            except: guion = "El éxito es disciplina."
+            except: guion = "El éxito se basa en la disciplina constante."
 
             audio_voz = "taller/voz.mp3"
             subprocess.run(f'edge-tts --voice es-MX-JorgeNeural --text "{guion}" --write-media "{audio_voz}"', shell=True)
             
-            # 2. MÚSICA RÁPIDA (Enlaces directos para que no pete)
-            st.markdown(f'<div class="msg">🎧 Cargando banda sonora {estilo_m}...</div>', unsafe_allow_html=True)
-            musica_file = "taller/bg.mp3"
-            m_links = {
-                "Epic": "https://www.chosic.com/wp-content/uploads/2021/05/The-Epic-Hero.mp3",
-                "Cinematic": "https://www.chosic.com/wp-content/uploads/2021/07/Inspirational-Cinematic-Background.mp3",
-                "Motivation": "https://www.chosic.com/wp-content/uploads/2021/12/Motivation.mp3",
-                "Dark": "https://www.chosic.com/wp-content/uploads/2021/10/Shadows.mp3",
-                "Lo-fi": "https://www.chosic.com/wp-content/uploads/2021/04/Warm-Light.mp3"
-            }
-            with open(musica_file, "wb") as f: f.write(requests.get(m_links[estilo_m]).content)
-
             try: dur = float(subprocess.check_output(f'ffprobe -i "{audio_voz}" -show_entries format=duration -v quiet -of csv="p=0"', shell=True))
-            except: dur = 20.0
+            except: dur = 15.0
 
-            # 3. PROCESAR CLIPS (V58)
-            n_clips = min(math.ceil(dur / 3.4), 14)
+            # 2. GENERACIÓN DE ESCENAS (LIGERO E IMAGEN)
+            n_clips = min(math.ceil(dur / 4.0), 10)
             t_clip = dur / n_clips
             clips = []
             palabras = guion.split()
             chunk = max(len(palabras) // n_clips, 1)
-            ultima = None
-
+            
             for i in range(n_clips):
-                txt = " ".join(palabras[i*chunk:(i+1)*chunk])
-                st.markdown(f'<div class="msg">🎥 Escena {i+1}/{n_clips}...</div>', unsafe_allow_html=True)
-                raw, vid = f"taller/r_{i}.mp4", f"taller/v_{i}.mp4"
+                txt_part = " ".join(palabras[i*chunk:(i+1)*chunk])
+                st.markdown(f'<div class="msg">📸 Escena {i+1}/{n_clips}: Generando imagen...</div>', unsafe_allow_html=True)
+                img, vid = f"taller/i_{i}.jpg", f"taller/v_{i}.mp4"
+                
                 try:
-                    h = {"Authorization": PEXELS_API}
-                    url_p = f"https://api.pexels.com/videos/search?query={urllib.parse.quote(txt[:15]+' luxury')}&orientation=portrait&per_page=1"
-                    v_link = requests.get(url_p, headers=h, timeout=8).json()['videos'][0]['video_files'][0]['link']
-                    with open(raw, 'wb') as f: f.write(requests.get(v_link, timeout=10).content)
-                    subprocess.run(f'ffmpeg -y -stream_loop -1 -i "{raw}" -t {t_clip} -vf "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,setsar=1" -c:v libx264 -preset superfast "{vid}"', shell=True)
+                    url_ia = f"https://image.pollinations.ai/prompt/{urllib.parse.quote(txt_part[:20]+' luxury cinematic 8k')}?width=720&height=1280&nologo=true"
+                    with open(img, 'wb') as f: f.write(requests.get(url_ia, timeout=10).content)
+                    z_fx = "zoompan=z='1.0+0.001*on':x='iw/4-(iw/4/d)*on'"
+                    vf = f"scale=1280:2275,{z_fx}:d={int(t_clip*25)}:s=720x1280,format=yuv420p"
+                    subprocess.run(f'ffmpeg -y -loop 1 -i "{img}" -vf "{vf}" -t {t_clip} -c:v libx264 -preset ultrafast "{vid}"', shell=True)
                 except:
-                    if ultima: subprocess.run(f'cp "{ultima}" "{vid}"', shell=True)
-                    else: subprocess.run(f'ffmpeg -y -f lavfi -i color=c=#111827:s=720x1280:d={t_clip}:r=24 -c:v libx264 -preset superfast "{vid}"', shell=True)
+                    subprocess.run(f'ffmpeg -y -f lavfi -i color=c=#000000:s=720x1280:d={t_clip}:r=25 -c:v libx264 -preset ultrafast "{vid}"', shell=True)
                 
                 clips.append(os.path.abspath(vid))
-                ultima = vid
-                if os.path.exists(raw): os.remove(raw)
-                gc.collect()
+                if os.path.exists(img): os.remove(img)
 
-            # 4. MEZCLA FINAL (PASO ÚNICO PARA AHORRAR RAM)
-            st.markdown('<div class="msg">🎬 Masterizando vídeo y audio...</div>', unsafe_allow_html=True)
+            # 3. ENSAMBLADO FINAL (VOZ PURA + VÍDEO)
+            # Para que no pete, primero vamos a asegurar el video con voz.
+            st.markdown('<div class="msg">🎬 Ensamblando máster final...</div>', unsafe_allow_html=True)
             with open("taller/lista.txt", "w") as f:
                 for c in clips: f.write(f"file '{c}'\n")
             
             mudo = "taller/mudo.mp4"
             subprocess.run(f'ffmpeg -y -f concat -safe 0 -i taller/lista.txt -c copy "{mudo}"', shell=True)
             
-            # SUBTÍTULOS
             pal_sub = guion.upper().split()
             chunks = [pal_sub[j:j+2] for j in range(0, len(pal_sub), 2)]
             t_ch = dur / max(len(chunks), 1)
@@ -118,12 +101,9 @@ if st.button("🚀 CREAR VÍDEO (VERSIÓN BLINDADA)"):
             with open("taller/s.txt", "w") as f: f.write(",\n".join(subs))
             
             final = "taller/master.mp4"
-            fade_st = max(0, dur - 2)
-            # Combinamos todo en un solo comando final optimizado
-            cmd = f'ffmpeg -y -i "{mudo}" -i "{audio_voz}" -i "{musica_file}" -filter_complex "[2:a]volume=0.15,afade=t=out:st={fade_st}:d=2[m];[1:a][m]amix=inputs=2:duration=first[a];[0:v]filter_complex_script=taller/s.txt[v]" -map "[v]" -map "[a]" -c:v libx264 -preset superfast -t {dur} "{final}"'
-            subprocess.run(cmd, shell=True)
+            # Comando ultra-ligero: Solo Video + Voz + Subtítulos
+            subprocess.run(f'ffmpeg -y -i "{mudo}" -i "{audio_voz}" -filter_complex_script taller/s.txt -map 0:v -map 1:a -c:v libx264 -preset ultrafast -crf 30 -t {dur} "{final}"', shell=True)
             
             if os.path.exists(final):
-                st.markdown('<div class="info-card">🏆 VÍDEO V139 COMPLETADO SIN FALLOS</div>', unsafe_allow_html=True)
+                st.markdown('<div class="info-card">🏆 VÍDEO FINALIZADO SIN PETAR</div>', unsafe_allow_html=True)
                 with open(final, "rb") as f: st.video(f.read())
-                st.balloons()
