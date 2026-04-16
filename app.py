@@ -3,7 +3,7 @@ import os, time, subprocess, re, urllib.parse, shutil, math, random, gc
 import requests
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Fénix Studio V115", layout="centered")
+st.set_page_config(page_title="Fénix Studio V117", layout="centered")
 
 components.html("<script>if('wakeLock' in navigator){navigator.wakeLock.request('screen');}</script>", height=0)
 
@@ -17,7 +17,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V115 🤖</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V117 🏦</div>', unsafe_allow_html=True)
 
 @st.cache_resource
 def get_font():
@@ -30,6 +30,8 @@ def get_font():
     return os.path.abspath(p).replace('\\', '/')
 
 f_abs = get_font()
+
+PEXELS_API = "Ty0uFISh3APEAXIVcrFpSM7ZdwOeRElCuUgoG42EW6WVISRTEfqjm0BZ"
 
 def traducir_en(palabra):
     try:
@@ -47,11 +49,10 @@ def preparar():
     os.makedirs("taller", exist_ok=True)
     subprocess.run("pkill ffmpeg", shell=True)
 
-tema = st.text_input("🧠 Tema del vídeo:", placeholder="Ej: Hábitos de éxito")
+tema = st.text_input("🧠 Tema del vídeo:", placeholder="Ej: Mentalidad de tiburón")
 color_sub = st.selectbox("🎨 Color de los Subtítulos:", ["yellow", "white", "#00FFD1"])
-estilo_v = st.text_input("🎨 Estilo de la IA:", value="Luxury Cinematic 8k photography masterpiece")
 
-if st.button("🚀 CREAR OBRA MAESTRA (IA FLUX)"):
+if st.button("🚀 CREAR VÍDEO (BANCO DE IA)"):
     if not tema: st.error("⚠️ Escribe un tema, jefe.")
     else:
         preparar()
@@ -59,13 +60,13 @@ if st.button("🚀 CREAR OBRA MAESTRA (IA FLUX)"):
         
         with log:
             st.markdown('<div class="msg">📝 IA redactando guion...</div>', unsafe_allow_html=True)
-            prompt_g = f"Escribe un guion corto para TikTok sobre {tema}. Solo el texto, maximo 50 palabras, sin emojis."
+            prompt_g = f"Escribe un guion motivador para TikTok sobre {tema}. Solo el texto, maximo 50 palabras, sin emojis."
             try:
-                guion_raw = requests.get(f"https://text.pollinations.ai/{urllib.parse.quote(prompt_g)}", timeout=15).text
+                guion_raw = requests.get(f"https://text.pollinations.ai/{urllib.parse.quote(prompt_g)}", timeout=10).text
                 guion = re.sub(r'[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ.,! ]', '', guion_raw).strip()
             except:
-                guion = "El éxito es la suma de pequeños esfuerzos repetidos día tras día. No te rindas nunca."
-            
+                guion = "El éxito es constancia. Levántate, lucha por tus sueños y no mires atrás. Tú puedes."
+                
             guion = " ".join(guion.split()[:60])
             
             st.markdown('<div class="msg">🎙️ Grabando voz HD...</div>', unsafe_allow_html=True)
@@ -77,96 +78,93 @@ if st.button("🚀 CREAR OBRA MAESTRA (IA FLUX)"):
 
             try: dur = float(subprocess.check_output(f'ffprobe -i "{audio}" -show_entries format=duration -v quiet -of csv="p=0"', shell=True))
             except: dur = 15.0
-            if dur > 30.0: dur = 30.0
-
+            
             n_clips = math.ceil(dur / 3.5)
             if n_clips > 10: n_clips = 10 
             t_clip = dur / n_clips
             
             clips = []
-            palabras_guion_final = guion.split()
-            chunk_size = max(len(palabras_guion_final) // n_clips, 1)
-
+            palabras_guion = guion.split()
+            chunk_size = max(len(palabras_guion) // n_clips, 1)
             ultima_vid_exitosa = None
 
             for i in range(n_clips):
-                txt_chunk = " ".join(palabras_guion_final[i*chunk_size:(i+1)*chunk_size])
-                kw_es = extraer_kw(txt_chunk)
-                kw_en = traducir_en(kw_es)
-                
-                st.markdown(f'<div class="msg">📸 Escena {i+1}/{n_clips}: IA FLUX creando "{kw_en.upper()}"...</div>', unsafe_allow_html=True)
+                txt_chunk = " ".join(palabras_guion[i*chunk_size:(i+1)*chunk_size])
+                kw_en = traducir_en(extraer_kw(txt_chunk))
+                st.markdown(f'<div class="msg">📸 Escena {i+1}/{n_clips}: Explorando Banco IA para "{kw_en.upper()}"...</div>', unsafe_allow_html=True)
                 
                 img = f"taller/i_{i}.jpg"
                 vid = f"taller/v_{i}.mp4"
-                exito_ia = False
+                exito_imagen = False
 
-                # MOTOR FLUX: Más rápido y estable. Intentamos 3 veces.
-                for intento in range(3):
-                    seed = random.randint(1, 999999)
-                    # Añadimos &model=flux para usar el modelo más avanzado y rápido
-                    url_ia = f"https://image.pollinations.ai/prompt/{urllib.parse.quote(kw_en+' '+estilo_v)}?width=720&height=1280&nologo=true&seed={seed}&model=flux"
+                # --- MOTOR 1: BANCO DE IMÁGENES IA (LEXICA) ---
+                try:
+                    lexica_url = f"https://lexica.art/api/v1/search?q={urllib.parse.quote(kw_en + ' luxury cinematic masterpiece')}"
+                    r_lex = requests.get(lexica_url, timeout=10).json()
+                    if r_lex.get('images'):
+                        # Coge una imagen aleatoria entre las 8 mejores
+                        img_url = random.choice(r_lex['images'][:8])['src']
+                        with open(img, 'wb') as f: f.write(requests.get(img_url, timeout=10).content)
+                        exito_imagen = True
+                except: pass
+
+                # --- MOTOR 2: PEXELS (FILTRADO POR ARTE IA) ---
+                if not exito_imagen:
+                    st.markdown('<div class="msg">🔄 Buscando en reserva de Pexels IA...</div>', unsafe_allow_html=True)
                     try:
-                        r = requests.get(url_ia, timeout=25)
-                        # Verificamos que realmente ha descargado una imagen pesada y no un error
-                        if r.status_code == 200 and len(r.content) > 15000:
-                            with open(img, 'wb') as f: f.write(r.content)
-                            exito_ia = True
-                            break
-                    except: time.sleep(1.5)
+                        headers = {"Authorization": PEXELS_API}
+                        url_p = f"https://api.pexels.com/v1/search?query={urllib.parse.quote(kw_en+' ai generated art')}&orientation=portrait&per_page=5"
+                        r_p = requests.get(url_p, headers=headers, timeout=10).json()
+                        if r_p.get('photos'):
+                            img_url = random.choice(r_p['photos'])['src']['large2x']
+                            with open(img, 'wb') as f: f.write(requests.get(img_url, timeout=10).content)
+                            exito_imagen = True
+                    except: pass
 
-                if exito_ia:
+                # RENDERIZAR CLIP CON ZOOM LATERAL V58
+                if exito_imagen:
                     z_fx = random.choice(["zoompan=z='1.0+0.001*on':x='iw/4-(iw/4/d)*on'", "zoompan=z='1.15-0.001*on':x='(iw/4/d)*on'"])
                     vf = f"scale=1280:2275,{z_fx}:d={int(t_clip*24)}:s=720x1280,format=yuv420p"
                     subprocess.run(f'ffmpeg -y -loop 1 -i "{img}" -vf "{vf}" -t {t_clip} -c:v libx264 -preset ultrafast -r 24 "{vid}"', shell=True)
                 
-                # PARACAÍDAS: Si la IA FLUX fallase, heredamos la anterior
+                # PARACAÍDAS FINAL
                 if not os.path.exists(vid) or os.path.getsize(vid) < 1000:
-                    if ultima_vid_exitosa:
-                        st.markdown('<div class="msg">🔄 Clonando escena anterior por seguridad...</div>', unsafe_allow_html=True)
-                        subprocess.run(f'cp "{ultima_vid_exitosa}" "{vid}"', shell=True)
-                    else:
-                        subprocess.run(f'ffmpeg -y -f lavfi -i color=c=#1A1A1A:s=720x1280:d={t_clip}:r=24 -c:v libx264 -preset ultrafast -pix_fmt yuv420p "{vid}"', shell=True)
+                    if ultima_vid_exitosa: subprocess.run(f'cp "{ultima_vid_exitosa}" "{vid}"', shell=True)
+                    else: subprocess.run(f'ffmpeg -y -f lavfi -i color=c=#1A1A1A:s=720x1280:d={t_clip}:r=24 -c:v libx264 -preset ultrafast -pix_fmt yuv420p "{vid}"', shell=True)
 
                 if os.path.exists(vid):
                     clips.append(os.path.abspath(vid).replace('\\', '/'))
                     ultima_vid_exitosa = vid
-
                 if os.path.exists(img): os.remove(img)
                 gc.collect()
 
-            st.markdown('<div class="msg">🎬 Ensamblando metraje base...</div>', unsafe_allow_html=True)
+            st.markdown('<div class="msg">🎬 Ensamblando y tatuando subtítulos V58...</div>', unsafe_allow_html=True)
             with open("taller/lista.txt", "w") as f:
                 for c in clips: f.write(f"file '{c}'\n")
             
             mudo = "taller/mudo.mp4"
             subprocess.run(f'ffmpeg -y -f concat -safe 0 -i taller/lista.txt -c copy "{mudo}"', shell=True)
             
-            st.markdown('<div class="msg">✨ Tatuando subtítulos V58...</div>', unsafe_allow_html=True)
-            palabras_sub = re.sub(r'[^\w\s]', '', guion.upper()).split()
-            chunks_sub = [palabras_sub[j:j+2] for j in range(0, len(palabras_sub), 2)]
-            t_por_chunk = dur / max(len(chunks_sub), 1)
-            
+            # SUBTÍTULOS V58
+            pal_sub = re.sub(r'[^\w\s]', '', guion.upper()).split()
+            chunks = [pal_sub[j:j+2] for j in range(0, len(pal_sub), 2)]
+            t_ch = dur / max(len(chunks), 1)
             f_str = f"fontfile='{f_abs}':" if os.path.exists(f_abs) else ""
-            subs_cmd = []
-
-            for j, p_list in enumerate(chunks_sub):
-                ts, te = j * t_por_chunk, (j + 1) * t_por_chunk
-                if len(p_list) == 2 and (len(p_list[0]) + len(p_list[1]) > 10):
-                    subs_cmd.append(f"drawtext=text='{p_list[0]}':fontcolor={color_sub}:fontsize=70:{f_str}borderw=5:bordercolor=black:x=(w-tw)/2:y=(h-th)/2-45:enable='between(t,{ts},{te})'")
-                    subs_cmd.append(f"drawtext=text='{p_list[1]}':fontcolor={color_sub}:fontsize=70:{f_str}borderw=5:bordercolor=black:x=(w-tw)/2:y=(h-th)/2+45:enable='between(t,{ts},{te})'")
+            subs = []
+            for j, p in enumerate(chunks):
+                ts, te = j * t_ch, (j + 1) * t_ch
+                if len(p) == 2 and (len(p[0])+len(p[1]) > 10):
+                    subs.append(f"drawtext=text='{p[0]}':fontcolor={color_sub}:fontsize=70:{f_str}borderw=5:bordercolor=black:x=(w-tw)/2:y=(h-th)/2-45:enable='between(t,{ts},{te})'")
+                    subs.append(f"drawtext=text='{p[1]}':fontcolor={color_sub}:fontsize=70:{f_str}borderw=5:bordercolor=black:x=(w-tw)/2:y=(h-th)/2+45:enable='between(t,{ts},{te})'")
                 else:
-                    frase = " ".join(p_list)
-                    subs_cmd.append(f"drawtext=text='{frase}':fontcolor={color_sub}:fontsize=70:{f_str}borderw=5:bordercolor=black:x=(w-tw)/2:y=(h-th)/2:enable='between(t,{ts},{te})'")
+                    subs.append(f"drawtext=text='{' '.join(p)}':fontcolor={color_sub}:fontsize=70:{f_str}borderw=5:bordercolor=black:x=(w-tw)/2:y=(h-th)/2:enable='between(t,{ts},{te})'")
             
-            with open("taller/subs_filter.txt", "w") as f: f.write(",\n".join(subs_cmd))
+            with open("taller/s.txt", "w") as f: f.write(",\n".join(subs))
             
             final = "taller/master.mp4"
-            
-            subprocess.run(f'ffmpeg -y -i "{mudo}" -i "{audio}" -filter_complex_script taller/subs_filter.txt -c:v libx264 -preset ultrafast -crf 28 -threads 1 -t {dur} "{final}"', shell=True)
+            subprocess.run(f'ffmpeg -y -i "{mudo}" -i "{audio}" -filter_complex_script taller/s.txt -c:v libx264 -preset ultrafast -crf 28 -threads 1 -t {dur} "{final}"', shell=True)
             
             if os.path.exists(final):
-                st.markdown('<div class="info-card">🏆 VÍDEO COMPLETADO: IA FLUX + MOTOR V58</div>', unsafe_allow_html=True)
+                st.markdown('<div class="info-card">🏆 VÍDEO COMPLETADO (BANCO DE IA)</div>', unsafe_allow_html=True)
                 with open(final, "rb") as f: st.video(f.read())
                 st.balloons()
-            else:
-                st.error("❌ Ocurrió un error en el ensamblado final.")
