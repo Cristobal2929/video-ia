@@ -2,7 +2,7 @@ import streamlit as st
 import os, time, random, subprocess, textwrap, re, urllib.parse, math
 import requests
 
-st.set_page_config(page_title="Fénix Estudio PRO | V56", layout="centered")
+st.set_page_config(page_title="Fénix Estudio PRO | V57", layout="centered")
 
 st.markdown("""
 <style>
@@ -12,8 +12,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V56</div>', unsafe_allow_html=True)
-st.markdown('<div class="pro-subtitle" style="text-align:center; color:#94A3B8; margin-bottom: 30px;">Sincronización Perfecta • Cero Imágenes Congeladas • 30 FPS Forzados</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V57</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-subtitle" style="text-align:center; color:#94A3B8; margin-bottom: 30px;">Inteligencia Semántica • Contexto Visual 100% Perfecto • Sincro 30 FPS</div>', unsafe_allow_html=True)
 
 font_path = "Arial.ttf"
 if not os.path.exists(font_path):
@@ -59,6 +59,16 @@ def generar_voz_inmortal(texto, codigo_voz, tl_code):
         if os.path.exists("t.mp3") and os.path.getsize("t.mp3") > 1000: return True
     return False
 
+# CEREBRO LECTOR: Extrae la palabra más importante de un trozo de guion
+def extraer_palabra_clave(texto_chunk):
+    palabras = re.sub(r'[^\w\s]', '', texto_chunk).split()
+    # Filtramos palabras cortas (que suelen ser conectores como "el", "de", "con", "and", "the")
+    palabras_utiles = [p for p in palabras if len(p) > 4]
+    if palabras_utiles:
+        # Devuelve la palabra más larga (suele ser el sustantivo principal: "criptomonedas", "millonario", etc.)
+        return max(palabras_utiles, key=len)
+    return "cinematic"
+
 with st.sidebar:
     st.header("🌍 Mercado Global")
     pexels_key = st.text_input("🔑 API Pexels:", value="Ty0uFISh3APEAXIVcrFpSM7ZdwOeRElCuUgoG42EW6WVISRTEfqjm0BZ", type="password")
@@ -73,15 +83,15 @@ with st.sidebar:
     musica_tipo = st.selectbox("🎵 Música", ["Misterio / Tensión (60Hz)", "Acción / Negocios (75Hz)"])
 
 st.markdown("### 1. El Guion")
-guion_usuario = st.text_area("📝 Pega tu Guion en el idioma elegido:", height=150)
-st.markdown("### 2. Temática Visual")
-tema_broll = st.text_input("🔍 ¿De qué va el vídeo? (En inglés encuentra mejores vídeos):")
+guion_usuario = st.text_area("📝 Pega tu Guion aquí:", height=150)
+st.markdown("### 2. Estilo Visual")
+tema_broll = st.text_input("🎨 ¿Qué filtro o ambiente le damos? (Ej: Dark, Luxury, Cyberpunk, Cinematic...):", placeholder="Luxury")
 
-if st.button("🚀 CREAR VÍDEO (SINCRO PERFECTA V56)"):
-    if len(guion_usuario.strip()) < 20 or len(tema_broll.strip()) < 3:
-        st.warning("⚠️ Rellena todo el guion y el tema visual.")
+if st.button("🚀 CREAR VÍDEO (INTELIGENCIA SEMÁNTICA V57)"):
+    if len(guion_usuario.strip()) < 20 or len(tema_broll.strip()) < 2:
+        st.warning("⚠️ Rellena el guion y el estilo visual.")
     else:
-        with st.status(f"🎬 Sincronizando frames y audio...", expanded=True) as status:
+        with st.status(f"🎬 Leyendo guion y buscando contexto perfecto...", expanded=True) as status:
             subprocess.run("rm -f a_*.mp3 g_*.mp3 v_*.mp4 p_*.mp4 clip_*.mp4 text_*.txt temp_txt.txt lista*.txt music.m4a audio_final.m4a video_mudo.mp4 final.mp4 t.mp3 subs_filter.txt", shell=True)
             
             status.write("🎙️ Grabando locución nativa...")
@@ -94,27 +104,43 @@ if st.button("🚀 CREAR VÍDEO (SINCRO PERFECTA V56)"):
             freq = 60 if "Misterio" in musica_tipo else 75
             subprocess.run(f'ffmpeg -y -i t.mp3 -f lavfi -i "sine=f={freq}:d={dur_audio}" -filter_complex "[1:a]volume=0.03[m];[0:a][m]amix=inputs=2:duration=first" -c:a aac -ar 44100 audio_final.m4a', shell=True)
 
-            status.write("🎞️ Descargando metraje cinematográfico (Forzando 30 FPS)...")
-            pool_urls = []
-            try:
-                r = requests.get(f"https://api.pexels.com/videos/search?query={urllib.parse.quote(tema_broll + ' 4k motion')}&per_page=15&size=large&orientation=portrait", headers={"Authorization": pexels_key.strip()}, timeout=15).json()
-                pool_urls = [v['video_files'][0]['link'] for v in r.get('videos', [])]
-            except: pass
+            status.write("🎞️ Analizando el guion palabra por palabra...")
             
             dur_corte = 3.5
             num_clips = math.ceil(dur_audio / dur_corte)
             clips_finales = []
             
+            # Cortamos el guion en el mismo número de trozos que vídeos vamos a necesitar
+            palabras_guion = guion_usuario.split()
+            chunk_size = max(len(palabras_guion) // num_clips, 1)
+            
             for i in range(num_clips):
-                v_url = pool_urls[i % len(pool_urls)] if pool_urls else None
+                # Extraemos el trozo de guion que suena en este clip exacto
+                start_idx = i * chunk_size
+                end_idx = start_idx + chunk_size if i < num_clips - 1 else len(palabras_guion)
+                texto_del_clip = " ".join(palabras_guion[start_idx:end_idx])
                 
-                # EL TRUCO DE MAGIA: Si es el último clip, le añadimos 1 segundo de "propina" para que la imagen NUNCA se acabe antes que el audio.
-                if i < num_clips - 1:
-                    t_clip = dur_corte
-                else:
-                    t_clip = (dur_audio - (i * dur_corte)) + 1.0 
-                    
+                # CEREBRO LECTOR: Sacamos la palabra clave de este trozo
+                palabra_magica = extraer_palabra_clave(texto_del_clip)
+                query_busqueda = urllib.parse.quote(f"{palabra_magica} {tema_broll} 4k")
+                status.write(f"🔍 Escena {i+1}: Leyendo '{palabra_magica}' -> Buscando vídeo...")
+
+                # Ajuste de tiempo (1 seg de propina al final para que no se congele)
+                t_clip = dur_corte if i < num_clips - 1 else (dur_audio - (i * dur_corte)) + 1.0 
                 if t_clip <= 0: t_clip = 1.0
+                
+                v_url = None
+                try:
+                    r = requests.get(f"https://api.pexels.com/videos/search?query={query_busqueda}&per_page=5&size=large&orientation=portrait", headers={"Authorization": pexels_key.strip()}, timeout=10).json()
+                    if r.get('videos'): v_url = random.choice(r['videos'])['video_files'][0]['link']
+                except: pass
+
+                # Si falla la palabra exacta, buscamos solo con el tema visual
+                if not v_url:
+                    try:
+                        r = requests.get(f"https://api.pexels.com/videos/search?query={urllib.parse.quote(tema_broll + ' 4k')}&per_page=5&size=large&orientation=portrait", headers={"Authorization": pexels_key.strip()}, timeout=10).json()
+                        if r.get('videos'): v_url = random.choice(r['videos'])['video_files'][0]['link']
+                    except: pass
                 
                 exito_descarga = False
                 if v_url:
@@ -124,7 +150,6 @@ if st.button("🚀 CREAR VÍDEO (SINCRO PERFECTA V56)"):
                         exito_descarga = True
                     except: pass
                 
-                # Si falla la descarga, copiamos EL ORIGINAL RAW del paso anterior, no el procesado, para poder ponerle el tiempo exacto.
                 if not exito_descarga:
                     if i > 0 and os.path.exists(f"clip_{i-1}.mp4"):
                         subprocess.run(f"cp clip_{i-1}.mp4 clip_{i}.mp4", shell=True)
@@ -133,7 +158,7 @@ if st.button("🚀 CREAR VÍDEO (SINCRO PERFECTA V56)"):
                         clips_finales.append(f"p_{i}.mp4")
                         continue
                 
-                # RENDERIZAMOS CON -r 30 PARA QUE NADA SE DESINCRONICE
+                # RENDERIZAMOS CON -r 30 (Sincronización perfecta de la V56)
                 vf = "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,colorchannelmixer=rr=0.7:gg=0.7:bb=0.7,format=yuv420p"
                 subprocess.run(f'ffmpeg -y -stream_loop -1 -i "clip_{i}.mp4" -vf "{vf}" -an -c:v libx264 -r 30 -preset ultrafast -t {t_clip} "p_{i}.mp4"', shell=True)
                 
@@ -144,7 +169,7 @@ if st.button("🚀 CREAR VÍDEO (SINCRO PERFECTA V56)"):
                 for c in clips_finales: f.write(f"file '{c}'\n")
             subprocess.run('ffmpeg -y -f concat -safe 0 -i lista.txt -c copy video_mudo.mp4', shell=True)
 
-            status.write("🎬 Mapeando Textos Globales...")
+            status.write("🎬 Mapeando Subtítulos (Doble capa anti-errores)...")
             texto_seguro = re.sub(r'[^\w\s]', '', guion_usuario.replace('\n', ' ').upper()).replace('_', '')
             palabras = texto_seguro.split()
             
@@ -168,14 +193,13 @@ if st.button("🚀 CREAR VÍDEO (SINCRO PERFECTA V56)"):
             
             with open("subs_filter.txt", "w") as f: f.write(",\n".join(subs_cmd))
 
-            status.write("✨ Exportando Máster Fluido...")
+            status.write("✨ Renderizando Máster Final...")
             v_final = f"output/v_{int(time.time())}.mp4"
-            # Como la imagen ahora es 1 segundo MÁS LARGA que la voz, -t {dur_audio} recorta la parte sobrante del vídeo. Encaje perfecto.
             cmd_f = f"""ffmpeg -y -i video_mudo.mp4 -i audio_final.m4a -filter_complex_script subs_filter.txt -c:v libx264 -preset fast -crf 23 -c:a copy -t {dur_audio} "{v_final}" """
             subprocess.run(cmd_f, shell=True)
             
             if os.path.exists(v_final):
-                st.success("🔥 ¡VÍDEO V56 CREADO! Sincronización perfecta hasta el último frame.")
+                st.success("🔥 ¡VÍDEO V57 CREADO! Imágenes sincronizadas con el contexto de las palabras.")
                 st.video(v_final)
                 st.balloons()
             else:
