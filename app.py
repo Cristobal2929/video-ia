@@ -3,7 +3,7 @@ import os, time, subprocess, re, urllib.parse, shutil, math, random, gc
 import requests
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Fénix Studio V138", layout="centered")
+st.set_page_config(page_title="Fénix Studio V139", layout="centered")
 components.html("<script>if('wakeLock' in navigator){navigator.wakeLock.request('screen');}</script>", height=0)
 
 st.markdown("""
@@ -15,7 +15,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V138 🎵🎬</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V139 🛡️🔥</div>', unsafe_allow_html=True)
 
 @st.cache_resource
 def get_font():
@@ -39,76 +39,70 @@ def preparar():
     os.makedirs("taller", exist_ok=True)
     subprocess.run("pkill ffmpeg", shell=True)
 
-tema = st.text_input("🧠 Tema del vídeo:", placeholder="Ej: Mentalidad Ganadora")
-tipo_musica = st.selectbox("🎵 Estilo de Música:", ["Cinematic", "Epic", "Lo-fi", "Dark", "Motivational"])
+tema = st.text_input("🧠 Tema del vídeo:", placeholder="Ej: Hábitos millonarios")
+estilo_m = st.selectbox("🎵 Estilo de Música:", ["Epic", "Cinematic", "Motivation", "Dark", "Lo-fi"])
 
-if st.button("🚀 CREAR VÍDEO CON DJ IA"):
+if st.button("🚀 CREAR VÍDEO (VERSIÓN BLINDADA)"):
     if not tema: st.error("Escribe un tema")
     else:
         preparar()
         log = st.container()
         with log:
-            # 1. GUION
-            st.markdown('<div class="msg">📝 Redactando guion original...</div>', unsafe_allow_html=True)
-            p = f"Escribe UNICAMENTE el texto para TikTok sobre {tema}. Sin notas. Solo español fluido. Maximo 90 palabras."
+            # 1. GUION Y AUDIO
+            st.markdown('<div class="msg">📝 Creando guion maestro...</div>', unsafe_allow_html=True)
+            p = f"Escribe UNICAMENTE el texto para TikTok sobre {tema}. Sin notas. Solo español fluido. Maximo 95 palabras."
             try:
-                g_raw = requests.get(f"https://text.pollinations.ai/{urllib.parse.quote(p)}", timeout=20).text
+                g_raw = requests.get(f"https://text.pollinations.ai/{urllib.parse.quote(p)}", timeout=15).text
                 guion = limpiar_texto(g_raw)
-            except: guion = "El éxito es para los que perseveran."
+            except: guion = "El éxito es disciplina."
 
-            # 2. AUDIO VOZ
             audio_voz = "taller/voz.mp3"
             subprocess.run(f'edge-tts --voice es-MX-JorgeNeural --text "{guion}" --write-media "{audio_voz}"', shell=True)
             
-            # 3. BUSCADOR DE MÚSICA (DJ IA)
-            st.markdown(f'<div class="msg">🎧 DJ IA buscando música estilo {tipo_musica}...</div>', unsafe_allow_html=True)
+            # 2. MÚSICA RÁPIDA (Enlaces directos para que no pete)
+            st.markdown(f'<div class="msg">🎧 Cargando banda sonora {estilo_m}...</div>', unsafe_allow_html=True)
             musica_file = "taller/bg.mp3"
-            # Lista de canciones seguras según el estilo
-            music_db = {
-                "Cinematic": "https://www.chosic.com/wp-content/uploads/2021/07/Inspirational-Cinematic-Background.mp3",
+            m_links = {
                 "Epic": "https://www.chosic.com/wp-content/uploads/2021/05/The-Epic-Hero.mp3",
-                "Lo-fi": "https://www.chosic.com/wp-content/uploads/2021/04/Warm-Light.mp3",
+                "Cinematic": "https://www.chosic.com/wp-content/uploads/2021/07/Inspirational-Cinematic-Background.mp3",
+                "Motivation": "https://www.chosic.com/wp-content/uploads/2021/12/Motivation.mp3",
                 "Dark": "https://www.chosic.com/wp-content/uploads/2021/10/Shadows.mp3",
-                "Motivational": "https://www.chosic.com/wp-content/uploads/2021/12/Motivation.mp3"
+                "Lo-fi": "https://www.chosic.com/wp-content/uploads/2021/04/Warm-Light.mp3"
             }
-            try:
-                r_m = requests.get(music_db[tipo_musica], timeout=15)
-                with open(musica_file, "wb") as f: f.write(r_m.content)
-            except: # Música de respaldo
-                r_m = requests.get(music_db["Cinematic"])
-                with open(musica_file, "wb") as f: f.write(r_m.content)
+            with open(musica_file, "wb") as f: f.write(requests.get(m_links[estilo_m]).content)
 
             try: dur = float(subprocess.check_output(f'ffprobe -i "{audio_voz}" -show_entries format=duration -v quiet -of csv="p=0"', shell=True))
             except: dur = 20.0
 
-            # 4. CAPTURA DE CLIPS
-            n_clips = min(math.ceil(dur / 3.5), 12)
+            # 3. PROCESAR CLIPS (V58)
+            n_clips = min(math.ceil(dur / 3.4), 14)
             t_clip = dur / n_clips
             clips = []
             palabras = guion.split()
             chunk = max(len(palabras) // n_clips, 1)
-            
+            ultima = None
+
             for i in range(n_clips):
-                txt_part = " ".join(palabras[i*chunk:(i+1)*chunk])
+                txt = " ".join(palabras[i*chunk:(i+1)*chunk])
                 st.markdown(f'<div class="msg">🎥 Escena {i+1}/{n_clips}...</div>', unsafe_allow_html=True)
                 raw, vid = f"taller/r_{i}.mp4", f"taller/v_{i}.mp4"
                 try:
                     h = {"Authorization": PEXELS_API}
-                    url_p = f"https://api.pexels.com/videos/search?query={urllib.parse.quote(txt_part[:15]+' luxury')}&orientation=portrait&per_page=1"
-                    r_p = requests.get(url_p, headers=h, timeout=10).json()
-                    v_link = r_p['videos'][0]['video_files'][0]['link']
-                    with open(raw, 'wb') as f: f.write(requests.get(v_link).content)
-                    vf = "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,setsar=1,format=yuv420p"
-                    subprocess.run(f'ffmpeg -y -stream_loop -1 -i "{raw}" -t {t_clip} -vf "{vf}" -c:v libx264 -preset superfast -crf 28 "{vid}"', shell=True)
-                    clips.append(os.path.abspath(vid))
+                    url_p = f"https://api.pexels.com/videos/search?query={urllib.parse.quote(txt[:15]+' luxury')}&orientation=portrait&per_page=1"
+                    v_link = requests.get(url_p, headers=h, timeout=8).json()['videos'][0]['video_files'][0]['link']
+                    with open(raw, 'wb') as f: f.write(requests.get(v_link, timeout=10).content)
+                    subprocess.run(f'ffmpeg -y -stream_loop -1 -i "{raw}" -t {t_clip} -vf "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,setsar=1" -c:v libx264 -preset superfast "{vid}"', shell=True)
                 except:
-                    subprocess.run(f'ffmpeg -y -f lavfi -i color=c=#111827:s=720x1280:d={t_clip}:r=24 -c:v libx264 -preset superfast "{vid}"', shell=True)
-                    clips.append(os.path.abspath(vid))
+                    if ultima: subprocess.run(f'cp "{ultima}" "{vid}"', shell=True)
+                    else: subprocess.run(f'ffmpeg -y -f lavfi -i color=c=#111827:s=720x1280:d={t_clip}:r=24 -c:v libx264 -preset superfast "{vid}"', shell=True)
+                
+                clips.append(os.path.abspath(vid))
+                ultima = vid
                 if os.path.exists(raw): os.remove(raw)
                 gc.collect()
 
-            # 5. MONTAJE FINAL (Voz + DJ Música + Subtítulos)
-            st.markdown('<div class="msg">🎬 DJ IA mezclando pista y masterizando...</div>', unsafe_allow_html=True)
+            # 4. MEZCLA FINAL (PASO ÚNICO PARA AHORRAR RAM)
+            st.markdown('<div class="msg">🎬 Masterizando vídeo y audio...</div>', unsafe_allow_html=True)
             with open("taller/lista.txt", "w") as f:
                 for c in clips: f.write(f"file '{c}'\n")
             
@@ -123,12 +117,13 @@ if st.button("🚀 CREAR VÍDEO CON DJ IA"):
             subs = [f"drawtext=text='{' '.join(p)}':fontcolor=yellow:fontsize=65:{f_s}borderw=4:bordercolor=black:x=(w-tw)/2:y=(h-th)/2:enable='between(t,{j*t_ch},{(j+1)*t_ch})'" for j, p in enumerate(chunks)]
             with open("taller/s.txt", "w") as f: f.write(",\n".join(subs))
             
-            # Mezcla con Fade Out para la música
             final = "taller/master.mp4"
             fade_st = max(0, dur - 2)
+            # Combinamos todo en un solo comando final optimizado
             cmd = f'ffmpeg -y -i "{mudo}" -i "{audio_voz}" -i "{musica_file}" -filter_complex "[2:a]volume=0.15,afade=t=out:st={fade_st}:d=2[m];[1:a][m]amix=inputs=2:duration=first[a];[0:v]filter_complex_script=taller/s.txt[v]" -map "[v]" -map "[a]" -c:v libx264 -preset superfast -t {dur} "{final}"'
             subprocess.run(cmd, shell=True)
             
             if os.path.exists(final):
-                st.markdown('<div class="info-card">🏆 VÍDEO CON MÚSICA PERSONALIZADA COMPLETADO</div>')
+                st.markdown('<div class="info-card">🏆 VÍDEO V139 COMPLETADO SIN FALLOS</div>', unsafe_allow_html=True)
                 with open(final, "rb") as f: st.video(f.read())
+                st.balloons()
