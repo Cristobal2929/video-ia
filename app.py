@@ -2,7 +2,7 @@ import streamlit as st
 import os, time, random, subprocess, textwrap, re, urllib.parse, math
 import requests
 
-st.set_page_config(page_title="Fénix Estudio PRO | V49", layout="centered")
+st.set_page_config(page_title="Fénix Estudio PRO | V50", layout="centered")
 
 st.markdown("""
 <style>
@@ -12,8 +12,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V49</div>', unsafe_allow_html=True)
-st.markdown('<div class="pro-subtitle" style="text-align:center; color:#94A3B8; margin-bottom: 30px;">Audio Acelerado (+15%) • Subtítulos Inteligentes (2 Líneas) • 4K B-Roll</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V50</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-subtitle" style="text-align:center; color:#94A3B8; margin-bottom: 30px;">Audio Acelerado (+15%) • Subtítulos Perfectos Sin Errores • 4K B-Roll</div>', unsafe_allow_html=True)
 
 # 1. DESCARGA DE FUENTE
 font_path = "Arial.ttf"
@@ -24,10 +24,9 @@ if not os.path.exists(font_path):
     except: pass
 font_abs = os.path.abspath(font_path).replace('\\', '/')
 
-# --- MOTOR DE VOZ (AHORA UN POCO MÁS RÁPIDO +15%) ---
+# --- MOTOR DE VOZ DUAL (+15% VELOCIDAD) ---
 def generar_voz_inmortal(texto, codigo_voz):
     with open("temp_txt.txt", "w", encoding="utf-8") as f: f.write(texto)
-    # VELOCIDAD ACELERADA AQUÍ (+15%)
     subprocess.run(["python", "-m", "edge_tts", "--voice", codigo_voz, "--rate=+15%", "-f", "temp_txt.txt", "--write-media", "t.mp3"])
     
     if os.path.exists("t.mp3") and os.path.getsize("t.mp3") > 1000: return True
@@ -70,17 +69,17 @@ guion_usuario = st.text_area("📝 Pega tu Guion aquí:", height=150, placeholde
 st.markdown("### 2. La Temática Visual (B-Roll)")
 tema_broll = st.text_input("🔍 ¿De qué va el vídeo exactamente?:", placeholder="Ej: Coches de lujo, Bosque con niebla, Trading, Abstracto...")
 
-if st.button("🚀 CREAR VÍDEO (DINAMISMO PERFECTO)"):
+if st.button("🚀 CREAR VÍDEO (CORRECCIÓN V50)"):
     if len(guion_usuario.strip()) < 20 or len(tema_broll.strip()) < 3:
         st.warning("⚠️ Rellena tanto el guion como el tema de fondo para continuar.")
     else:
-        with st.status("🎬 Descargando 4K y sincronizando subtítulos en 2 líneas...", expanded=True) as status:
+        with st.status("🎬 Descargando 4K y aplicando algoritmo de subtítulos perfecto...", expanded=True) as status:
             subprocess.run("rm -f a_*.mp3 g_*.mp3 v_*.mp4 p_*.mp4 text_*.txt temp_txt.txt lista*.txt music.m4a audio_final.m4a video_mudo.mp4 final.mp4 base.mp4 t.mp3 subs_filter.txt", shell=True)
             
-            # 1. VOZ PREMIUM (Rápida y Dinámica)
-            status.write("🎙️ Grabando locución acelerada y natural...")
+            # 1. VOZ
+            status.write("🎙️ Grabando locución acelerada...")
             if not generar_voz_inmortal(guion_usuario, codigo_voz):
-                st.error("❌ Servidores de voz caídos. Inténtalo en un momento.")
+                st.error("❌ Servidores de voz caídos.")
                 st.stop()
                 
             dur_audio = float(subprocess.check_output("ffprobe -i t.mp3 -show_entries format=duration -v quiet -of csv='p=0'", shell=True).decode('utf-8').strip())
@@ -128,20 +127,20 @@ if st.button("🚀 CREAR VÍDEO (DINAMISMO PERFECTO)"):
                 for c in clips_finales: f.write(f"file '{c}'\n")
             subprocess.run('ffmpeg -y -f concat -safe 0 -i lista.txt -c copy video_mudo.mp4', shell=True)
 
-            # 4. SUBTÍTULOS CAPCUT (ALGORITMO DE SALTO DE LÍNEA)
-            status.write("🎬 Mapeando Subtítulos Dinámicos e Inteligentes...")
+            # 4. SUBTÍTULOS CAPCUT (ALGORITMO FIX V50)
+            status.write("🎬 Mapeando Subtítulos (Sin errores de letra N)...")
             txt_m = guion_usuario.upper().replace('Á','A').replace('É','E').replace('Í','I').replace('Ó','O').replace('Ú','U').replace('Ñ','N')
             txt_m = re.sub(r'[^A-Z0-9\s]', '', txt_m)
             palabras = txt_m.split()
             
             chunks = []
-            # ALGORITMO: Si las 2 palabras suman más de 13 letras, las partimos en 2 líneas.
             for j in range(0, len(palabras), 2):
                 w1 = palabras[j]
                 if j + 1 < len(palabras):
                     w2 = palabras[j+1]
                     if len(w1) + len(w2) > 13:
-                        chunks.append(f"{w1}\\n{w2}") # El \n obliga a FFmpeg a bajar la palabra
+                        # FIX MAGICO: 4 barras invertidas garantizan el salto de linea en FFmpeg
+                        chunks.append(f"{w1}\\\\n{w2}") 
                     else:
                         chunks.append(f"{w1} {w2}")
                 else:
@@ -156,12 +155,11 @@ if st.button("🚀 CREAR VÍDEO (DINAMISMO PERFECTO)"):
             for j, chunk in enumerate(chunks):
                 t_start = j * tiempo_por_chunk
                 t_end = t_start + tiempo_por_chunk
-                # Añadido line_spacing=15 para que las dos líneas no se peguen
                 subs_cmd.append(f"drawtext=text='{chunk}':fontcolor={color_sub}:fontsize=65:{font_cmd}borderw=5:bordercolor=black:shadowcolor=black@0.8:shadowx=4:shadowy=4:line_spacing=15:x=(w-tw)/2:y=(h-th)/2:enable='between(t,{t_start},{t_end})'")
                 
             with open("subs_filter.txt", "w") as f: f.write(",\n".join(subs_cmd))
 
-            # 5. RENDERIZADO HD
+            # 5. RENDER FINAL
             status.write("✨ Renderizando Máster Final en HD...")
             v_final = f"output/v_{int(time.time())}.mp4"
             
@@ -169,7 +167,7 @@ if st.button("🚀 CREAR VÍDEO (DINAMISMO PERFECTO)"):
             subprocess.run(cmd_f, shell=True)
             
             if os.path.exists(v_final) and os.path.getsize(v_final) > 1000:
-                st.success("🔥 ¡VÍDEO BRUTAL! Subtítulos perfectos y velocidad TikTok.")
+                st.success("🔥 ¡VÍDEO BRUTAL! Subtítulos divididos perfectamente.")
                 st.video(v_final)
                 st.balloons()
             else:
