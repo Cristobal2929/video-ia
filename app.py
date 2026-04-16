@@ -3,7 +3,7 @@ import os, time, subprocess, re, urllib.parse, shutil, math, random
 import requests
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Fénix Studio V92", layout="centered")
+st.set_page_config(page_title="Fénix Studio V93", layout="centered")
 
 components.html("""
 <script>
@@ -26,8 +26,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V92 🎥</div>', unsafe_allow_html=True)
-st.markdown('<div style="text-align:center; color:#94A3B8; margin-bottom: 30px;">Transiciones Suaves • Imágenes Únicas (Seed) • Zoom Dinámico</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V93 🎥</div>', unsafe_allow_html=True)
+st.markdown('<div style="text-align:center; color:#94A3B8; margin-bottom: 30px;">Director de Fotografía IA • Cortes Secos Virales • Audio Perfecto</div>', unsafe_allow_html=True)
 
 @st.cache_resource
 def descargar_fuente():
@@ -78,14 +78,23 @@ duracion_opcion = st.selectbox("⏱️ Duración del Vídeo:", [
     "Largo (~60 segundos)"
 ])
 
-if st.button("🚀 CREAR VÍDEO FLUIDO (V92)"):
+# TIPOS DE PLANOS PARA FORZAR VARIEDAD VISUAL
+TIPOS_DE_PLANO = [
+    "wide establishing shot", 
+    "extreme close-up detail", 
+    "low angle dynamic shot", 
+    "drone view from above",
+    "medium portrait shot"
+]
+
+if st.button("🚀 CREAR VÍDEO 8K (V93)"):
     if not tema: st.warning("⚠️ Escribe un tema para la IA.")
     else:
         preparar_entorno()
         
-        if "15" in duracion_opcion: palabras_target = 35
-        elif "30" in duracion_opcion: palabras_target = 70
-        else: palabras_target = 130
+        if "15" in duracion_opcion: palabras_target = 35; dur_corte = 3.0
+        elif "30" in duracion_opcion: palabras_target = 70; dur_corte = 3.0
+        else: palabras_target = 130; dur_corte = 3.0
             
         with st.status(f"🎬 Generando Obra de Arte IA ({duracion_opcion})...", expanded=True) as status:
             
@@ -117,11 +126,11 @@ if st.button("🚀 CREAR VÍDEO FLUIDO (V92)"):
             try: dur = float(subprocess.check_output(f'ffprobe -i "{audio}" -show_entries format=duration -v quiet -of csv="p=0"', shell=True))
             except: pass
             
-            num_clips = math.ceil(dur / 3.5)
+            num_clips = math.ceil(dur / dur_corte)
             t_por_escena = dur / num_clips
             dur_frames = int(t_por_escena * 24)
             
-            status.write(f"🎨 Dibujando {num_clips} escenas (Forzando variedad)...")
+            status.write(f"🎨 Dirigiendo {num_clips} planos de cámara únicos...")
             clips_finales = []
             palabras_guion = guion.split()
             chunk_size = max(len(palabras_guion) // num_clips, 1)
@@ -134,15 +143,15 @@ if st.button("🚀 CREAR VÍDEO FLUIDO (V92)"):
                 palabra_es = extraer_palabra_clave(texto_del_clip)
                 palabra_en = traducir_a_ingles(palabra_es)
                 
-                status.write(f"⏳ Escena {i+1}: '{palabra_en}'...")
-                time.sleep(3.5)
+                tipo_plano = random.choice(TIPOS_DE_PLANO)
+                status.write(f"⏳ Escena {i+1}: '{palabra_en}' ({tipo_plano})...")
+                time.sleep(3.5) 
                 
                 img = f"taller/img_{i}.jpg"
                 vid = f"taller/vid_{i}.mp4"
                 
-                # TRUCO 1: Añadimos un seed aleatorio para forzar a la IA a no repetir la imagen
                 seed_aleatorio = random.randint(1, 999999)
-                prompt_ia = f"{palabra_en} {estilo_visual}, 8k resolution, Unreal Engine 5 render, hyperrealistic photograph, masterpiece, cinematic lighting, extremely detailed, depth of field"
+                prompt_ia = f"{palabra_en}, {tipo_plano}, {estilo_visual}, 8k resolution, Unreal Engine 5 render, masterpiece, cinematic lighting, highly detailed"
                 url = f"https://image.pollinations.ai/prompt/{urllib.parse.quote(prompt_ia)}?width=720&height=1280&nologo=true&seed={seed_aleatorio}"
                 
                 exito = False
@@ -151,8 +160,8 @@ if st.button("🚀 CREAR VÍDEO FLUIDO (V92)"):
                     if r.status_code == 200:
                         with open(img, 'wb') as f: f.write(r.content)
                         
-                        # TRUCO 2: Zoom aleatorio (hacia adelante o hacia atrás)
-                        zoom_dir = random.choice(["z='min(zoom+0.0015,1.2)'", "z='max(1.2-0.0015*on,1.0)'"])
+                        # Zoom aleatorio (hacia adelante o hacia atrás) súper fluido
+                        zoom_dir = random.choice(["z='1.0+0.001*on'", "z='1.3-0.001*on'"])
                         vf = f"scale=800:1422,zoompan={zoom_dir}:d={dur_frames}:s=720x1280:fps=24,format=yuv420p" 
                         subprocess.run(f'ffmpeg -y -loop 1 -i "{img}" -vf "{vf}" -c:v libx264 -preset ultrafast -crf 26 -threads 1 -t {t_por_escena} "{vid}"', shell=True)
                         
@@ -168,35 +177,12 @@ if st.button("🚀 CREAR VÍDEO FLUIDO (V92)"):
                 
                 clips_finales.append(f"taller/vid_{i}.mp4")
 
-            status.write("🎬 Fusionando escenas con efecto de transición (Fade)...")
-            v_mudo = "taller/mudo.mp4"
+            status.write("🎬 Uniendo secuencias con cortes secos virales...")
+            with open("taller/lista.txt", "w") as f:
+                for c in clips_finales: f.write(f"file '{c.replace('taller/', '')}'\n")
             
-            # TRUCO 3: El Mega Filtro de Transición (xfade)
-            if len(clips_finales) > 1:
-                filter_complex = ""
-                inputs = ""
-                for idx, c in enumerate(clips_finales):
-                    inputs += f"-i {c} "
-                    if idx == 0:
-                        filter_complex += f"[0:v]settb=AVTB[v0];"
-                    else:
-                        filter_complex += f"[{idx}:v]settb=AVTB[v{idx}];"
-                
-                # Montar la cadena de fundidos cruzados (0.5 segundos)
-                offset = t_por_escena - 0.5
-                curr_offset = offset
-                last_out = "[v0]"
-                
-                for k in range(1, len(clips_finales)):
-                    out_name = f"[fade{k}]" if k < len(clips_finales)-1 else "[outv]"
-                    filter_complex += f"{last_out}[v{k}]xfade=transition=fade:duration=0.5:offset={curr_offset}{out_name};"
-                    last_out = f"[fade{k}]"
-                    curr_offset += offset
-                
-                cmd_merge = f"ffmpeg -y {inputs} -filter_complex \"{filter_complex[:-1]}\" -map \"[outv]\" -c:v libx264 -preset fast -crf 25 {v_mudo}"
-                subprocess.run(cmd_merge, shell=True)
-            else:
-                subprocess.run(f'cp {clips_finales[0]} {v_mudo}', shell=True)
+            v_mudo = "taller/mudo.mp4"
+            subprocess.run(f'ffmpeg -y -f concat -safe 0 -i taller/lista.txt -c copy "{v_mudo}"', shell=True)
 
             status.write("✨ Mapeando Subtítulos Inmortales...")
             texto_seguro = re.sub(r'[^\w\s]', '', guion.replace('\n', ' ').upper()).replace('_', '')
