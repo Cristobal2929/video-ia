@@ -2,12 +2,11 @@ import streamlit as st
 import os, time, subprocess, re, urllib.parse
 import requests
 import tempfile
-import concurrent.futures
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Fénix Studio V73", layout="centered")
+st.set_page_config(page_title="Fénix Studio V74", layout="centered")
 
-# INYECCIÓN JAVASCRIPT ANTI-SUEÑO (Mantiene la pantalla encendida en móviles)
+# Evita que la pantalla del móvil se apague
 components.html("""
 <script>
 if ('wakeLock' in navigator) {
@@ -24,11 +23,11 @@ st.markdown("""
 <style>
     .stApp { background: #000000; color: #FFFFFF; }
     .pro-title { font-size: 40px; font-weight: 900; color: #00FFD1; text-align: center; }
-    .time-card { padding: 15px; border-radius: 10px; background: #111827; border: 2px solid #FF0055; text-align: center; color: #FF0055; font-weight: bold; }
+    .warning-card { padding: 15px; border-radius: 10px; background: #111827; border: 2px solid #FFD700; text-align: center; color: #FFD700; font-weight: bold; font-size: 14px;}
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V73 ⚡</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V74 🦅</div>', unsafe_allow_html=True)
 
 @st.cache_resource
 def descargar_fuente():
@@ -55,8 +54,8 @@ def generar_voz(texto, tmp):
     subprocess.run(f'python -m edge_tts --voice es-MX-JorgeNeural --text "{texto}" --write-media "{mp3}"', shell=True, capture_output=True)
     return mp3 if os.path.exists(mp3) else None
 
-def procesar_escena_turbo(args):
-    i, palabra, t, tmp = args
+def procesar_escena_segura(i, palabra, t, tmp, status):
+    status.write(f"🖼️ Generando imagen {i+1} y animando... (Esto lleva su tiempo)")
     img = os.path.join(tmp, f"{i}.jpg")
     vid = os.path.join(tmp, f"{i}.mp4")
     url = f"https://image.pollinations.ai/prompt/{urllib.parse.quote(palabra + ' cinematic 4k')}?width=720&height=1280&nologo=true"
@@ -64,19 +63,24 @@ def procesar_escena_turbo(args):
         r = requests.get(url, timeout=15)
         with open(img, 'wb') as f: f.write(r.content)
         vf = "scale=720:1280,format=yuv420p" 
-        subprocess.run(f'ffmpeg -y -loop 1 -i "{img}" -vf "{vf}" -c:v libx264 -preset ultrafast -threads 0 -t {t} "{vid}"', shell=True)
+        # Hilos limitados a 1 para no saturar el servidor gratuito
+        subprocess.run(f'ffmpeg -y -loop 1 -i "{img}" -vf "{vf}" -c:v libx264 -preset ultrafast -threads 1 -t {t} "{vid}"', shell=True)
         return vid
     except: return None
 
 tema = st.text_input("Tema del vídeo:")
-if st.button("🚀 GENERACIÓN ANTI-SUEÑO"):
+if st.button("🚀 CREAR (MODO ESTABLE)"):
     if not tema: st.warning("Escribe un tema")
     else:
-        timer_area = st.empty()
+        st.markdown('<div class="warning-card">⚠️ AVISO HONESTO: Estás usando un servidor gratuito. Renderizar vídeo exige mucha potencia. Tardará entre 2 y 4 minutos. Por favor, ten paciencia y NO cierres Chrome.</div>', unsafe_allow_html=True)
+        
         with tempfile.TemporaryDirectory() as tmp:
-            with st.status("⚡ Motor Turbo activado...", expanded=True) as status:
+            with st.status("⚙️ Iniciando proceso paso a paso...", expanded=True) as status:
                 
+                status.write("🧠 1/4: Pensando el guion...")
                 guion = generar_guion(tema)
+                
+                status.write("🎙️ 2/4: Grabando al locutor...")
                 audio = generar_voz(guion, tmp)
                 
                 dur = 8.0
@@ -85,17 +89,18 @@ if st.button("🚀 GENERACIÓN ANTI-SUEÑO"):
                         dur = float(subprocess.check_output(f'ffprobe -i "{audio}" -show_entries format=duration -v quiet -of csv="p=0"', shell=True))
                     except: pass
                 
-                t_aprox = int(dur + 35) 
-                timer_area.markdown(f'<div class="time-card">⌛ TIEMPO REAL ESTIMADO: {t_aprox} SEG<br>⚠️ NO CAMBIES DE APP HASTA TERMINAR</div>', unsafe_allow_html=True)
-                
                 n = 3
                 palabras = guion.split()[:n]
-                tareas = [(i, p, dur/n, tmp) for i, p in enumerate(palabras)]
                 
-                with concurrent.futures.ThreadPoolExecutor(max_workers=3) as ex:
-                    clips = [c for c in list(ex.map(procesar_escena_turbo, tareas)) if c]
+                status.write(f"🎨 3/4: Creando {n} escenas (El paso más lento)...")
+                clips = []
                 
-                status.write("🎬 Ensamblaje rápido...")
+                # Procesamiento SECUENCIAL para que no se cuelgue la RAM
+                for i, p in enumerate(palabras):
+                    vid = procesar_escena_segura(i, p, dur/n, tmp, status)
+                    if vid: clips.append(vid)
+                
+                status.write("🎬 4/4: Exportando máster final...")
                 lista = os.path.join(tmp, "l.txt")
                 with open(lista, "w") as f:
                     for c in clips: f.write(f"file '{c}'\n")
@@ -107,8 +112,7 @@ if st.button("🚀 GENERACIÓN ANTI-SUEÑO"):
                 final = f"output/v_{int(time.time())}.mp4"
                 
                 sub = f"drawtext=text='{guion[:30]}...':fontcolor=white:fontsize=45:fontfile='{font_abs}':x=(w-tw)/2:y=(h-th)/2:borderw=2"
-                subprocess.run(f'ffmpeg -y -i "{v_mudo}" -i "{audio}" -vf "{sub}" -c:v libx264 -preset ultrafast -t {dur} "{final}"', shell=True)
+                subprocess.run(f'ffmpeg -y -i "{v_mudo}" -i "{audio}" -vf "{sub}" -c:v libx264 -preset ultrafast -threads 1 -t {dur} "{final}"', shell=True)
                 
-                timer_area.empty()
                 st.video(final)
-                st.success("⚡ ¡Vídeo generado en tiempo récord!")
+                st.success("✅ ¡Vídeo terminado! Gracias por la paciencia.")
