@@ -3,135 +3,103 @@ import os, time, subprocess, re, urllib.parse, shutil, math, random, gc
 import requests
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Fénix Studio V95", layout="centered")
+st.set_page_config(page_title="Fénix Studio V96", layout="centered")
 
-# TRUCO DE HACKER: Mantener la pantalla del móvil encendida durante el proceso
+# Mantener pantalla activa
 components.html("<script>if('wakeLock' in navigator){navigator.wakeLock.request('screen');}</script>", height=0)
 
 st.markdown("""
 <style>
     .stApp { background: #000000; color: #FFFFFF; }
-    .pro-title { font-size: 40px; font-weight: 900; background: -webkit-linear-gradient(45deg, #00FFD1, #FFD700); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: center; text-transform: uppercase; margin-bottom: 20px;}
-    .info-card { padding: 15px; border-radius: 10px; background: #0f172a; border: 1px solid #00FFD1; text-align: center; color: #00FFD1; margin-top: 20px;}
-    .msg { color: #94A3B8; font-family: monospace; font-size: 14px; margin-bottom: 8px; border-left: 3px solid #00FFD1; padding-left: 10px; }
-    .stButton>button { width: 100%; background: linear-gradient(45deg, #00FFD1, #0088ff); color: white; border: none; font-weight: bold; height: 50px; border-radius: 10px;}
+    .pro-title { font-size: 38px; font-weight: 900; background: -webkit-linear-gradient(45deg, #FFD700, #00FFD1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: center; text-transform: uppercase; margin-bottom: 10px;}
+    .msg { color: #94A3B8; font-family: monospace; font-size: 13px; margin-bottom: 5px; border-left: 2px solid #00FFD1; padding-left: 8px; }
+    .info-card { padding: 15px; border-radius: 10px; background: #111827; border: 1px solid #00FFD1; text-align: center; color: #00FFD1; margin-top: 15px;}
+    .stButton>button { width: 100%; background: linear-gradient(45deg, #00FFD1, #0088ff); color: white; border: none; font-weight: bold; border-radius: 8px;}
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V95 🎥</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V96 🎥</div>', unsafe_allow_html=True)
 
 @st.cache_resource
-def descargar_fuente():
-    font_path = "Arial_Pro.ttf"
-    if not os.path.exists(font_path):
+def get_font():
+    f_path = "font.ttf"
+    if not os.path.exists(f_path):
         try:
             r = requests.get("https://github.com/matomo-org/travis-scripts/raw/master/fonts/Arial.ttf", timeout=10)
-            with open(font_path, "wb") as f: f.write(r.content)
+            with open(f_path, "wb") as f: f.write(r.content)
         except: pass
-    return os.path.abspath(font_path).replace('\\', '/')
+    return os.path.abspath(f_path).replace('\\', '/')
 
-font_abs = descargar_fuente()
+f_abs = get_font()
 
-def traducir_a_ingles(palabra):
-    try:
-        url = f"https://api.mymemory.translated.net/get?q={urllib.parse.quote(palabra)}&langpair=es|en"
-        return requests.get(url, timeout=5).json()['responseData']['translatedText']
-    except: return palabra
-
-def preparar_entorno():
+def preparar():
     if os.path.exists("taller"): shutil.rmtree("taller")
     os.makedirs("taller", exist_ok=True)
+    # Limpiar procesos zombies de ffmpeg para liberar RAM
+    subprocess.run("pkill ffmpeg", shell=True)
 
-# INTERFAZ DE USUARIO
-tema = st.text_input("🧠 ¿Sobre qué quieres el vídeo?", placeholder="Ej: Las claves para el éxito online")
-color_sub = st.selectbox("🎨 Color de los Subtítulos", ["yellow", "white", "#00FFD1"])
-n_escenas = st.select_slider("⏱️ Cantidad de Escenas (Variedad)", options=[4, 8, 12, 15], value=8)
+tema = st.text_input("🧠 Tema del vídeo:", placeholder="Ej: Motivación millonaria")
+n_escenas = st.select_slider("⏱️ Número de escenas:", options=[4, 6, 8, 10], value=6)
 
-if st.button("🚀 INICIAR PRODUCCIÓN EN VIVO"):
-    if not tema: 
-        st.error("⚠️ Por favor, escribe un tema primero.")
+if st.button("🚀 GENERAR VÍDEO (MODO ESTABLE)"):
+    if not tema:
+        st.error("Escribe un tema")
     else:
-        preparar_entorno()
-        placeholder = st.empty()
-        log_container = st.container()
-
-        with log_container:
-            # 1. GENERACIÓN DE GUION
-            st.markdown('<div class="msg">📝 IA Redactando guion original...</div>', unsafe_allow_html=True)
-            prompt = f"Escribe un guion corto para TikTok sobre {tema}. Solo el texto del locutor, sin emojis, 70 palabras."
-            try:
-                guion = requests.get(f"https://text.pollinations.ai/{urllib.parse.quote(prompt)}", timeout=15).text
-                guion = re.sub(r'[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ.,! ]', '', guion).strip()
-            except:
-                guion = "El éxito no es el final, el fracaso no es fatal, es el coraje para continuar lo que cuenta. Sigue adelante siempre."
-
-            # 2. GENERACIÓN DE VOZ (MOTOR TITANIUM)
-            st.markdown('<div class="msg">🎙️ Grabando locución (Microsoft Jorge)...</div>', unsafe_allow_html=True)
-            audio_path = "taller/audio.mp3"
-            subprocess.run(f'python -m edge_tts --voice es-MX-JorgeNeural --text "{guion}" --write-media "{audio_path}"', shell=True)
+        preparar()
+        log = st.container()
+        
+        with log:
+            st.markdown('<div class="msg">📝 Creando guion...</div>', unsafe_allow_html=True)
+            guion = requests.get(f"https://text.pollinations.ai/{urllib.parse.quote('Guion TikTok '+tema+'. Solo texto, 50 palabras.')}").text
+            guion = re.sub(r'[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ.,! ]', '', guion).strip()
             
-            duracion_total = 15.0
-            try:
-                duracion_total = float(subprocess.check_output(f'ffprobe -i "{audio_path}" -show_entries format=duration -v quiet -of csv="p=0"', shell=True))
+            st.markdown('<div class="msg">🎙️ Generando voz...</div>', unsafe_allow_html=True)
+            audio = "taller/a.mp3"
+            subprocess.run(f'edge-tts --voice es-MX-JorgeNeural --text "{guion}" --write-media "{audio}"', shell=True)
+            
+            dur = 15.0
+            try: dur = float(subprocess.check_output(f'ffprobe -i "{audio}" -show_entries format=duration -v quiet -of csv="p=0"', shell=True))
             except: pass
-
-            # 3. PRODUCCIÓN DE ESCENAS
-            t_por_escena = duracion_total / n_escenas
-            dur_frames = int(t_por_escena * 24)
+            
+            t_escena = dur / n_escenas
             clips = []
-            palabras_clave = guion.split()
+            words = guion.split()
 
             for i in range(n_escenas):
-                p_base = palabras_clave[min(i*4, len(palabras_clave)-1)]
-                p_en = traducir_a_ingles(p_base)
-                st.markdown(f'<div class="msg">📸 Escena {i+1}/{n_escenas}: Renderizando "{p_en.upper()}"...</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="msg">🎬 Procesando escena {i+1}...</div>', unsafe_allow_html=True)
+                keyword = words[min(i*4, len(words)-1)]
+                img = f"taller/i_{i}.jpg"
+                vid = f"taller/v_{i}.mp4"
                 
-                img_path = f"taller/i_{i}.jpg"
-                vid_path = f"taller/v_{i}.mp4"
-                
-                # Motor de imagen con Seed para evitar repeticiones
-                seed = random.randint(1, 100000)
-                ia_url = f"https://image.pollinations.ai/prompt/{urllib.parse.quote(p_en + ' luxury cinematic hyperrealistic 8k')}?width=720&height=1280&nologo=true&seed={seed}"
+                # Imagen optimizada (menos peso para evitar crash)
+                seed = random.randint(1, 9999)
+                url = f"https://image.pollinations.ai/prompt/{urllib.parse.quote(keyword + ' cinematic 4k style')}?width=540&height=960&nologo=true&seed={seed}"
                 
                 try:
-                    time.sleep(3.5) # Truco anti-bloqueo
-                    r = requests.get(ia_url, timeout=25)
-                    with open(img_path, 'wb') as f: f.write(r.content)
-                    
-                    # Zoom dinámico aleatorio
-                    zoom_fx = random.choice(["z='1.0+0.001*on'", "z='1.2-0.001*on'"])
-                    vf = f"scale=800:1422,zoompan={zoom_fx}:d={dur_frames}:s=720x1280:fps=24,format=yuv420p"
-                    
-                    subprocess.run(f'ffmpeg -y -loop 1 -i "{img_path}" -vf "{vf}" -t {t_por_escena} -c:v libx264 -preset superfast -crf 25 "{vid_path}"', shell=True)
-                    
-                    if os.path.exists(vid_path):
-                        clips.append(f"v_{i}.mp4")
-                except:
-                    if i > 0: clips.append(clips[-1])
+                    r = requests.get(url, timeout=15)
+                    if r.status_code == 200:
+                        with open(img, 'wb') as f: f.write(r.content)
+                        # Zoom suave y ultra rápido
+                        vf = f"scale=600:1066,zoompan=z='1.0+0.001*on':d={int(t_escena*24)}:s=540x960:fps=24,format=yuv420p"
+                        subprocess.run(f'ffmpeg -y -loop 1 -i "{img}" -vf "{vf}" -t {t_escena} -c:v libx264 -preset ultrafast -crf 28 "{vid}"', shell=True)
+                        if os.path.exists(vid): clips.append(f"v_{i}.mp4")
+                except: pass
                 
-                if os.path.exists(img_path): os.remove(img_path)
-                gc.collect() # Limpieza de memoria tras cada escena
+                if os.path.exists(img): os.remove(img)
+                gc.collect() # Liberar RAM después de cada escena
 
-            # 4. MONTAJE FINAL
-            st.markdown('<div class="msg">🎬 Uniendo todas las piezas...</div>', unsafe_allow_html=True)
-            with open("taller/lista.txt", "w") as f:
+            st.markdown('<div class="msg">🎞️ Montaje final...</div>', unsafe_allow_html=True)
+            with open("taller/l.txt", "w") as f:
                 for c in clips: f.write(f"file '{c}'\n")
             
-            v_mudo = "taller/mudo.mp4"
-            subprocess.run(f'ffmpeg -y -f concat -safe 0 -i taller/lista.txt -c copy "{v_mudo}"', shell=True)
+            mudo = "taller/m.mp4"
+            subprocess.run(f'ffmpeg -y -f concat -safe 0 -i taller/l.txt -c copy "{mudo}"', shell=True)
             
-            st.markdown('<div class="msg">✨ Aplicando subtítulos dinámicos...</div>', unsafe_allow_html=True)
-            master_path = "taller/master.mp4"
+            final = "taller/final.mp4"
+            # Subtítulos centrados y simples para máxima estabilidad
+            txt_f = f"drawtext=text='{guion[:40]}...':fontcolor=white:fontsize=45:fontfile='{f_abs}':x=(w-tw)/2:y=(h-th)/2:borderw=2:bordercolor=black"
+            subprocess.run(f'ffmpeg -y -i "{mudo}" -i "{audio}" -vf "{txt_f}" -c:v libx264 -preset fast -t {dur} "{final}"', shell=True)
             
-            # Subtítulos simplificados pero potentes para evitar errores de renderizado
-            sub_filter = f"drawtext=text='{guion[:35].upper()}...':fontcolor={color_sub}:fontsize=60:fontfile='{font_abs}':x=(w-tw)/2:y=(h-th)/2:borderw=4:bordercolor=black"
-            
-            subprocess.run(f'ffmpeg -y -i "{v_mudo}" -i "{audio_path}" -vf "{sub_filter}" -c:v libx264 -preset fast -t {duracion_total} "{master_path}"', shell=True)
-            
-            if os.path.exists(master_path):
-                st.markdown('<div class="info-card">✅ ¡ÉXITO! Tu vídeo ha sido procesado correctamente.</div>', unsafe_allow_html=True)
-                with open(master_path, "rb") as f:
-                    st.video(f.read())
-                st.balloons()
-            else:
-                st.error("❌ Falló el último paso del renderizado.")
+            if os.path.exists(final):
+                st.markdown('<div class="info-card">✅ VÍDEO LISTO</div>', unsafe_allow_html=True)
+                st.video(final)
