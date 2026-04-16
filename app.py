@@ -1,5 +1,5 @@
 import streamlit as st
-import os, time, subprocess, re, urllib.parse, shutil, math, random, gc
+import os, subprocess, re, urllib.parse, shutil, math, gc
 import requests
 import streamlit.components.v1 as components
 
@@ -12,6 +12,7 @@ st.markdown("""
     .pro-title { font-size: 42px; font-weight: 900; background: -webkit-linear-gradient(45deg, #00FFD1, #FFD700); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: center; text-transform: uppercase; margin-bottom: 20px;}
     .msg { color: #00FFD1; font-family: 'Courier New', monospace; font-size: 14px; margin-bottom: 8px; border-left: 3px solid #FFD700; padding-left: 12px; }
     .stButton>button { width: 100%; background: linear-gradient(45deg, #00FFD1, #0088ff); color: white; border: none; font-weight: 900; height: 55px; border-radius: 12px; font-size: 18px;}
+    .video-container { border: 3px solid #00FFD1; border-radius: 15px; padding: 10px; background: #111; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -44,7 +45,7 @@ tema = st.text_input("🧠 Tema del vídeo:", placeholder="Ej: La mentalidad del
 estilo_m = st.selectbox("🎵 Música de Fondo:", ["Epic", "Cinematic", "Dark", "Motivational"])
 
 if st.button("🚀 CREAR VÍDEO (VÍDEOS REALES + MÚSICA)"):
-    if not tema: 
+    if not tema:
         st.error("Escribe un tema")
     else:
         preparar()
@@ -62,7 +63,7 @@ if st.button("🚀 CREAR VÍDEO (VÍDEOS REALES + MÚSICA)"):
             audio_voz = "taller/voz.mp3"
             subprocess.run(f'edge-tts --voice es-MX-JorgeNeural --text "{guion}" --write-media "{audio_voz}"', shell=True)
             
-            # 2. MÚSICA ESTABLE
+            # 2. MÚSICA
             st.markdown('<div class="msg">🎵 Sincronizando banda sonora...</div>', unsafe_allow_html=True)
             musica_file = "taller/bg.mp3"
             m_url = "https://www.chosic.com/wp-content/uploads/2021/07/Inspirational-Cinematic-Background.mp3"
@@ -75,11 +76,11 @@ if st.button("🚀 CREAR VÍDEO (VÍDEOS REALES + MÚSICA)"):
                 f.write(requests.get(m_url).content)
 
             try: 
-                dur = float(subprocess.check_output(f'ffprobe -i "{audio_voz}" -show_entries format=duration -v quiet -of csv="p=0"', shell=True))
+                dur = float(subprocess.check_output(f'ffprobe -i "{audio_voz}" -show_entries format=duration -v quiet -of csv="p=0"', shell=True).decode().strip())
             except: 
                 dur = 25.0
 
-            # 3. CAPTURA DE VÍDEOS REALES
+            # 3. VÍDEOS REALES DE PEXELS
             n_clips = min(math.ceil(dur / 3.5), 15)
             t_clip = dur / n_clips
             clips = []
@@ -90,8 +91,8 @@ if st.button("🚀 CREAR VÍDEO (VÍDEOS REALES + MÚSICA)"):
             for i in range(n_clips):
                 txt_part = " ".join(palabras[i*chunk:(i+1)*chunk])
                 st.markdown(f'<div class="msg">🎥 Escena {i+1}/{n_clips}: Vídeo real de "{txt_part[:15]}..."</div>', unsafe_allow_html=True)
-                raw, vid = f"taller/r_{i}.mp4", f"taller/v_{i}.mp4"
-                exito = False
+                raw = f"taller/r_{i}.mp4"
+                vid = f"taller/v_{i}.mp4"
                 try:
                     h = {"Authorization": PEXELS_API}
                     url_p = f"https://api.pexels.com/videos/search?query={urllib.parse.quote(txt_part[:15]+' luxury')}&orientation=portrait&per_page=1"
@@ -100,31 +101,27 @@ if st.button("🚀 CREAR VÍDEO (VÍDEOS REALES + MÚSICA)"):
                         f.write(requests.get(v_link, timeout=15).content)
                     vf = "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,setsar=1,format=yuv420p"
                     subprocess.run(f'ffmpeg -y -stream_loop -1 -i "{raw}" -t {t_clip} -vf "{vf}" -c:v libx264 -preset superfast "{vid}"', shell=True)
-                    exito = True
                 except:
-                    if ultima: 
+                    if ultima:
                         subprocess.run(f'cp "{ultima}" "{vid}"', shell=True)
-                    else: 
+                    else:
                         subprocess.run(f'ffmpeg -y -f lavfi -i color=c=#000000:s=720x1280:d={t_clip}:r=24 -c:v libx264 -preset superfast "{vid}"', shell=True)
                 
                 clips.append(os.path.abspath(vid))
                 ultima = vid
-                if os.path.exists(raw): 
-                    os.remove(raw)
+                if os.path.exists(raw): os.remove(raw)
                 gc.collect()
 
-            # 4. ENSAMBLADO FINAL CON MÚSICA Y SUBTÍTULOS (OPTIMIZADO - BAJO CONSUMO DE RAM)
-            st.markdown('<div class="msg">🎬 Masterizando con música y subtítulos V58 (bajo consumo RAM)...</div>', unsafe_allow_html=True)
+            # 4. ENSAMBLADO FINAL (OPTIMIZADO PARA BAJA RAM + REPRODUCCIÓN CORRECTA)
+            st.markdown('<div class="msg">🎬 Masterizando con música y subtítulos (bajo consumo RAM)...</div>', unsafe_allow_html=True)
             
             with open("taller/lista.txt", "w") as f:
                 for c in clips: 
                     f.write(f"file '{c}'\n")
             
             mudo = "taller/mudo.mp4"
-            # Concat eficiente
             subprocess.run(f'ffmpeg -y -f concat -safe 0 -i taller/lista.txt -c copy "{mudo}"', shell=True)
 
-            # Añadir voz (re-codificación controlada)
             voz_temp = "taller/voz_temp.mp4"
             subprocess.run(
                 f'ffmpeg -y -i "{mudo}" -i "{audio_voz}" -c:v libx264 -preset veryfast -threads 2 '
@@ -132,7 +129,6 @@ if st.button("🚀 CREAR VÍDEO (VÍDEOS REALES + MÚSICA)"):
                 shell=True
             )
 
-            # Mezcla final de música + voz (más ligera)
             final = "taller/master.mp4"
             fade_st = max(0, dur - 2)
 
@@ -145,19 +141,29 @@ if st.button("🚀 CREAR VÍDEO (VÍDEOS REALES + MÚSICA)"):
             )
             subprocess.run(cmd, shell=True)
 
-            # Limpieza agresiva de archivos temporales para liberar RAM
+            # Limpieza de archivos temporales
             for f in ["taller/mudo.mp4", "taller/voz_temp.mp4"] + [f"taller/v_{i}.mp4" for i in range(n_clips)]:
                 if os.path.exists(f):
-                    try: 
-                        os.remove(f)
-                    except: 
-                        pass
+                    try: os.remove(f)
+                    except: pass
             gc.collect()
 
+            # Mostrar el vídeo correctamente en la página
             if os.path.exists(final):
-                st.markdown('<div class="msg">🏆 VÍDEO REAL + MÚSICA COMPLETADO</div>', unsafe_allow_html=True)
-                with open(final, "rb") as f: 
-                    st.video(f.read())
+                st.markdown('<div class="msg">🏆 ¡VÍDEO COMPLETADO CON ÉXITO!</div>', unsafe_allow_html=True)
+                st.markdown('<div class="video-container">', unsafe_allow_html=True)
+                st.video(final)   # ← Ahora se reproduce correctamente en la página
+                st.markdown('</div>', unsafe_allow_html=True)
+                
+                # Botón para descargar
+                with open(final, "rb") as file:
+                    st.download_button(
+                        label="⬇️ Descargar vídeo MP4",
+                        data=file,
+                        file_name=f"fenix_{tema.replace(' ', '_')[:30]}.mp4",
+                        mime="video/mp4"
+                    )
+            else:
+                st.error("Error al generar el vídeo final.")
 
-            # Mensaje final
-            st.success("¡Vídeo generado correctamente!")
+            st.success("Proceso terminado. ¡Disfruta tu vídeo!")
