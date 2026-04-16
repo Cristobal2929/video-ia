@@ -2,7 +2,7 @@ import streamlit as st
 import os, time, random, subprocess, textwrap, re, urllib.parse, math
 import requests
 
-st.set_page_config(page_title="Fénix Estudio PRO | V57", layout="centered")
+st.set_page_config(page_title="Fénix Estudio PRO | V58", layout="centered")
 
 st.markdown("""
 <style>
@@ -12,8 +12,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V57</div>', unsafe_allow_html=True)
-st.markdown('<div class="pro-subtitle" style="text-align:center; color:#94A3B8; margin-bottom: 30px;">Inteligencia Semántica • Contexto Visual 100% Perfecto • Sincro 30 FPS</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V58</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-subtitle" style="text-align:center; color:#94A3B8; margin-bottom: 30px;">Cerebro Bilingüe • Viñeta Cinemática • Calidad de Agencia</div>', unsafe_allow_html=True)
 
 font_path = "Arial.ttf"
 if not os.path.exists(font_path):
@@ -26,10 +26,7 @@ font_abs = os.path.abspath(font_path).replace('\\', '/')
 IDIOMAS = {
     "🇪🇸 Español": {"tl": "es", "voces": {"Jorge (Latino)": "es-MX-JorgeNeural", "Elvira (España)": "es-ES-ElviraNeural", "Alvaro (España)": "es-ES-AlvaroNeural"}},
     "🇺🇸 English": {"tl": "en", "voces": {"Guy (Masculino US)": "en-US-GuyNeural", "Aria (Femenina US)": "en-US-AriaNeural", "Christopher (Masculino US)": "en-US-ChristopherNeural"}},
-    "🇫🇷 Français": {"tl": "fr", "voces": {"Henri (Masculino)": "fr-FR-HenriNeural", "Denise (Femenina)": "fr-FR-DeniseNeural"}},
-    "🇩🇪 Deutsch": {"tl": "de", "voces": {"Killian (Masculino)": "de-DE-KillianNeural", "Amala (Femenina)": "de-DE-AmalaNeural"}},
-    "🇮🇹 Italiano": {"tl": "it", "voces": {"Diego (Masculino)": "it-IT-DiegoNeural", "Elsa (Femenina)": "it-IT-ElsaNeural"}},
-    "🇧🇷 Português": {"tl": "pt", "voces": {"Antonio (Brasil)": "pt-BR-AntonioNeural", "Francisca (Brasil)": "pt-BR-FranciscaNeural"}}
+    "🇫🇷 Français": {"tl": "fr", "voces": {"Henri (Masculino)": "fr-FR-HenriNeural", "Denise (Femenina)": "fr-FR-DeniseNeural"}}
 }
 
 def generar_voz_inmortal(texto, codigo_voz, tl_code):
@@ -59,14 +56,20 @@ def generar_voz_inmortal(texto, codigo_voz, tl_code):
         if os.path.exists("t.mp3") and os.path.getsize("t.mp3") > 1000: return True
     return False
 
-# CEREBRO LECTOR: Extrae la palabra más importante de un trozo de guion
+# TRADUCTOR INTERNO AUTOMÁTICO
+def traducir_a_ingles(palabra, idioma_origen):
+    if "English" in idioma_origen: return palabra
+    try:
+        url = f"https://api.mymemory.translated.net/get?q={urllib.parse.quote(palabra)}&langpair=es|en"
+        respuesta = requests.get(url, timeout=5).json()
+        return respuesta['responseData']['translatedText']
+    except:
+        return palabra
+
 def extraer_palabra_clave(texto_chunk):
     palabras = re.sub(r'[^\w\s]', '', texto_chunk).split()
-    # Filtramos palabras cortas (que suelen ser conectores como "el", "de", "con", "and", "the")
     palabras_utiles = [p for p in palabras if len(p) > 4]
-    if palabras_utiles:
-        # Devuelve la palabra más larga (suele ser el sustantivo principal: "criptomonedas", "millonario", etc.)
-        return max(palabras_utiles, key=len)
+    if palabras_utiles: return max(palabras_utiles, key=len)
     return "cinematic"
 
 with st.sidebar:
@@ -85,47 +88,43 @@ with st.sidebar:
 st.markdown("### 1. El Guion")
 guion_usuario = st.text_area("📝 Pega tu Guion aquí:", height=150)
 st.markdown("### 2. Estilo Visual")
-tema_broll = st.text_input("🎨 ¿Qué filtro o ambiente le damos? (Ej: Dark, Luxury, Cyberpunk, Cinematic...):", placeholder="Luxury")
+tema_broll = st.text_input("🎨 Estilo General (Ej: Dark, Luxury, Cinematic...):", placeholder="Luxury")
 
-if st.button("🚀 CREAR VÍDEO (INTELIGENCIA SEMÁNTICA V57)"):
+if st.button("🚀 CREAR VÍDEO (CEREBRO BILINGÜE V58)"):
     if len(guion_usuario.strip()) < 20 or len(tema_broll.strip()) < 2:
         st.warning("⚠️ Rellena el guion y el estilo visual.")
     else:
-        with st.status(f"🎬 Leyendo guion y buscando contexto perfecto...", expanded=True) as status:
+        with st.status(f"🎬 Leyendo, Traduciendo y Creando Magia...", expanded=True) as status:
             subprocess.run("rm -f a_*.mp3 g_*.mp3 v_*.mp4 p_*.mp4 clip_*.mp4 text_*.txt temp_txt.txt lista*.txt music.m4a audio_final.m4a video_mudo.mp4 final.mp4 t.mp3 subs_filter.txt", shell=True)
             
-            status.write("🎙️ Grabando locución nativa...")
+            status.write("🎙️ Grabando locución...")
             if not generar_voz_inmortal(guion_usuario, codigo_voz, tl_code):
-                st.error("❌ Servidores de voz caídos.")
+                st.error("❌ Servidores caídos.")
                 st.stop()
             dur_audio = float(subprocess.check_output("ffprobe -i t.mp3 -show_entries format=duration -v quiet -of csv='p=0'", shell=True).decode('utf-8').strip())
 
-            status.write("🎵 Mezclando banda sonora...")
+            status.write("🎵 Mezclando audio...")
             freq = 60 if "Misterio" in musica_tipo else 75
             subprocess.run(f'ffmpeg -y -i t.mp3 -f lavfi -i "sine=f={freq}:d={dur_audio}" -filter_complex "[1:a]volume=0.03[m];[0:a][m]amix=inputs=2:duration=first" -c:a aac -ar 44100 audio_final.m4a', shell=True)
-
-            status.write("🎞️ Analizando el guion palabra por palabra...")
             
             dur_corte = 3.5
             num_clips = math.ceil(dur_audio / dur_corte)
             clips_finales = []
-            
-            # Cortamos el guion en el mismo número de trozos que vídeos vamos a necesitar
             palabras_guion = guion_usuario.split()
             chunk_size = max(len(palabras_guion) // num_clips, 1)
             
             for i in range(num_clips):
-                # Extraemos el trozo de guion que suena en este clip exacto
                 start_idx = i * chunk_size
                 end_idx = start_idx + chunk_size if i < num_clips - 1 else len(palabras_guion)
                 texto_del_clip = " ".join(palabras_guion[start_idx:end_idx])
                 
-                # CEREBRO LECTOR: Sacamos la palabra clave de este trozo
-                palabra_magica = extraer_palabra_clave(texto_del_clip)
-                query_busqueda = urllib.parse.quote(f"{palabra_magica} {tema_broll} 4k")
-                status.write(f"🔍 Escena {i+1}: Leyendo '{palabra_magica}' -> Buscando vídeo...")
+                palabra_es = extraer_palabra_clave(texto_del_clip)
+                # TRADUCCIÓN AUTOMÁTICA
+                palabra_en = traducir_a_ingles(palabra_es, idioma_elegido)
+                
+                query_busqueda = urllib.parse.quote(f"{palabra_en} {tema_broll} 4k")
+                status.write(f"🔍 Escena {i+1}: '{palabra_es}' traducido a '{palabra_en}'. Descargando...")
 
-                # Ajuste de tiempo (1 seg de propina al final para que no se congele)
                 t_clip = dur_corte if i < num_clips - 1 else (dur_audio - (i * dur_corte)) + 1.0 
                 if t_clip <= 0: t_clip = 1.0
                 
@@ -135,7 +134,6 @@ if st.button("🚀 CREAR VÍDEO (INTELIGENCIA SEMÁNTICA V57)"):
                     if r.get('videos'): v_url = random.choice(r['videos'])['video_files'][0]['link']
                 except: pass
 
-                # Si falla la palabra exacta, buscamos solo con el tema visual
                 if not v_url:
                     try:
                         r = requests.get(f"https://api.pexels.com/videos/search?query={urllib.parse.quote(tema_broll + ' 4k')}&per_page=5&size=large&orientation=portrait", headers={"Authorization": pexels_key.strip()}, timeout=10).json()
@@ -158,8 +156,8 @@ if st.button("🚀 CREAR VÍDEO (INTELIGENCIA SEMÁNTICA V57)"):
                         clips_finales.append(f"p_{i}.mp4")
                         continue
                 
-                # RENDERIZAMOS CON -r 30 (Sincronización perfecta de la V56)
-                vf = "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,colorchannelmixer=rr=0.7:gg=0.7:bb=0.7,format=yuv420p"
+                # NUEVO: FILTRO VIGNETTE (Viñeta para darle un toque dramático de película)
+                vf = "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,colorchannelmixer=rr=0.7:gg=0.7:bb=0.7,vignette=PI/3,format=yuv420p"
                 subprocess.run(f'ffmpeg -y -stream_loop -1 -i "clip_{i}.mp4" -vf "{vf}" -an -c:v libx264 -r 30 -preset ultrafast -t {t_clip} "p_{i}.mp4"', shell=True)
                 
                 if os.path.exists(f"p_{i}.mp4"):
@@ -169,20 +167,18 @@ if st.button("🚀 CREAR VÍDEO (INTELIGENCIA SEMÁNTICA V57)"):
                 for c in clips_finales: f.write(f"file '{c}'\n")
             subprocess.run('ffmpeg -y -f concat -safe 0 -i lista.txt -c copy video_mudo.mp4', shell=True)
 
-            status.write("🎬 Mapeando Subtítulos (Doble capa anti-errores)...")
+            status.write("🎬 Textos...")
             texto_seguro = re.sub(r'[^\w\s]', '', guion_usuario.replace('\n', ' ').upper()).replace('_', '')
             palabras = texto_seguro.split()
             
             subs_cmd = []
             font_cmd = f"fontfile='{font_abs}':" if os.path.exists(font_path) else ""
-            
             chunks_raw = [palabras[j:j+2] for j in range(0, len(palabras), 2)]
             tiempo_por_chunk = dur_audio / max(len(chunks_raw), 1)
             
             for j, p_list in enumerate(chunks_raw):
                 t_start = j * tiempo_por_chunk
                 t_end = t_start + tiempo_por_chunk
-                
                 if len(p_list) == 2 and (len(p_list[0]) + len(p_list[1]) > 12):
                     w1, w2 = p_list[0], p_list[1]
                     subs_cmd.append(f"drawtext=text='{w1}':fontcolor={color_sub}:fontsize=65:{font_cmd}borderw=5:bordercolor=black:shadowcolor=black@0.8:shadowx=4:shadowy=4:x=(w-tw)/2:y=(h-th)/2-40:enable='between(t,{t_start},{t_end})'")
@@ -193,14 +189,14 @@ if st.button("🚀 CREAR VÍDEO (INTELIGENCIA SEMÁNTICA V57)"):
             
             with open("subs_filter.txt", "w") as f: f.write(",\n".join(subs_cmd))
 
-            status.write("✨ Renderizando Máster Final...")
+            status.write("✨ Máster Final...")
             v_final = f"output/v_{int(time.time())}.mp4"
             cmd_f = f"""ffmpeg -y -i video_mudo.mp4 -i audio_final.m4a -filter_complex_script subs_filter.txt -c:v libx264 -preset fast -crf 23 -c:a copy -t {dur_audio} "{v_final}" """
             subprocess.run(cmd_f, shell=True)
             
             if os.path.exists(v_final):
-                st.success("🔥 ¡VÍDEO V57 CREADO! Imágenes sincronizadas con el contexto de las palabras.")
+                st.success("🔥 ¡VÍDEO V58 LISTO! Calidad Hollywood desbloqueada.")
                 st.video(v_final)
                 st.balloons()
             else:
-                st.error("❌ Fallo en el renderizado final.")
+                st.error("❌ Fallo en renderizado.")
