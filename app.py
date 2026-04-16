@@ -3,7 +3,7 @@ import os, time, subprocess, re, urllib.parse, shutil, math, random
 import requests
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Fénix Studio V88", layout="centered")
+st.set_page_config(page_title="Fénix Studio V89", layout="centered")
 
 components.html("""
 <script>
@@ -26,8 +26,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V88 🎥</div>', unsafe_allow_html=True)
-st.markdown('<div style="text-align:center; color:#94A3B8; margin-bottom: 30px;">Motor Midjourney 8K • Zoom Cinemático • Subs Virales</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V89 🎥</div>', unsafe_allow_html=True)
+st.markdown('<div style="text-align:center; color:#94A3B8; margin-bottom: 30px;">Motor Midjourney 8K • Zoom Cinemático • Bug Fix</div>', unsafe_allow_html=True)
 
 @st.cache_resource
 def descargar_fuente():
@@ -78,7 +78,7 @@ duracion_opcion = st.selectbox("⏱️ Duración del Vídeo:", [
     "Largo (~60 segundos)"
 ])
 
-if st.button("🚀 CREAR VÍDEO 8K (V88)"):
+if st.button("🚀 CREAR VÍDEO 8K (V89)"):
     if not tema: st.warning("⚠️ Escribe un tema para la IA.")
     else:
         preparar_entorno()
@@ -161,7 +161,8 @@ if st.button("🚀 CREAR VÍDEO 8K (V88)"):
             palabras = texto_seguro.split()
             
             subs_cmd = []
-            font_cmd = f"fontfile='{font_abs}':" if os.path.exists(font_path) else ""
+            # AQUÍ ESTÁ LA LÍNEA CORREGIDA: font_abs en lugar de font_path
+            font_cmd = f"fontfile='{font_abs}':" if os.path.exists(font_abs) else ""
             chunks_raw = [palabras[j:j+2] for j in range(0, len(palabras), 2)]
             tiempo_por_chunk = dur / max(len(chunks_raw), 1)
             
