@@ -3,7 +3,7 @@ import os, time, subprocess, re, urllib.parse, shutil
 import requests
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Fénix Studio V84", layout="centered")
+st.set_page_config(page_title="Fénix Studio V85", layout="centered")
 
 components.html("""
 <script>
@@ -26,7 +26,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V84 🎥</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V85 🎥</div>', unsafe_allow_html=True)
 
 @st.cache_resource
 def descargar_fuente():
@@ -101,9 +101,8 @@ if st.button("🚀 CREAR VÍDEO A MEDIDA"):
             
             for i in range(n_escenas):
                 palabra = palabras_limpias[i]
-                status.write(f"⏳ Escena {i+1}/{n_escenas}... (El truco de espera 🤫)")
+                status.write(f"⏳ Escena {i+1}/{n_escenas}... (Generando imagen única)")
                 
-                # EL TRUCO DEL HACKER: Esperar 3.5 segundos para que la IA no nos bloquee
                 time.sleep(3.5)
                 
                 img = f"taller/img_{i}.jpg"
@@ -126,9 +125,8 @@ if st.button("🚀 CREAR VÍDEO A MEDIDA"):
                 except Exception as e:
                     pass
                 
-                # PARACAÍDAS: Si la IA nos tira, copiamos el vídeo anterior para no detener la máquina
                 if not exito:
-                    status.write(f"⚠️ Servidor lento, clonando escena {i} para no parar...")
+                    status.write(f"⚠️ Servidor lento, clonando escena {i}...")
                     if i > 0 and os.path.exists(f"taller/vid_{i-1}.mp4"):
                         subprocess.run(f'cp taller/vid_{i-1}.mp4 "{vid}"', shell=True)
                     else:
@@ -154,7 +152,12 @@ if st.button("🚀 CREAR VÍDEO A MEDIDA"):
             
             if os.path.exists(final_path) and os.path.getsize(final_path) > 1000:
                 status.update(label="✅ ¡Proceso 100% Completado!", state="complete")
-                st.markdown('<div class="info-card">🎉 VÍDEO EXPORTADO. Haz clic en los tres puntitos para descargar.</div>', unsafe_allow_html=True)
-                st.video(final_path)
             else:
                 st.error("❌ Error al exportar el vídeo final.")
+                st.stop()
+        
+        # FUERA DEL STATUS: Leemos los bytes del video y forzamos a Streamlit a mostrarlo
+        st.markdown('<div class="info-card">🎉 VÍDEO EXPORTADO. Haz clic en los tres puntitos para descargar.</div>', unsafe_allow_html=True)
+        with open(final_path, 'rb') as video_file:
+            video_bytes = video_file.read()
+        st.video(video_bytes)
