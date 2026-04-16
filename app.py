@@ -1,11 +1,10 @@
 import streamlit as st
 import os, time, subprocess, re, urllib.parse, shutil
 import requests
-import base64
 import gc
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Fénix Studio V82", layout="centered")
+st.set_page_config(page_title="Fénix Studio V83", layout="centered")
 
 components.html("""
 <script>
@@ -24,12 +23,11 @@ st.markdown("""
     .stApp { background: #000000; color: #FFFFFF; }
     .pro-title { font-size: 40px; font-weight: 900; color: #00FFD1; text-align: center; }
     .stSelectbox div[data-baseweb="select"] { background-color: #1e293b; color: white; }
-    .info-card { padding: 10px; border-radius: 8px; background: #0f172a; border: 1px solid #00FFD1; text-align: center; color: #00FFD1; margin-bottom: 15px;}
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V82 🪠</div>', unsafe_allow_html=True)
-st.markdown('<div style="text-align:center; color:#94A3B8; margin-bottom:20px;">Sistema Anti-Atascos y Anti-Ban Activado</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V83 📺</div>', unsafe_allow_html=True)
+st.markdown('<div style="text-align:center; color:#94A3B8; margin-bottom:20px;">Reproductor Nativo y Anti-Atascos</div>', unsafe_allow_html=True)
 
 @st.cache_resource
 def descargar_fuente():
@@ -58,7 +56,7 @@ def preparar_entorno():
 tema = st.text_input("Tema del vídeo:")
 duracion_opcion = st.selectbox("Duración del Vídeo:", ["Corto (~15 segundos)", "Medio (~30 segundos)"])
 
-if st.button("🚀 CREAR SIN ATASCOS"):
+if st.button("🚀 CREAR VÍDEO"):
     if not tema: st.warning("Escribe un tema")
     else:
         preparar_entorno()
@@ -66,7 +64,7 @@ if st.button("🚀 CREAR SIN ATASCOS"):
         palabras_target = 35 if "15" in duracion_opcion else 70
         n_escenas = 4 if "15" in duracion_opcion else 8
             
-        with st.status(f"🎬 Producción blindada ({duracion_opcion})...", expanded=True) as status:
+        with st.status(f"🎬 Producción en marcha ({duracion_opcion})...", expanded=True) as status:
             
             status.write("🧠 Redactando guion...")
             guion = generar_guion(tema, palabras_target)
@@ -85,7 +83,7 @@ if st.button("🚀 CREAR SIN ATASCOS"):
             t_por_escena = dur / n_escenas
             dur_frames = int(t_por_escena * 15)
             
-            status.write(f"🎨 Creando {n_escenas} escenas (Con sistema Anti-Atascos)...")
+            status.write(f"🎨 Creando {n_escenas} escenas...")
             clips = []
             
             palabras_limpias = [p for p in guion.split() if len(p) > 3]
@@ -99,36 +97,27 @@ if st.button("🚀 CREAR SIN ATASCOS"):
                 vid = f"taller/vid_{i}.mp4"
                 url = f"https://image.pollinations.ai/prompt/{urllib.parse.quote(palabra + ' cinematic vertical')}?width=480&height=854&nologo=true"
                 
-                # TIMEOUT ESTRICTO Y MANEJO DE ERRORES PARA QUE NO SE CUELGUE
                 try:
-                    r = requests.get(url, timeout=12) # Si en 12s no descarga, aborta y pasa al plan B
+                    r = requests.get(url, timeout=12)
                     if r.status_code == 200 and len(r.content) > 1000:
                         with open(img, 'wb') as f: f.write(r.content)
                     else:
                         raise Exception("Imagen corrupta")
                 except:
-                    # PLAN B: Fondo de emergencia si la API falla
                     subprocess.run(f'ffmpeg -y -f lavfi -i color=c=#111827:s=480x854:d=1 -frames:v 1 "{img}"', shell=True)
                 
                 try:
                     vf = f"scale=500:888,zoompan=z='min(zoom+0.001,1.1)':d={dur_frames}:s=480x854:fps=15,format=yuv420p" 
-                    # TIMEOUT EN FFMPEG: Si tarda más de 25s, lo matamos y avanzamos
                     subprocess.run(f'ffmpeg -y -loop 1 -i "{img}" -vf "{vf}" -c:v libx264 -preset ultrafast -crf 28 -threads 1 -t {t_por_escena} "{vid}"', shell=True, timeout=25)
-                except subprocess.TimeoutExpired:
-                    pass # Ignoramos el atasco y avanzamos
-                except Exception:
-                    pass
+                except: pass
                     
-                if os.path.exists(vid): 
-                    clips.append(vid)
-                
+                if os.path.exists(vid): clips.append(vid)
                 if os.path.exists(img): os.remove(img)
                 
-                # FORZAMOS LA LIMPIEZA DE MEMORIA Y PAUSAMOS PARA NO SER BANEADOS
                 gc.collect()
                 time.sleep(1.5) 
             
-            status.write("🎬 Ensamblando piezas...")
+            status.write("🎬 Ensamblando...")
             lista_txt = "taller/lista.txt"
             with open(lista_txt, "w") as f:
                 for c in clips: f.write(f"file '../{c}'\n")
@@ -146,15 +135,11 @@ if st.button("🚀 CREAR SIN ATASCOS"):
                 with open(final_path, "rb") as f:
                     video_bytes = f.read()
                 
-                b64_video = base64.b64encode(video_bytes).decode()
-                video_html = f'''
-                    <video width="100%" controls autoplay style="border: 2px solid #00FFD1; border-radius: 10px;">
-                        <source src="data:video/mp4;base64,{b64_video}" type="video/mp4">
-                    </video>
-                '''
-                
                 status.update(label="✅ ¡Proceso 100% Completado!", state="complete")
-                st.markdown('<div class="info-card">🎉 VÍDEO EXPORTADO. Haz clic derecho o mantén pulsado para descargar.</div>', unsafe_allow_html=True)
-                st.markdown(video_html, unsafe_allow_html=True)
-            else:
-                st.error("Error al exportar. Servidor sobrecargado.")
+
+        # Esto se ejecuta fuera del status para que quede limpio en la pantalla principal
+        if 'video_bytes' in locals():
+            st.success("🎉 VÍDEO COMPLETADO. Dale al play para verlo o a los 3 puntitos para descargarlo.")
+            st.video(video_bytes) # Reproductor Nativo Directo en Pantalla
+        else:
+            st.error("Error al exportar. Servidor sobrecargado.")
