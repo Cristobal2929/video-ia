@@ -3,7 +3,7 @@ import os, time, subprocess, re, urllib.parse, shutil, math, random, gc
 import requests
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Fénix Studio V110", layout="centered")
+st.set_page_config(page_title="Fénix Studio V111", layout="centered")
 
 components.html("<script>if('wakeLock' in navigator){navigator.wakeLock.request('screen');}</script>", height=0)
 
@@ -17,7 +17,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V110 👑</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V111 👑</div>', unsafe_allow_html=True)
 
 @st.cache_resource
 def get_font():
@@ -89,7 +89,6 @@ if st.button("🚀 CREAR OBRA MAESTRA (MOTOR V58)"):
             palabras_guion_final = guion.split()
             chunk_size = max(len(palabras_guion_final) // n_clips, 1)
 
-            # --- FASE 1: GENERACIÓN DE CLIPS MUDOS LIMPIOS (COMO EN LA V58) ---
             ultima_vid_exitosa = None
 
             for i in range(n_clips):
@@ -114,13 +113,11 @@ if st.button("🚀 CREAR OBRA MAESTRA (MOTOR V58)"):
                             break
                     except: pass
 
-                # Convertimos imagen a vídeo con zoom lateral (formato exacto para que no falle al unir)
                 if exito_ia:
                     z_fx = random.choice(["zoompan=z='1.0+0.001*on':x='iw/4-(iw/4/d)*on'", "zoompan=z='1.15-0.001*on':x='(iw/4/d)*on'"])
                     vf = f"scale=1280:2275,{z_fx}:d={int(t_clip*24)}:s=720x1280,format=yuv420p"
                     subprocess.run(f'ffmpeg -y -loop 1 -i "{img}" -vf "{vf}" -t {t_clip} -c:v libx264 -preset ultrafast -r 24 "{vid}"', shell=True)
                 
-                # PARACAÍDAS ANTI-FALTAN PIEZAS
                 if not os.path.exists(vid) or os.path.getsize(vid) < 1000:
                     if ultima_vid_exitosa:
                         subprocess.run(f'cp "{ultima_vid_exitosa}" "{vid}"', shell=True)
@@ -134,7 +131,6 @@ if st.button("🚀 CREAR OBRA MAESTRA (MOTOR V58)"):
                 if os.path.exists(img): os.remove(img)
                 gc.collect()
 
-            # --- FASE 2: ENSAMBLAJE AL ESTILO V58 ---
             st.markdown('<div class="msg">🎬 Ensamblando película base...</div>', unsafe_allow_html=True)
             with open("taller/lista.txt", "w") as f:
                 for c in clips: f.write(f"file '{c}'\n")
@@ -142,7 +138,6 @@ if st.button("🚀 CREAR OBRA MAESTRA (MOTOR V58)"):
             mudo = "taller/mudo.mp4"
             subprocess.run(f'ffmpeg -y -f concat -safe 0 -i taller/lista.txt -c copy "{mudo}"', shell=True)
             
-            # --- FASE 3: SUBTÍTULOS DOBLE CAPA AL ESTILO V58 ---
             st.markdown('<div class="msg">✨ Tatuando subtítulos V58...</div>', unsafe_allow_html=True)
             palabras_sub = re.sub(r'[^\w\s]', '', guion.upper()).split()
             chunks_sub = [palabras_sub[j:j+2] for j in range(0, len(palabras_sub), 2)]
@@ -154,8 +149,9 @@ if st.button("🚀 CREAR OBRA MAESTRA (MOTOR V58)"):
             for j, p_list in enumerate(chunks_sub):
                 ts, te = j * t_por_chunk, (j + 1) * t_por_chunk
                 if len(p_list) == 2 and (len(p_list[0]) + len(p_list[1]) > 10):
+                    # ¡EL FIX ESTÁ AQUÍ! Hemos cambiado {f_abs} por {f_str} en la segunda línea
                     subs_cmd.append(f"drawtext=text='{p_list[0]}':fontcolor={color_sub}:fontsize=70:{f_str}borderw=5:bordercolor=black:x=(w-tw)/2:y=(h-th)/2-45:enable='between(t,{ts},{te})'")
-                    subs_cmd.append(f"drawtext=text='{p_list[1]}':fontcolor={color_sub}:fontsize=70:{f_abs}borderw=5:bordercolor=black:x=(w-tw)/2:y=(h-th)/2+45:enable='between(t,{ts},{te})'")
+                    subs_cmd.append(f"drawtext=text='{p_list[1]}':fontcolor={color_sub}:fontsize=70:{f_str}borderw=5:bordercolor=black:x=(w-tw)/2:y=(h-th)/2+45:enable='between(t,{ts},{te})'")
                 else:
                     frase = " ".join(p_list)
                     subs_cmd.append(f"drawtext=text='{frase}':fontcolor={color_sub}:fontsize=70:{f_str}borderw=5:bordercolor=black:x=(w-tw)/2:y=(h-th)/2:enable='between(t,{ts},{te})'")
@@ -164,11 +160,10 @@ if st.button("🚀 CREAR OBRA MAESTRA (MOTOR V58)"):
             
             final = "taller/master.mp4"
             
-            # COMANDO FINAL SEGURO
             subprocess.run(f'ffmpeg -y -i "{mudo}" -i "{audio}" -filter_complex_script taller/subs_filter.txt -c:v libx264 -preset ultrafast -crf 28 -threads 1 -t {dur} "{final}"', shell=True)
             
             if os.path.exists(final):
-                st.markdown('<div class="info-card">🏆 VÍDEO COMPLETADO CON EL MOTOR DE LA V58</div>', unsafe_allow_html=True)
+                st.markdown('<div class="info-card">🏆 VÍDEO COMPLETADO: MOTOR V58 RESTAURADO AL 100%</div>', unsafe_allow_html=True)
                 with open(final, "rb") as f: st.video(f.read())
                 st.balloons()
             else:
