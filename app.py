@@ -2,7 +2,7 @@ import streamlit as st
 import os, time, random, subprocess, textwrap, re, urllib.parse
 import requests
 
-st.set_page_config(page_title="Fénix Estudio PRO | V44", layout="centered")
+st.set_page_config(page_title="Fénix Estudio PRO | V45", layout="centered")
 
 st.markdown("""
 <style>
@@ -12,8 +12,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V44</div>', unsafe_allow_html=True)
-st.markdown('<div class="pro-subtitle" style="text-align:center; color:#94A3B8; margin-bottom: 30px;">Imágenes Inteligentes • Sincronización de Contexto • HD Limpio</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V45</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-subtitle" style="text-align:center; color:#94A3B8; margin-bottom: 30px;">Voces Humanas • Metraje 4K en Movimiento • Cámara Dinámica</div>', unsafe_allow_html=True)
 
 # 1. DESCARGA DE FUENTE SEGURA
 font_path = "Arial.ttf"
@@ -24,10 +24,11 @@ if not os.path.exists(font_path):
     except: pass
 font_abs = os.path.abspath(font_path).replace('\\', '/')
 
-# --- MOTOR DE VOZ INMORTAL DUAL ---
-def generar_voz_inmortal(texto):
+# --- MOTOR DE VOZ INMORTAL (AHORA CON VOCES ULTRA NATURALES) ---
+def generar_voz_inmortal(texto, codigo_voz):
     with open("temp_txt.txt", "w", encoding="utf-8") as f: f.write(texto)
-    subprocess.run(["python", "-m", "edge_tts", "--voice", "es-ES-AlvaroNeural", "--rate=+5%", "-f", "temp_txt.txt", "--write-media", "t.mp3"])
+    # Generamos la voz con el locutor elegido
+    subprocess.run(["python", "-m", "edge_tts", "--voice", codigo_voz, "--rate=+5%", "-f", "temp_txt.txt", "--write-media", "t.mp3"])
     
     if os.path.exists("t.mp3") and os.path.getsize("t.mp3") > 1000: return True
         
@@ -51,89 +52,93 @@ def generar_voz_inmortal(texto):
         return True
     return False
 
-# --- EL ANALISTA DE GUION (BUSCADOR INTELIGENTE) ---
+# --- EL ANALISTA DE GUION (BUSCADOR 4K INTELIGENTE) ---
 def extraer_palabra_clave(texto_chunk, atmosfera):
     basura = ["COMO", "PERO", "PARA", "ESTE", "ESTA", "TODO", "TODA", "NUNCA", "SIEMPRE", "PORQUE", "CUANDO", "DONDE", "QUIEN", "AUNQUE", "INCLUSO", "ADEMAS", "ENTONCES", "REALMENTE", "SOLAMENTE", "TIENES", "PUEDES", "QUIERES", "HACER", "DECIR", "ESTAR", "TENER", "SABER", "PODER", "MUCHO", "POCO", "NADA", "ALGO", "AHORA", "DESPUES", "ANTES", "DESDE", "HASTA", "SOBRE", "ENTRE", "MISMO", "TAMBIEN", "EXACTAMENTE", "HACIA", "CUALQUIER", "MIENTRAS", "SOLO"]
     palabras = re.sub(r'[^A-Z\s]', '', texto_chunk.upper()).split()
     palabras_utiles = [p for p in palabras if len(p) > 4 and p not in basura]
 
-    # Cogemos la palabra más larga y descriptiva del fragmento
     keyword = max(palabras_utiles, key=len) if palabras_utiles else ""
 
-    # Le añadimos el modificador de atmósfera para que el vídeo cuadre visualmente
-    if "Terror" in atmosfera: mod = "dark creepy"
-    elif "Negocios" in atmosfera: mod = "business finance"
-    elif "Espacio" in atmosfera: mod = "space abstract"
-    elif "Naturaleza" in atmosfera: mod = "nature landscape"
-    else: mod = "epic cinematic"
+    # FORZAMOS A PEXELS A BUSCAR MOVIMIENTO Y 4K
+    if "Terror" in atmosfera: mod = "dark creepy 4k motion"
+    elif "Negocios" in atmosfera: mod = "business money 4k dynamic"
+    elif "Espacio" in atmosfera: mod = "space galaxy 4k motion"
+    elif "Naturaleza" in atmosfera: mod = "nature landscape drone 4k"
+    else: mod = "epic cinematic 4k action"
 
     return f"{keyword} {mod}".strip()
 
 ATMOSFERAS = ["💀 Terror / Misterio", "💰 Negocios / Lujo", "🌌 Espacio / Ciencia", "🌿 Naturaleza / Paz", "🔥 Motivación / Gym"]
 
 with st.sidebar:
-    st.header("⚙️ Controles Visuales")
+    st.header("⚙️ Controles de Producción")
     pexels_key = st.text_input("🔑 API Pexels:", value="Ty0uFISh3APEAXIVcrFpSM7ZdwOeRElCuUgoG42EW6WVISRTEfqjm0BZ", type="password")
+    
+    # NUEVO SELECTOR DE VOCES (Jorge es el más humano y natural)
+    voz_elegida = st.selectbox("🗣️ Voz del Locutor", ["🎙️ Jorge (Latino - Muy Natural)", "🎙️ Elvira (Española - Femenina)", "🎙️ Alvaro (Español - Clásico)"])
+    if "Jorge" in voz_elegida: codigo_voz = "es-MX-JorgeNeural"
+    elif "Elvira" in voz_elegida: codigo_voz = "es-ES-ElviraNeural"
+    else: codigo_voz = "es-ES-AlvaroNeural"
+
     color_sub = st.selectbox("🎨 Color Subtítulos", ["yellow", "white", "#00FFD1", "#FF0055"])
     atmosfera_elegida = st.selectbox("🎬 Atmósfera Visual", ATMOSFERAS)
     
-guion_usuario = st.text_area("📝 Pega tu Guion aquí:", height=200, placeholder="Pega un guion largo (ej. 100 palabras) para que las imágenes tengan sentido...")
+guion_usuario = st.text_area("📝 Pega tu Guion aquí:", height=200, placeholder="Pega un guion largo (ej. 100 palabras)...")
 
-if st.button("🚀 CREAR VÍDEO INTELIGENTE HD"):
+if st.button("🚀 CREAR VÍDEO CINEMATOGRÁFICO HD"):
     if len(guion_usuario.strip()) < 20:
         st.warning("⚠️ El guion es muy corto.")
     else:
-        with st.status("🎬 Analizando guion y buscando imágenes que cuadren...", expanded=True) as status:
+        with st.status("🎬 Analizando guion y forzando calidad 4K...", expanded=True) as status:
             subprocess.run("rm -f a_*.mp3 g_*.mp3 v_*.mp4 p_*.mp4 text_*.txt temp_txt.txt lista*.txt music.m4a audio_final.m4a video_mudo.mp4 final.mp4 base.mp4 t.mp3 subs_filter.txt", shell=True)
             
-            # 1. VOZ DUAL
-            status.write("🎙️ Sintetizando voz...")
-            if not generar_voz_inmortal(guion_usuario):
+            # 1. VOZ PREMIUM DUAL
+            status.write("🎙️ Grabando voz con calidad humana...")
+            if not generar_voz_inmortal(guion_usuario, codigo_voz):
                 st.error("❌ Servidores de voz caídos.")
                 st.stop()
                 
             dur_audio = float(subprocess.check_output("ffprobe -i t.mp3 -show_entries format=duration -v quiet -of csv='p=0'", shell=True).decode('utf-8').strip())
 
             # 2. MEZCLA DE AUDIO
-            status.write("🎵 Añadiendo banda sonora...")
+            status.write("🎵 Añadiendo banda sonora inmersiva...")
             freq = 60 if "Terror" in atmosfera_elegida else 75
             subprocess.run(f'ffmpeg -y -i t.mp3 -f lavfi -i "sine=f={freq}:d={dur_audio}" -filter_complex "[1:a]volume=0.03[m];[0:a][m]amix=inputs=2:duration=first" -c:a aac -ar 44100 audio_final.m4a', shell=True)
 
-            # 3. ANÁLISIS DE GUION Y BÚSQUEDA INTELIGENTE
-            status.write("🎞️ Buscando vídeos que coincidan con tus palabras...")
+            # 3. BÚSQUEDA 4K INTELIGENTE Y CÁMARA RÁPIDA
+            status.write("🎞️ Descargando metraje en movimiento...")
             clips_finales = []
             dur_escena = dur_audio / 5
             
-            # Partimos el texto del usuario en 5 partes iguales
             palabras_guion = guion_usuario.split()
             chunk_size = max(len(palabras_guion) // 5, 1)
             partes_texto = [" ".join(palabras_guion[i*chunk_size : (i+1)*chunk_size]) for i in range(5)]
             if len(partes_texto) > 5: partes_texto[4] += " " + " ".join(palabras_guion[5*chunk_size:])
             
             for i in range(5):
-                # Extraemos la palabra clave de ese trozo específico del guion
                 busqueda_inteligente = extraer_palabra_clave(partes_texto[i], atmosfera_elegida)
                 
                 v_url = None
                 try:
-                    # locale=es-ES permite que Pexels entienda la palabra en español
-                    r = requests.get(f"https://api.pexels.com/videos/search?query={urllib.parse.quote(busqueda_inteligente)}&per_page=5&orientation=portrait&locale=es-ES", headers={"Authorization": pexels_key.strip()}, timeout=5).json()
+                    # size=large obliga a Pexels a devolver vídeos en HD/4K
+                    r = requests.get(f"https://api.pexels.com/videos/search?query={urllib.parse.quote(busqueda_inteligente)}&per_page=10&size=large&orientation=portrait&locale=es-ES", headers={"Authorization": pexels_key.strip()}, timeout=5).json()
                     if r.get('videos'): v_url = random.choice(r['videos'])['video_files'][0]['link']
                 except: pass
                 
-                # Fallback por si la palabra no se encuentra
                 if not v_url:
-                    fallback_query = "dark cinematic" if "Terror" in atmosfera_elegida else "business money"
+                    fallback_query = "dark cinematic motion 4k" if "Terror" in atmosfera_elegida else "business money dynamic 4k"
                     try:
-                        r = requests.get(f"https://api.pexels.com/videos/search?query={fallback_query}&per_page=3&orientation=portrait", headers={"Authorization": pexels_key.strip()}).json()
+                        r = requests.get(f"https://api.pexels.com/videos/search?query={fallback_query}&per_page=5&size=large&orientation=portrait", headers={"Authorization": pexels_key.strip()}).json()
                         v_url = r['videos'][0]['video_files'][0]['link']
                     except: pass
 
                 try:
                     if not v_url: raise Exception()
                     with open(f"clip_{i}.mp4", 'wb') as f: f.write(requests.get(v_url, timeout=10).content)
-                    zoom_dir = random.choice(["zoom+0.0015", "zoom-0.001"])
-                    vf_magic = f"scale=800:1422,zoompan=z='min({zoom_dir},1.5)':d=300:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=720x1280,colorchannelmixer=rr=0.7:gg=0.7:bb=0.7,format=yuv420p"
+                    
+                    # CÁMARA RÁPIDA: Duplicamos la velocidad del zoompan (+0.0035 en vez de 0.0015) para forzar movimiento
+                    vf_magic = f"scale=800:1422,zoompan=z='min(zoom+0.0035,1.5)':d=300:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=720x1280,colorchannelmixer=rr=0.7:gg=0.7:bb=0.7,format=yuv420p"
                     subprocess.run(f'ffmpeg -y -stream_loop -1 -i "clip_{i}.mp4" -vf "{vf_magic}" -an -c:v libx264 -preset ultrafast -t {dur_escena} "p_{i}.mp4"', shell=True)
                 except:
                     subprocess.run(f'ffmpeg -y -f lavfi -i color=c=black:s=720x1280:d={dur_escena}:r=30 -c:v libx264 -preset ultrafast -format yuv420p "p_{i}.mp4"', shell=True)
@@ -146,7 +151,7 @@ if st.button("🚀 CREAR VÍDEO INTELIGENTE HD"):
             subprocess.run('ffmpeg -y -f concat -safe 0 -i lista.txt -c copy video_mudo.mp4', shell=True)
 
             # 4. SUBTÍTULOS CAPCUT HD (Tamaño equilibrado 65)
-            status.write("🎬 Mapeando Subtítulos...")
+            status.write("🎬 Sincronizando Textos Dinámicos...")
             txt_m = guion_usuario.upper().replace('Á','A').replace('É','E').replace('Í','I').replace('Ó','O').replace('Ú','U').replace('Ñ','N')
             txt_m = re.sub(r'[^A-Z0-9\s]', '', txt_m)
             palabras = txt_m.split()
@@ -165,15 +170,15 @@ if st.button("🚀 CREAR VÍDEO INTELIGENTE HD"):
                 
             with open("subs_filter.txt", "w") as f: f.write(",\n".join(subs_cmd))
 
-            # 5. RENDER FINAL
-            status.write("✨ Renderizando Master Final...")
+            # 5. RENDER FINAL HD
+            status.write("✨ Renderizando Master Final en Alta Definición...")
             v_final = f"output/v_{int(time.time())}.mp4"
             
             cmd_f = f"""ffmpeg -y -i video_mudo.mp4 -i audio_final.m4a -filter_complex_script subs_filter.txt -c:v libx264 -preset fast -crf 23 -c:a copy -t {dur_audio} "{v_final}" """
             subprocess.run(cmd_f, shell=True)
             
             if os.path.exists(v_final) and os.path.getsize(v_final) > 1000:
-                st.success("🔥 ¡VÍDEO INTELIGENTE COMPLETADO! Imágenes acordes al guion.")
+                st.success("🔥 ¡VÍDEO COMPLETADO! Voz premium y metraje dinámico listos.")
                 st.video(v_final)
                 st.balloons()
             else:
