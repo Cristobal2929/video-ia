@@ -4,7 +4,7 @@ import requests
 import tempfile
 import concurrent.futures
 
-st.set_page_config(page_title="Fénix Estudio PRO | V64", layout="centered")
+st.set_page_config(page_title="Fénix Estudio PRO | V65", layout="centered")
 
 st.markdown("""
 <style>
@@ -14,8 +14,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V64</div>', unsafe_allow_html=True)
-st.markdown('<div class="pro-subtitle" style="text-align:center; color:#94A3B8; margin-bottom: 30px;">IA Generativa Total • Guiones Automáticos • 100% Gratis</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V65</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-subtitle" style="text-align:center; color:#94A3B8; margin-bottom: 30px;">IA Total • Estimador de Tiempo Real • Multi-Thread</div>', unsafe_allow_html=True)
 
 @st.cache_resource
 def descargar_fuente():
@@ -64,35 +64,9 @@ def generar_voz_inmortal(texto, codigo_voz, tl_code, dir_trabajo):
     txt_path = os.path.join(dir_trabajo, "temp_txt.txt")
     mp3_path = os.path.join(dir_trabajo, "t.mp3")
     vtt_path = os.path.join(dir_trabajo, "subs.vtt")
-    
     with open(txt_path, "w", encoding="utf-8") as f: f.write(texto_limpio)
-    error_log = ""
-    for _ in range(2):
-        cmd = ["python", "-m", "edge_tts", "--voice", codigo_voz, "--rate=+15%", "-f", txt_path, "--write-media", mp3_path, "--write-subtitles", vtt_path]
-        res = subprocess.run(cmd, capture_output=True, text=True)
-        if os.path.exists(mp3_path) and os.path.getsize(mp3_path) > 1000: return True, "edge"
-        error_log = res.stderr
-        time.sleep(1.5)
-        
-    oraciones = textwrap.wrap(texto_limpio, width=150)
-    archivos = []
-    for idx, oracion in enumerate(oraciones):
-        try:
-            url = f"https://translate.google.com/translate_tts?ie=UTF-8&q={urllib.parse.quote(oracion)}&tl={tl_code}&client=tw-ob"
-            r = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=10)
-            if r.status_code == 200:
-                chunk_path = os.path.join(dir_trabajo, f"g_{idx}.mp3")
-                with open(chunk_path, "wb") as f: f.write(r.content)
-                archivos.append(chunk_path)
-        except: pass
-
-    if archivos:
-        lista_path = os.path.join(dir_trabajo, "lista_audio.txt")
-        with open(lista_path, "w") as f:
-            for a in archivos: f.write(f"file '{a}'\n")
-        subprocess.run(f'ffmpeg -y -f concat -safe 0 -i "{lista_path}" -c copy "{mp3_path}"', shell=True)
-        if os.path.exists(mp3_path) and os.path.getsize(mp3_path) > 1000: return True, f"google_fallback"
-    return False, error_log
+    subprocess.run(["python", "-m", "edge_tts", "--voice", codigo_voz, "--rate=+15%", "-f", txt_path, "--write-media", mp3_path, "--write-subtitles", vtt_path])
+    return os.path.exists(mp3_path)
 
 def leer_vtt(vtt_path):
     subs = []
@@ -112,31 +86,19 @@ def procesar_escena_ia(args):
     i, texto_del_clip, t_clip, tema_broll, tl_code, dir_trabajo = args
     palabra_es = extraer_palabra_clave(texto_del_clip)
     palabra_en = traducir_a_ingles(palabra_es, tl_code)
-    
-    # GENERACIÓN DE IMAGEN IA ÚNICA
-    prompt_ia = f"{palabra_en}, {tema_broll}, masterpiece, 4k resolution, highly detailed, vertical portrait"
+    prompt_ia = f"{palabra_en}, {tema_broll}, masterpiece, 4k, vertical"
     img_url = f"https://image.pollinations.ai/prompt/{urllib.parse.quote(prompt_ia)}?width=720&height=1280&nologo=true"
-    
     img_path = os.path.join(dir_trabajo, f"img_{i}.jpg")
     p_path = os.path.join(dir_trabajo, f"p_{i}.mp4")
-
-    exito_descarga = False
     try:
         img_data = requests.get(img_url, timeout=20).content
         with open(img_path, 'wb') as f: f.write(img_data)
-        exito_descarga = True
-    except: pass
-
-    if not exito_descarga:
-        subprocess.run(f'ffmpeg -y -f lavfi -i color=c=#111827:s=720x1280:d={t_clip}:r=30 -c:v libx264 -preset ultrafast -format yuv420p "{p_path}"', shell=True)
+        frames = int(t_clip * 30)
+        vf = f"scale=800:1422,zoompan=z='min(zoom+0.0015,1.2)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={frames}:s=720x1280:fps=30,colorchannelmixer=rr=0.7:gg=0.7:bb=0.7,vignette=PI/3,format=yuv420p"
+        subprocess.run(f'ffmpeg -y -loop 1 -i "{img_path}" -vf "{vf}" -c:v libx264 -preset ultrafast -t {t_clip} "{p_path}"', shell=True)
         return (i, p_path)
-
-    # ANIMACIÓN IA: Convertimos la imagen en vídeo con zoom suave (Ken Burns)
-    frames_totales = int(t_clip * 30)
-    vf = f"scale=800:1422,zoompan=z='min(zoom+0.0015,1.2)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={frames_totales}:s=720x1280:fps=30,colorchannelmixer=rr=0.7:gg=0.7:bb=0.7,vignette=PI/3,format=yuv420p"
-    subprocess.run(f'ffmpeg -y -loop 1 -i "{img_path}" -vf "{vf}" -c:v libx264 -preset ultrafast -t {t_clip} "{p_path}"', shell=True)
-    
-    return (i, p_path)
+    except:
+        return (i, None)
 
 with st.sidebar:
     st.header("🌍 Mercado Global")
@@ -145,121 +107,87 @@ with st.sidebar:
     nombre_voz = st.selectbox("🗣️ Voz del Locutor", list(voces_disponibles.keys()))
     codigo_voz = voces_disponibles[nombre_voz]
     tl_code = IDIOMAS[idioma_elegido]["tl"]
-    
-    color_sub = st.selectbox("🎨 Color Subtítulos", ["yellow", "white", "#00FFD1", "#FF0055"])
-    musica_tipo = st.selectbox("🎵 Música", ["Misterio / Tensión (60Hz)", "Acción / Negocios (75Hz)"])
+    color_sub = st.selectbox("🎨 Color Subtítulos", ["yellow", "white", "#00FFD1"])
+    musica_tipo = st.selectbox("🎵 Música", ["Misterio (60Hz)", "Negocios (75Hz)"])
 
-st.markdown("### 1. El Cerebro (Delega en la IA)")
-tema_usuario = st.text_input("💡 ¿De qué quieres que trate el vídeo?", placeholder="Ej: Hábitos estoicos para ser millonario")
-st.markdown("### 2. Estilo Visual (Imágenes Generadas por IA)")
-tema_broll = st.text_input("🎨 Estilo General (Ej: Dark cinematic, Cyberpunk, Watercolor...):", value="Dark cinematic, hyperrealistic")
+st.markdown("### 1. El Cerebro")
+tema_usuario = st.text_input("💡 ¿De qué quieres que trate el vídeo?", placeholder="Ej: Curiosidades del espacio")
+st.markdown("### 2. Estilo Visual")
+tema_broll = st.text_input("🎨 Estilo IA:", value="Dark cinematic, hyperrealistic")
 
-if st.button("🚀 GENERAR MAGIA (V64 IA TOTAL)"):
+if st.button("🚀 GENERAR MAGIA (V65)"):
     if len(tema_usuario.strip()) < 3:
-        st.warning("⚠️ Escribe un tema para que la IA invente el vídeo.")
+        st.warning("⚠️ Escribe un tema.")
     else:
         with tempfile.TemporaryDirectory() as dir_trabajo:
-            with st.status(f"🧠 La IA está pensando el guion...", expanded=True) as status:
+            # INICIO DE ESTIMACIÓN
+            with st.status("🎬 Calculando tiempos...", expanded=True) as status:
                 
-                guion_generado = generar_guion_ia(tema_usuario, idioma_elegido)
-                if not guion_generado:
-                    st.error("❌ La IA de texto está saturada. Intenta de nuevo.")
-                    st.stop()
-                st.write(f"📝 Guion creado: *{guion_generado}*")
+                status.write("🧠 IA redactando guion...")
+                guion = generar_guion_ia(tema_usuario, idioma_elegido)
+                if not guion: st.stop()
                 
-                status.write("🎙️ Grabando locución y masterizando audio...")
-                exito_audio, motor_usado = generar_voz_inmortal(guion_generado, codigo_voz, tl_code, dir_trabajo)
-                
-                if not exito_audio:
-                    st.error("❌ Fallo en los servidores de voz.")
-                    st.stop()
+                status.write("🎙️ Grabando voz...")
+                generar_voz_inmortal(guion, codigo_voz, tl_code, dir_trabajo)
                 
                 mp3_path = os.path.join(dir_trabajo, "t.mp3")
                 vtt_path = os.path.join(dir_trabajo, "subs.vtt")
                 dur_audio = float(subprocess.check_output(f'ffprobe -i "{mp3_path}" -show_entries format=duration -v quiet -of csv="p=0"', shell=True).decode('utf-8').strip())
                 
-                status.write("🎵 Aplicando EQ Micrófono Podcast...")
-                freq = 60 if "Misterio" in musica_tipo else 75
-                audio_final = os.path.join(dir_trabajo, "audio_final.m4a")
-                audio_filter = f"[0:a]bass=g=5,treble=g=3,acompressor[v]; [1:a]volume=0.03[m]; [v][m]amix=inputs=2:duration=first"
-                subprocess.run(f'ffmpeg -y -i "{mp3_path}" -f lavfi -i "sine=f={freq}:d={dur_audio}" -filter_complex "{audio_filter}" -c:a aac -ar 44100 "{audio_final}"', shell=True)
+                num_clips = math.ceil(dur_audio / 3.5)
                 
-                dur_corte = 3.5
-                num_clips = math.ceil(dur_audio / dur_corte)
-                palabras_guion = guion_generado.split()
-                chunk_size = max(len(palabras_guion) // num_clips, 1)
+                # CÁLCULO DE TIEMPO APROXIMADO
+                tiempo_estimado = (num_clips * 8) + 20 
+                st.info(f"⏳ **Tiempo estimado total:** {tiempo_estimado} segundos.")
+                progreso = st.progress(0)
                 
+                status.write(f"🎨 Pintando {num_clips} escenas IA (Este es el paso más largo)...")
+                
+                # PROCESAMIENTO
                 tareas = []
-                status.write(f"⚡ Pintando y animando {num_clips} imágenes IA únicas...")
                 for i in range(num_clips):
-                    start_idx = i * chunk_size
-                    end_idx = start_idx + chunk_size if i < num_clips - 1 else len(palabras_guion)
-                    texto_del_clip = " ".join(palabras_guion[start_idx:end_idx])
-                    t_clip = dur_corte if i < num_clips - 1 else (dur_audio - (i * dur_corte)) + 1.0
-                    if t_clip <= 0: t_clip = 1.0
-                    tareas.append((i, texto_del_clip, t_clip, tema_broll, tl_code, dir_trabajo))
+                    t_clip = 3.5 if i < num_clips - 1 else (dur_audio - (i * 3.5)) + 1.0
+                    txt_part = " ".join(guion.split()[i*5:(i+1)*5])
+                    tareas.append((i, txt_part, t_clip, tema_broll, tl_code, dir_trabajo))
 
-                resultados = []
+                clips_finales = []
                 with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
                     futuros = [executor.submit(procesar_escena_ia, arg) for arg in tareas]
-                    for future in concurrent.futures.as_completed(futuros):
-                        resultados.append(future.result())
-
-                resultados.sort(key=lambda x: x[0])
-                clips_finales = [res[1] for res in resultados]
+                    for idx, future in enumerate(concurrent.futures.as_completed(futuros)):
+                        clips_finales.append(future.result())
+                        # Actualizar barra de progreso
+                        porcentaje = int(((idx + 1) / num_clips) * 80)
+                        progreso.progress(porcentaje)
                 
-                lista_video_path = os.path.join(dir_trabajo, "lista_video.txt")
+                clips_finales.sort(key=lambda x: x[0])
+                
+                status.write("✨ Renderizando máster final...")
                 video_mudo = os.path.join(dir_trabajo, "video_mudo.mp4")
+                lista_video_path = os.path.join(dir_trabajo, "lista.txt")
                 with open(lista_video_path, "w") as f:
-                    for c in clips_finales: f.write(f"file '{c}'\n")
+                    for c in clips_finales: 
+                        if c[1]: f.write(f"file '{c[1]}'\n")
+                
                 subprocess.run(f'ffmpeg -y -f concat -safe 0 -i "{lista_video_path}" -c copy "{video_mudo}"', shell=True)
-
-                status.write("🎬 Generando motor de subtítulos...")
+                
+                # AUDIO Y SUBS
+                audio_final = os.path.join(dir_trabajo, "audio_final.m4a")
+                freq = 60 if "Misterio" in musica_tipo else 75
+                subprocess.run(f'ffmpeg -y -i "{mp3_path}" -f lavfi -i "sine=f={freq}:d={dur_audio}" -filter_complex "[0:a]bass=g=5,treble=g=3,acompressor[v]; [1:a]volume=0.03[m]; [v][m]amix=inputs=2:duration=first" -c:a aac "{audio_final}"', shell=True)
+                
+                vtt_data = leer_vtt(vtt_path)
                 subs_cmd = []
-                font_cmd = f"fontfile='{font_abs}':" if os.path.exists(font_abs) else ""
-                texto_seguro = re.sub(r'[^\w\s]', '', guion_generado.replace('\n', ' ').upper()).replace('_', '')
-                palabras = texto_seguro.split()
+                for v in vtt_data:
+                    subs_cmd.append(f"drawtext=text='{v[2]}':fontcolor={color_sub}:fontsize=65:fontfile='{font_abs}':borderw=5:bordercolor=black:x=(w-tw)/2:y=(h-th)/2:enable='between(t,{v[0]},{v[1]})'")
                 
-                if motor_usado == "edge" and os.path.exists(vtt_path):
-                    vtt_data = leer_vtt(vtt_path)
-                    chunks_vtt = [vtt_data[k:k+2] for k in range(0, len(vtt_data), 2)]
-                    for p_list in chunks_vtt:
-                        if not p_list: continue
-                        t_start = p_list[0][0]
-                        t_end = p_list[-1][1]
-                        if len(p_list) == 2 and (len(p_list[0][2]) + len(p_list[1][2]) > 12):
-                            w1, w2 = p_list[0][2], p_list[1][2]
-                            subs_cmd.append(f"drawtext=text='{w1}':fontcolor={color_sub}:fontsize=65:{font_cmd}borderw=5:bordercolor=black:shadowcolor=black@0.8:shadowx=4:shadowy=4:x=(w-tw)/2:y=(h-th)/2-40:enable='between(t,{t_start},{t_end})'")
-                            subs_cmd.append(f"drawtext=text='{w2}':fontcolor={color_sub}:fontsize=65:{font_cmd}borderw=5:bordercolor=black:shadowcolor=black@0.8:shadowx=4:shadowy=4:x=(w-tw)/2:y=(h-th)/2+40:enable='between(t,{t_start},{t_end})'")
-                        else:
-                            frase = " ".join([w[2] for w in p_list])
-                            subs_cmd.append(f"drawtext=text='{frase}':fontcolor={color_sub}:fontsize=65:{font_cmd}borderw=5:bordercolor=black:shadowcolor=black@0.8:shadowx=4:shadowy=4:x=(w-tw)/2:y=(h-th)/2:enable='between(t,{t_start},{t_end})'")
-                else:
-                    chunks_raw = [palabras[j:j+2] for j in range(0, len(palabras), 2)]
-                    tiempo_por_chunk = dur_audio / max(len(chunks_raw), 1)
-                    for j, p_list in enumerate(chunks_raw):
-                        t_start = j * tiempo_por_chunk
-                        t_end = t_start + tiempo_por_chunk
-                        if len(p_list) == 2 and (len(p_list[0]) + len(p_list[1]) > 12):
-                            w1, w2 = p_list[0], p_list[1]
-                            subs_cmd.append(f"drawtext=text='{w1}':fontcolor={color_sub}:fontsize=65:{font_cmd}borderw=5:bordercolor=black:shadowcolor=black@0.8:shadowx=4:shadowy=4:x=(w-tw)/2:y=(h-th)/2-40:enable='between(t,{t_start},{t_end})'")
-                            subs_cmd.append(f"drawtext=text='{w2}':fontcolor={color_sub}:fontsize=65:{font_cmd}borderw=5:bordercolor=black:shadowcolor=black@0.8:shadowx=4:shadowy=4:x=(w-tw)/2:y=(h-th)/2+40:enable='between(t,{t_start},{t_end})'")
-                        else:
-                            frase = " ".join(p_list)
-                            subs_cmd.append(f"drawtext=text='{frase}':fontcolor={color_sub}:fontsize=65:{font_cmd}borderw=5:bordercolor=black:shadowcolor=black@0.8:shadowx=4:shadowy=4:x=(w-tw)/2:y=(h-th)/2:enable='between(t,{t_start},{t_end})'")
+                filt_path = os.path.join(dir_trabajo, "f.txt")
+                with open(filt_path, "w", encoding="utf-8") as f: f.write(",\n".join(subs_cmd))
                 
-                subs_filter_path = os.path.join(dir_trabajo, "subs_filter.txt")
-                with open(subs_filter_path, "w", encoding="utf-8") as f: f.write(",\n".join(subs_cmd))
-
-                status.write("✨ Renderizando Máster Final con FX...")
-                os.makedirs("output", exist_ok=True)
                 v_final = f"output/v_{int(time.time())}.mp4"
-                cmd_f = f"""ffmpeg -y -i "{video_mudo}" -i "{audio_final}" -filter_complex_script "{subs_filter_path}" -c:v libx264 -preset fast -crf 23 -c:a copy -t {dur_audio} "{v_final}" """
-                subprocess.run(cmd_f, shell=True)
-
-            if os.path.exists(v_final):
-                st.success("🔥 ¡VÍDEO V64 LISTO! Obra de arte única generada.")
+                os.makedirs("output", exist_ok=True)
+                subprocess.run(f'ffmpeg -y -i "{video_mudo}" -i "{audio_final}" -filter_complex_script "{filt_path}" -c:v libx264 -preset fast -t {dur_audio} "{v_final}"', shell=True)
+                
+                progreso.progress(100)
+                st.success("🔥 ¡VÍDEO LISTO!")
                 st.video(v_final)
                 st.balloons()
-            else:
-                st.error("❌ Fallo en renderizado final. Revisa los logs.")
