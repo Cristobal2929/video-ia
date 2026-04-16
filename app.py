@@ -3,7 +3,7 @@ import os, time, subprocess, re, urllib.parse, shutil, math, random, gc
 import requests
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Fénix Studio V131", layout="centered")
+st.set_page_config(page_title="Fénix Studio V132", layout="centered")
 
 components.html("<script>if('wakeLock' in navigator){navigator.wakeLock.request('screen');}</script>", height=0)
 
@@ -16,7 +16,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V131 🎭🔥</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V132 🎯🎬</div>', unsafe_allow_html=True)
 
 @st.cache_resource
 def get_font():
@@ -38,46 +38,54 @@ def traducir_en(palabra):
         return requests.get(url, timeout=5).json()['responseData']['translatedText']
     except: return palabra
 
-def extraer_kw(texto):
+def extraer_kw_contextual(texto):
+    t = texto.lower()
+    # Diccionario de contexto mejorado para que la imagen pegue con el audio
+    if any(x in t for x in ["despertar", "madrugada", "mañana", "temprano"]): return "waking up sunrise motivation"
+    if any(x in t for x in ["dinero", "banco", "saldo", "pobre", "presupuesto"]): return "luxury wallet money"
+    if any(x in t for x in ["negocio", "emprender", "empresa", "idea"]): return "businessman office luxury"
+    if any(x in t for x in ["luchar", "esfuerzo", "disciplina", "persistir"]): return "gym training motivation"
+    if any(x in t for x in ["redes", "tiktok", "instagram", "viral"]): return "smartphone social media lifestyle"
+    if any(x in t for x in ["éxito", "triunfo", "lograr", "ganar"]): return "champagne luxury party success"
+    if any(x in t for x in ["viaje", "coche", "avión", "yate"]): return "luxury private jet yacht"
+    
     palabras = re.sub(r'[^\w\s]', '', texto).split()
     utiles = [p for p in palabras if len(p) > 4]
-    return max(utiles, key=len) if utiles else "success"
+    return max(utiles, key=len) if utiles else "luxury lifestyle"
 
 def preparar():
     if os.path.exists("taller"): shutil.rmtree("taller")
     os.makedirs("taller", exist_ok=True)
     subprocess.run("pkill ffmpeg", shell=True)
 
-tema = st.text_input("🧠 Tema del vídeo:", placeholder="Ej: Superación desde cero")
+tema = st.text_input("🧠 Tema del vídeo:", placeholder="Ej: La rutina de un millonario")
 color_sub = st.selectbox("🎨 Color de los Subtítulos:", ["yellow", "white", "#00FFD1"])
 
-if st.button("🚀 CREAR HISTORIA CON GANCHO (V131)"):
+if st.button("🚀 CREAR VÍDEO SINCRONIZADO (V132)"):
     if not tema: st.error("⚠️ Escribe un tema")
     else:
         preparar()
         log = st.container()
         
         with log:
-            st.markdown('<div class="msg">📝 IA creando historia con gancho maestro...</div>', unsafe_allow_html=True)
-            # Prompt mejorado para forzar un inicio narrativo
-            prompt_g = f"Actua como un experto en storytelling de TikTok. Escribe un guion épico sobre {tema}. Estructura obligatoria: 1) Gancho inicial de 5-7 segundos planteando un problema o una historia intrigante, 2) Desarrollo con 3 pasos clave, 3) Cierre con un mensaje de poder. Usa unas 110 palabras para que el video dure. No incluyas números ni etiquetas."
+            st.markdown('<div class="msg">📝 IA creando guion narrativo...</div>', unsafe_allow_html=True)
+            prompt_g = f"Actua como un experto narrador de TikTok. Escribe un guion sobre {tema}. Estructura: 1) Gancho con historia, 2) Pasos claros, 3) Cierre potente. Usa unas 100 palabras. Solo texto fluido."
             
             try:
                 guion_raw = requests.get(f"https://text.pollinations.ai/{urllib.parse.quote(prompt_g)}", timeout=20).text
                 guion = re.sub(r'[0-9]+', '', guion_raw)
-                guion = re.sub(r'Assistant|Reasoning|Thought|Context', '', guion, flags=re.I)
                 guion = re.sub(r'[^a-zA-ZáéíóúÁÉÍÓÚñÑ.,! ]', '', guion).strip()
             except:
-                guion = "Él no tenía nada, solo una vieja laptop y un sueño. Se despertó un lunes y decidió que su realidad iba a cambiar. No fue fácil, hubo noches de duda y cansancio, pero la persistencia fue su mejor aliada. Hoy, mira atrás y sabe que el esfuerzo valió cada segundo de lucha."
+                guion = "Juan trabajaba doce horas al día y su cuenta seguía en cero. Hasta que entendió que no se trata de trabajar más, sino de trabajar mejor. Cambió su mentalidad, priorizó sus metas y hoy su realidad es otra. El éxito te espera, solo tienes que ir a por él."
             
-            st.markdown('<div class="msg">🎙️ Grabando voz Jorge (Ritmo Narrativo)...</div>', unsafe_allow_html=True)
+            st.markdown('<div class="msg">🎙️ Grabando voz...</div>', unsafe_allow_html=True)
             audio = "taller/audio.mp3"
             subprocess.run(f'edge-tts --voice es-MX-JorgeNeural --rate=+0% --text "{guion}" --write-media "{audio}"', shell=True)
             
             try: dur = float(subprocess.check_output(f'ffprobe -i "{audio}" -show_entries format=duration -v quiet -of csv="p=0"', shell=True))
             except: dur = 30.0
 
-            n_clips = min(math.ceil(dur / 3.2), 25) 
+            n_clips = min(math.ceil(dur / 3.0), 20) 
             t_clip = dur / n_clips
             clips = []
             palabras_guion = guion.split()
@@ -86,15 +94,15 @@ if st.button("🚀 CREAR HISTORIA CON GANCHO (V131)"):
 
             for i in range(n_clips):
                 txt_chunk = " ".join(palabras_guion[i*chunk_size:(i+1)*chunk_size])
-                kw_en = traducir_en(extraer_kw(txt_chunk))
-                st.markdown(f'<div class="msg">🎥 Escena {i+1}/{n_clips}: Recortando "{kw_en.upper()}"...</div>', unsafe_allow_html=True)
+                # Usamos la nueva logica de contexto
+                kw_en = traducir_en(extraer_kw_contextual(txt_chunk))
+                st.markdown(f'<div class="msg">🎥 Escena {i+1}/{n_clips}: Sincronizando "{kw_en.upper()}"...</div>', unsafe_allow_html=True)
                 
                 raw_vid, vid = f"taller/raw_{i}.mp4", f"taller/v_{i}.mp4"
                 exito_vid = False
                 try:
                     headers = {"Authorization": PEXELS_API}
-                    # Busqueda de lujo 8k para mejorar la imagen
-                    url_p = f"https://api.pexels.com/videos/search?query={urllib.parse.quote(kw_en+' luxury 8k cinematic')}&orientation=portrait&per_page=3"
+                    url_p = f"https://api.pexels.com/videos/search?query={urllib.parse.quote(kw_en)}&orientation=portrait&per_page=3"
                     r_p = requests.get(url_p, headers=headers, timeout=12).json()
                     if r_p.get('videos'):
                         v_url = r_p['videos'][0]['video_files'][0]['link']
@@ -115,7 +123,7 @@ if st.button("🚀 CREAR HISTORIA CON GANCHO (V131)"):
                 if os.path.exists(raw_vid): os.remove(raw_vid)
                 gc.collect()
 
-            st.markdown('<div class="msg">🎬 Ensamblado y Tatuado V131...</div>', unsafe_allow_html=True)
+            st.markdown('<div class="msg">🎬 Ensamblado Final V132...</div>', unsafe_allow_html=True)
             with open("taller/lista.txt", "w") as f:
                 for c in clips: f.write(f"file '{c}'\n")
             
@@ -140,6 +148,5 @@ if st.button("🚀 CREAR HISTORIA CON GANCHO (V131)"):
             subprocess.run(f'ffmpeg -y -i "{mudo}" -i "{audio}" -filter_complex_script taller/s.txt -c:v libx264 -preset ultrafast -crf 28 -threads 1 -t {dur} "{final}"', shell=True)
             
             if os.path.exists(final):
-                st.markdown(f'<div class="info-card">🏆 HISTORIA ÉPICA COMPLETADA (DURACIÓN {int(dur)}s)</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="info-card">🏆 VÍDEO SINCRONIZADO COMPLETADO</div>', unsafe_allow_html=True)
                 with open(final, "rb") as f: st.video(f.read())
-                st.balloons()
