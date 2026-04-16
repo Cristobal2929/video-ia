@@ -1,10 +1,10 @@
 import streamlit as st
-import os, time, random, subprocess, textwrap, re, urllib.parse, math
+import os, time, subprocess, textwrap, re, urllib.parse, math
 import requests
 import tempfile
 import concurrent.futures
 
-st.set_page_config(page_title="Fénix Estudio PRO | V63", layout="centered")
+st.set_page_config(page_title="Fénix Estudio PRO | V64", layout="centered")
 
 st.markdown("""
 <style>
@@ -14,8 +14,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V63</div>', unsafe_allow_html=True)
-st.markdown('<div class="pro-subtitle" style="text-align:center; color:#94A3B8; margin-bottom: 30px;">Vídeos Reales Dinámicos • Tolerancia a Fallos • Audio Estudio</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V64</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-subtitle" style="text-align:center; color:#94A3B8; margin-bottom: 30px;">IA Generativa Total • Guiones Automáticos • 100% Gratis</div>', unsafe_allow_html=True)
 
 @st.cache_resource
 def descargar_fuente():
@@ -34,6 +34,15 @@ IDIOMAS = {
     "🇺🇸 English": {"tl": "en", "voces": {"Guy (Masculino US)": "en-US-GuyNeural", "Aria (Femenina US)": "en-US-AriaNeural", "Christopher (Masculino US)": "en-US-ChristopherNeural"}},
     "🇫🇷 Français": {"tl": "fr", "voces": {"Henri (Masculino)": "fr-FR-HenriNeural", "Denise (Femenina)": "fr-FR-DeniseNeural"}}
 }
+
+def generar_guion_ia(tema, idioma):
+    prompt = f"Escribe un guion corto y viral de 40 palabras para TikTok sobre: {tema}. Idioma: {idioma}. Ve directo al grano, sin saludos ni introducciones, usa un tono persuasivo."
+    url = f"https://text.pollinations.ai/{urllib.parse.quote(prompt)}"
+    try:
+        r = requests.get(url, timeout=15)
+        return re.sub(r'[\*\[\]]', '', r.text).strip()
+    except:
+        return ""
 
 def extraer_palabra_clave(texto_chunk):
     palabras = re.sub(r'[^\w\s]', '', texto_chunk).split()
@@ -57,13 +66,11 @@ def generar_voz_inmortal(texto, codigo_voz, tl_code, dir_trabajo):
     vtt_path = os.path.join(dir_trabajo, "subs.vtt")
     
     with open(txt_path, "w", encoding="utf-8") as f: f.write(texto_limpio)
-
     error_log = ""
     for _ in range(2):
         cmd = ["python", "-m", "edge_tts", "--voice", codigo_voz, "--rate=+15%", "-f", txt_path, "--write-media", mp3_path, "--write-subtitles", vtt_path]
         res = subprocess.run(cmd, capture_output=True, text=True)
-        if os.path.exists(mp3_path) and os.path.getsize(mp3_path) > 1000: 
-            return True, "edge"
+        if os.path.exists(mp3_path) and os.path.getsize(mp3_path) > 1000: return True, "edge"
         error_log = res.stderr
         time.sleep(1.5)
         
@@ -84,9 +91,7 @@ def generar_voz_inmortal(texto, codigo_voz, tl_code, dir_trabajo):
         with open(lista_path, "w") as f:
             for a in archivos: f.write(f"file '{a}'\n")
         subprocess.run(f'ffmpeg -y -f concat -safe 0 -i "{lista_path}" -c copy "{mp3_path}"', shell=True)
-        if os.path.exists(mp3_path) and os.path.getsize(mp3_path) > 1000: 
-            return True, f"google_fallback"
-            
+        if os.path.exists(mp3_path) and os.path.getsize(mp3_path) > 1000: return True, f"google_fallback"
     return False, error_log
 
 def leer_vtt(vtt_path):
@@ -103,48 +108,38 @@ def leer_vtt(vtt_path):
     except: pass
     return subs
 
-def procesar_escena(args):
-    i, texto_del_clip, t_clip, tema_broll, pexels_key, tl_code, dir_trabajo = args
+def procesar_escena_ia(args):
+    i, texto_del_clip, t_clip, tema_broll, tl_code, dir_trabajo = args
     palabra_es = extraer_palabra_clave(texto_del_clip)
     palabra_en = traducir_a_ingles(palabra_es, tl_code)
     
-    query_busqueda = urllib.parse.quote(f"{palabra_en} {tema_broll} 4k")
-    clip_path = os.path.join(dir_trabajo, f"clip_{i}.mp4")
+    # GENERACIÓN DE IMAGEN IA ÚNICA
+    prompt_ia = f"{palabra_en}, {tema_broll}, masterpiece, 4k resolution, highly detailed, vertical portrait"
+    img_url = f"https://image.pollinations.ai/prompt/{urllib.parse.quote(prompt_ia)}?width=720&height=1280&nologo=true"
+    
+    img_path = os.path.join(dir_trabajo, f"img_{i}.jpg")
     p_path = os.path.join(dir_trabajo, f"p_{i}.mp4")
 
-    v_url = None
-    try:
-        r = requests.get(f"https://api.pexels.com/videos/search?query={query_busqueda}&per_page=5&size=large&orientation=portrait", headers={"Authorization": pexels_key.strip()}, timeout=10).json()
-        if r.get('videos'): v_url = random.choice(r['videos'])['video_files'][0]['link']
-    except: pass
-
-    if not v_url:
-        try:
-            r = requests.get(f"https://api.pexels.com/videos/search?query={urllib.parse.quote(tema_broll + ' 4k')}&per_page=5&size=large&orientation=portrait", headers={"Authorization": pexels_key.strip()}, timeout=10).json()
-            if r.get('videos'): v_url = random.choice(r['videos'])['video_files'][0]['link']
-        except: pass
-
     exito_descarga = False
-    if v_url:
-        try:
-            vid_data = requests.get(v_url, timeout=20).content
-            with open(clip_path, 'wb') as f: f.write(vid_data)
-            exito_descarga = True
-        except: pass
+    try:
+        img_data = requests.get(img_url, timeout=20).content
+        with open(img_path, 'wb') as f: f.write(img_data)
+        exito_descarga = True
+    except: pass
 
     if not exito_descarga:
         subprocess.run(f'ffmpeg -y -f lavfi -i color=c=#111827:s=720x1280:d={t_clip}:r=30 -c:v libx264 -preset ultrafast -format yuv420p "{p_path}"', shell=True)
-        return (i, p_path, palabra_es, palabra_en)
+        return (i, p_path)
 
-    # CORRECCIÓN V63: Se eliminó el "zoompan" que congelaba el vídeo. Se restaura el escalado en movimiento original.
-    vf = "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,colorchannelmixer=rr=0.7:gg=0.7:bb=0.7,vignette=PI/3,format=yuv420p"
-    subprocess.run(f'ffmpeg -y -stream_loop -1 -i "{clip_path}" -vf "{vf}" -an -c:v libx264 -r 30 -preset ultrafast -t {t_clip} "{p_path}"', shell=True)
-    return (i, p_path, palabra_es, palabra_en)
+    # ANIMACIÓN IA: Convertimos la imagen en vídeo con zoom suave (Ken Burns)
+    frames_totales = int(t_clip * 30)
+    vf = f"scale=800:1422,zoompan=z='min(zoom+0.0015,1.2)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={frames_totales}:s=720x1280:fps=30,colorchannelmixer=rr=0.7:gg=0.7:bb=0.7,vignette=PI/3,format=yuv420p"
+    subprocess.run(f'ffmpeg -y -loop 1 -i "{img_path}" -vf "{vf}" -c:v libx264 -preset ultrafast -t {t_clip} "{p_path}"', shell=True)
+    
+    return (i, p_path)
 
 with st.sidebar:
     st.header("🌍 Mercado Global")
-    pexels_key = st.text_input("🔑 API Pexels:", value="Ty0uFISh3APEAXIVcrFpSM7ZdwOeRElCuUgoG42EW6WVISRTEfqjm0BZ", type="password")
-    
     idioma_elegido = st.selectbox("🌐 Idioma del Vídeo", list(IDIOMAS.keys()))
     voces_disponibles = IDIOMAS[idioma_elegido]["voces"]
     nombre_voz = st.selectbox("🗣️ Voz del Locutor", list(voces_disponibles.keys()))
@@ -154,28 +149,30 @@ with st.sidebar:
     color_sub = st.selectbox("🎨 Color Subtítulos", ["yellow", "white", "#00FFD1", "#FF0055"])
     musica_tipo = st.selectbox("🎵 Música", ["Misterio / Tensión (60Hz)", "Acción / Negocios (75Hz)"])
 
-st.markdown("### 1. El Guion")
-guion_usuario = st.text_area("📝 Pega tu Guion aquí:", height=150)
-st.markdown("### 2. Estilo Visual")
-tema_broll = st.text_input("🎨 Estilo General (Ej: Dark, Luxury, Cinematic...):", placeholder="Luxury")
+st.markdown("### 1. El Cerebro (Delega en la IA)")
+tema_usuario = st.text_input("💡 ¿De qué quieres que trate el vídeo?", placeholder="Ej: Hábitos estoicos para ser millonario")
+st.markdown("### 2. Estilo Visual (Imágenes Generadas por IA)")
+tema_broll = st.text_input("🎨 Estilo General (Ej: Dark cinematic, Cyberpunk, Watercolor...):", value="Dark cinematic, hyperrealistic")
 
-if st.button("🚀 CREAR VÍDEO (CEREBRO BILINGÜE V63)"):
-    if len(guion_usuario.strip()) < 20 or len(tema_broll.strip()) < 2:
-        st.warning("⚠️ Rellena el guion y el estilo visual.")
-    elif not pexels_key:
-        st.error("⚠️ Falta la API Key de Pexels en la barra lateral.")
+if st.button("🚀 GENERAR MAGIA (V64 IA TOTAL)"):
+    if len(tema_usuario.strip()) < 3:
+        st.warning("⚠️ Escribe un tema para que la IA invente el vídeo.")
     else:
         with tempfile.TemporaryDirectory() as dir_trabajo:
-            with st.status(f"🎬 Iniciando Motor V63...", expanded=True) as status:
+            with st.status(f"🧠 La IA está pensando el guion...", expanded=True) as status:
+                
+                guion_generado = generar_guion_ia(tema_usuario, idioma_elegido)
+                if not guion_generado:
+                    st.error("❌ La IA de texto está saturada. Intenta de nuevo.")
+                    st.stop()
+                st.write(f"📝 Guion creado: *{guion_generado}*")
                 
                 status.write("🎙️ Grabando locución y masterizando audio...")
-                exito_audio, motor_usado = generar_voz_inmortal(guion_usuario, codigo_voz, tl_code, dir_trabajo)
+                exito_audio, motor_usado = generar_voz_inmortal(guion_generado, codigo_voz, tl_code, dir_trabajo)
                 
                 if not exito_audio:
-                    st.error(f"❌ Fallo masivo en los servidores. Log del error: {motor_usado}")
+                    st.error("❌ Fallo en los servidores de voz.")
                     st.stop()
-                elif "google" in motor_usado:
-                    st.warning("⚠️ El motor Premium (Microsoft) falló. Activado salvavidas Google (subtítulos estáticos seguros).")
                 
                 mp3_path = os.path.join(dir_trabajo, "t.mp3")
                 vtt_path = os.path.join(dir_trabajo, "subs.vtt")
@@ -189,25 +186,24 @@ if st.button("🚀 CREAR VÍDEO (CEREBRO BILINGÜE V63)"):
                 
                 dur_corte = 3.5
                 num_clips = math.ceil(dur_audio / dur_corte)
-                palabras_guion = guion_usuario.split()
+                palabras_guion = guion_generado.split()
                 chunk_size = max(len(palabras_guion) // num_clips, 1)
                 
                 tareas = []
-                status.write(f"⚡ Descargando vídeos dinámicos en paralelo...")
+                status.write(f"⚡ Pintando y animando {num_clips} imágenes IA únicas...")
                 for i in range(num_clips):
                     start_idx = i * chunk_size
                     end_idx = start_idx + chunk_size if i < num_clips - 1 else len(palabras_guion)
                     texto_del_clip = " ".join(palabras_guion[start_idx:end_idx])
                     t_clip = dur_corte if i < num_clips - 1 else (dur_audio - (i * dur_corte)) + 1.0
                     if t_clip <= 0: t_clip = 1.0
-                    tareas.append((i, texto_del_clip, t_clip, tema_broll, pexels_key, tl_code, dir_trabajo))
+                    tareas.append((i, texto_del_clip, t_clip, tema_broll, tl_code, dir_trabajo))
 
                 resultados = []
                 with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
-                    futuros = [executor.submit(procesar_escena, arg) for arg in tareas]
+                    futuros = [executor.submit(procesar_escena_ia, arg) for arg in tareas]
                     for future in concurrent.futures.as_completed(futuros):
-                        res = future.result()
-                        resultados.append(res)
+                        resultados.append(future.result())
 
                 resultados.sort(key=lambda x: x[0])
                 clips_finales = [res[1] for res in resultados]
@@ -221,7 +217,7 @@ if st.button("🚀 CREAR VÍDEO (CEREBRO BILINGÜE V63)"):
                 status.write("🎬 Generando motor de subtítulos...")
                 subs_cmd = []
                 font_cmd = f"fontfile='{font_abs}':" if os.path.exists(font_abs) else ""
-                texto_seguro = re.sub(r'[^\w\s]', '', guion_usuario.replace('\n', ' ').upper()).replace('_', '')
+                texto_seguro = re.sub(r'[^\w\s]', '', guion_generado.replace('\n', ' ').upper()).replace('_', '')
                 palabras = texto_seguro.split()
                 
                 if motor_usado == "edge" and os.path.exists(vtt_path):
@@ -262,7 +258,7 @@ if st.button("🚀 CREAR VÍDEO (CEREBRO BILINGÜE V63)"):
                 subprocess.run(cmd_f, shell=True)
 
             if os.path.exists(v_final):
-                st.success("🔥 ¡VÍDEO V63 LISTO! Movimiento real de vídeo restaurado.")
+                st.success("🔥 ¡VÍDEO V64 LISTO! Obra de arte única generada.")
                 st.video(v_final)
                 st.balloons()
             else:
