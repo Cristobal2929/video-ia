@@ -2,7 +2,7 @@ import streamlit as st
 import os, time, random, subprocess, textwrap, re, urllib.parse, math
 import requests
 
-st.set_page_config(page_title="Fénix Estudio PRO | V55", layout="centered")
+st.set_page_config(page_title="Fénix Estudio PRO | V56", layout="centered")
 
 st.markdown("""
 <style>
@@ -12,8 +12,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V55</div>', unsafe_allow_html=True)
-st.markdown('<div class="pro-subtitle" style="text-align:center; color:#94A3B8; margin-bottom: 30px;">Bucle Infinito Anti-Apagones • Multidioma Premium • 4K Dinámico</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V56</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-subtitle" style="text-align:center; color:#94A3B8; margin-bottom: 30px;">Sincronización Perfecta • Cero Imágenes Congeladas • 30 FPS Forzados</div>', unsafe_allow_html=True)
 
 font_path = "Arial.ttf"
 if not os.path.exists(font_path):
@@ -77,16 +77,16 @@ guion_usuario = st.text_area("📝 Pega tu Guion en el idioma elegido:", height=
 st.markdown("### 2. Temática Visual")
 tema_broll = st.text_input("🔍 ¿De qué va el vídeo? (En inglés encuentra mejores vídeos):")
 
-if st.button("🚀 CREAR VÍDEO (ANTI-APAGONES V55)"):
+if st.button("🚀 CREAR VÍDEO (SINCRO PERFECTA V56)"):
     if len(guion_usuario.strip()) < 20 or len(tema_broll.strip()) < 3:
         st.warning("⚠️ Rellena todo el guion y el tema visual.")
     else:
-        with st.status(f"🎬 Generando vídeo sin pantallas negras...", expanded=True) as status:
-            subprocess.run("rm -f a_*.mp3 g_*.mp3 v_*.mp4 p_*.mp4 text_*.txt temp_txt.txt lista*.txt music.m4a audio_final.m4a video_mudo.mp4 final.mp4 t.mp3 subs_filter.txt", shell=True)
+        with st.status(f"🎬 Sincronizando frames y audio...", expanded=True) as status:
+            subprocess.run("rm -f a_*.mp3 g_*.mp3 v_*.mp4 p_*.mp4 clip_*.mp4 text_*.txt temp_txt.txt lista*.txt music.m4a audio_final.m4a video_mudo.mp4 final.mp4 t.mp3 subs_filter.txt", shell=True)
             
             status.write("🎙️ Grabando locución nativa...")
             if not generar_voz_inmortal(guion_usuario, codigo_voz, tl_code):
-                st.error("❌ Servidores de voz caídos. Inténtalo en 5 minutos.")
+                st.error("❌ Servidores de voz caídos.")
                 st.stop()
             dur_audio = float(subprocess.check_output("ffprobe -i t.mp3 -show_entries format=duration -v quiet -of csv='p=0'", shell=True).decode('utf-8').strip())
 
@@ -94,10 +94,9 @@ if st.button("🚀 CREAR VÍDEO (ANTI-APAGONES V55)"):
             freq = 60 if "Misterio" in musica_tipo else 75
             subprocess.run(f'ffmpeg -y -i t.mp3 -f lavfi -i "sine=f={freq}:d={dur_audio}" -filter_complex "[1:a]volume=0.03[m];[0:a][m]amix=inputs=2:duration=first" -c:a aac -ar 44100 audio_final.m4a', shell=True)
 
-            status.write("🎞️ Descargando metraje cinematográfico (Con protección de bucle)...")
+            status.write("🎞️ Descargando metraje cinematográfico (Forzando 30 FPS)...")
             pool_urls = []
             try:
-                # Forzamos busqueda HD pero aumentamos el timeout
                 r = requests.get(f"https://api.pexels.com/videos/search?query={urllib.parse.quote(tema_broll + ' 4k motion')}&per_page=15&size=large&orientation=portrait", headers={"Authorization": pexels_key.strip()}, timeout=15).json()
                 pool_urls = [v['video_files'][0]['link'] for v in r.get('videos', [])]
             except: pass
@@ -108,31 +107,38 @@ if st.button("🚀 CREAR VÍDEO (ANTI-APAGONES V55)"):
             
             for i in range(num_clips):
                 v_url = pool_urls[i % len(pool_urls)] if pool_urls else None
-                t_clip = dur_corte if i < num_clips - 1 else dur_audio - (i * dur_corte)
-                if t_clip <= 0: continue
                 
-                exito = False
+                # EL TRUCO DE MAGIA: Si es el último clip, le añadimos 1 segundo de "propina" para que la imagen NUNCA se acabe antes que el audio.
+                if i < num_clips - 1:
+                    t_clip = dur_corte
+                else:
+                    t_clip = (dur_audio - (i * dur_corte)) + 1.0 
+                    
+                if t_clip <= 0: t_clip = 1.0
+                
+                exito_descarga = False
                 if v_url:
                     try:
-                        # Timeout extendido a 30s para que no falle la descarga
-                        vid_data = requests.get(v_url, timeout=30).content
+                        vid_data = requests.get(v_url, timeout=20).content
                         with open(f"clip_{i}.mp4", 'wb') as f: f.write(vid_data)
-                        
-                        vf = "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,colorchannelmixer=rr=0.7:gg=0.7:bb=0.7,format=yuv420p"
-                        # MAGIA ANTI-APAGÓN: -stream_loop -1 hace que el vídeo se repita infinitamente si es muy corto
-                        subprocess.run(f'ffmpeg -y -stream_loop -1 -i "clip_{i}.mp4" -vf "{vf}" -an -c:v libx264 -preset ultrafast -t {t_clip} "p_{i}.mp4"', shell=True)
-                        if os.path.exists(f"p_{i}.mp4") and os.path.getsize(f"p_{i}.mp4") > 1000:
-                            exito = True
+                        exito_descarga = True
                     except: pass
                 
-                # SISTEMA DE CLONADO: Si falla, copia el vídeo anterior para no dejar la pantalla en negro
-                if not exito:
-                    if len(clips_finales) > 0:
-                        subprocess.run(f"cp {clips_finales[-1]} p_{i}.mp4", shell=True)
+                # Si falla la descarga, copiamos EL ORIGINAL RAW del paso anterior, no el procesado, para poder ponerle el tiempo exacto.
+                if not exito_descarga:
+                    if i > 0 and os.path.exists(f"clip_{i-1}.mp4"):
+                        subprocess.run(f"cp clip_{i-1}.mp4 clip_{i}.mp4", shell=True)
                     else:
                         subprocess.run(f'ffmpeg -y -f lavfi -i color=c=#111827:s=720x1280:d={t_clip}:r=30 -c:v libx264 -preset ultrafast -format yuv420p "p_{i}.mp4"', shell=True)
+                        clips_finales.append(f"p_{i}.mp4")
+                        continue
                 
-                clips_finales.append(f"p_{i}.mp4")
+                # RENDERIZAMOS CON -r 30 PARA QUE NADA SE DESINCRONICE
+                vf = "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,colorchannelmixer=rr=0.7:gg=0.7:bb=0.7,format=yuv420p"
+                subprocess.run(f'ffmpeg -y -stream_loop -1 -i "clip_{i}.mp4" -vf "{vf}" -an -c:v libx264 -r 30 -preset ultrafast -t {t_clip} "p_{i}.mp4"', shell=True)
+                
+                if os.path.exists(f"p_{i}.mp4"):
+                    clips_finales.append(f"p_{i}.mp4")
 
             with open("lista.txt", "w") as f:
                 for c in clips_finales: f.write(f"file '{c}'\n")
@@ -162,13 +168,14 @@ if st.button("🚀 CREAR VÍDEO (ANTI-APAGONES V55)"):
             
             with open("subs_filter.txt", "w") as f: f.write(",\n".join(subs_cmd))
 
-            status.write("✨ Renderizando Máster Definitivo...")
+            status.write("✨ Exportando Máster Fluido...")
             v_final = f"output/v_{int(time.time())}.mp4"
+            # Como la imagen ahora es 1 segundo MÁS LARGA que la voz, -t {dur_audio} recorta la parte sobrante del vídeo. Encaje perfecto.
             cmd_f = f"""ffmpeg -y -i video_mudo.mp4 -i audio_final.m4a -filter_complex_script subs_filter.txt -c:v libx264 -preset fast -crf 23 -c:a copy -t {dur_audio} "{v_final}" """
             subprocess.run(cmd_f, shell=True)
             
             if os.path.exists(v_final):
-                st.success("🔥 ¡VÍDEO CREADO! Adiós a las pantallas negras y cortes de vídeo.")
+                st.success("🔥 ¡VÍDEO V56 CREADO! Sincronización perfecta hasta el último frame.")
                 st.video(v_final)
                 st.balloons()
             else:
