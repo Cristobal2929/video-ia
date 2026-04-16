@@ -3,7 +3,7 @@ import os, time, subprocess, re, urllib.parse, shutil, math, random
 import requests
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Fénix Studio V89", layout="centered")
+st.set_page_config(page_title="Fénix Studio V90", layout="centered")
 
 components.html("""
 <script>
@@ -26,8 +26,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V89 🎥</div>', unsafe_allow_html=True)
-st.markdown('<div style="text-align:center; color:#94A3B8; margin-bottom: 30px;">Motor Midjourney 8K • Zoom Cinemático • Bug Fix</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V90 🎥</div>', unsafe_allow_html=True)
+st.markdown('<div style="text-align:center; color:#94A3B8; margin-bottom: 30px;">IA 8K • Zoom Cinemático • Subs Inmortales (V58)</div>', unsafe_allow_html=True)
 
 @st.cache_resource
 def descargar_fuente():
@@ -78,14 +78,14 @@ duracion_opcion = st.selectbox("⏱️ Duración del Vídeo:", [
     "Largo (~60 segundos)"
 ])
 
-if st.button("🚀 CREAR VÍDEO 8K (V89)"):
+if st.button("🚀 CREAR VÍDEO 8K (V90)"):
     if not tema: st.warning("⚠️ Escribe un tema para la IA.")
     else:
         preparar_entorno()
         
-        if "15" in duracion_opcion: palabras_target = 35; dur_corte = 3.5; n_escenas = 4
-        elif "30" in duracion_opcion: palabras_target = 70; dur_corte = 3.5; n_escenas = 8
-        else: palabras_target = 130; dur_corte = 3.5; n_escenas = 15
+        if "15" in duracion_opcion: palabras_target = 35
+        elif "30" in duracion_opcion: palabras_target = 70
+        else: palabras_target = 130
             
         with st.status(f"🎬 Generando Obra de Arte IA ({duracion_opcion})...", expanded=True) as status:
             
@@ -100,7 +100,8 @@ if st.button("🚀 CREAR VÍDEO 8K (V89)"):
             try: dur = float(subprocess.check_output(f'ffprobe -i "{audio}" -show_entries format=duration -v quiet -of csv="p=0"', shell=True))
             except: pass
             
-            num_clips = math.ceil(dur / dur_corte)
+            # Cortamos a un tamaño estándar de 3.5s para no hacer escenas aburridas
+            num_clips = math.ceil(dur / 3.5)
             t_por_escena = dur / num_clips
             dur_frames = int(t_por_escena * 24) # 24 FPS de cine
             
@@ -117,13 +118,12 @@ if st.button("🚀 CREAR VÍDEO 8K (V89)"):
                 palabra_es = extraer_palabra_clave(texto_del_clip)
                 palabra_en = traducir_a_ingles(palabra_es)
                 
-                status.write(f"⏳ Escena {i+1}: Renderizando '{palabra_en}' (Pausa anti-bloqueo 🤫)...")
-                time.sleep(3.5) # El truco para que la IA no nos bloquee
+                status.write(f"⏳ Escena {i+1}/{num_clips}: '{palabra_en}' (Anti-bloqueo 🤫)...")
+                time.sleep(3.5) # Evasión del filtro de spam
                 
                 img = f"taller/img_{i}.jpg"
                 vid = f"taller/vid_{i}.mp4"
                 
-                # EL SUPER PROMPT OCULTO PARA CALIDAD EXTREMA
                 prompt_ia = f"{palabra_en} {estilo_visual}, 8k resolution, Unreal Engine 5 render, hyperrealistic photograph, masterpiece, cinematic lighting, extremely detailed, depth of field"
                 url = f"https://image.pollinations.ai/prompt/{urllib.parse.quote(prompt_ia)}?width=720&height=1280&nologo=true"
                 
@@ -133,7 +133,6 @@ if st.button("🚀 CREAR VÍDEO 8K (V89)"):
                     if r.status_code == 200:
                         with open(img, 'wb') as f: f.write(r.content)
                         
-                        # Efecto ZoomPan cinemático a 720p HD y 24FPS
                         vf = f"scale=800:1422,zoompan=z='min(zoom+0.0015,1.2)':d={dur_frames}:s=720x1280:fps=24,format=yuv420p" 
                         subprocess.run(f'ffmpeg -y -loop 1 -i "{img}" -vf "{vf}" -c:v libx264 -preset ultrafast -crf 26 -threads 1 -t {t_por_escena} "{vid}"', shell=True)
                         
@@ -149,19 +148,18 @@ if st.button("🚀 CREAR VÍDEO 8K (V89)"):
                 
                 clips_finales.append(f"vid_{i}.mp4")
 
-            status.write("🎬 Uniendo secuencias fluidas...")
+            status.write("🎬 Uniendo secuencias...")
             with open("taller/lista.txt", "w") as f:
                 for c in clips_finales: f.write(f"file '{c}'\n")
             
             v_mudo = "taller/mudo.mp4"
             subprocess.run(f'ffmpeg -y -f concat -safe 0 -i taller/lista.txt -c copy "{v_mudo}"', shell=True)
 
-            status.write("✨ Mapeando Subtítulos CapCut...")
+            status.write("✨ Mapeando Subtítulos Inmortales...")
             texto_seguro = re.sub(r'[^\w\s]', '', guion.replace('\n', ' ').upper()).replace('_', '')
             palabras = texto_seguro.split()
             
             subs_cmd = []
-            # AQUÍ ESTÁ LA LÍNEA CORREGIDA: font_abs en lugar de font_path
             font_cmd = f"fontfile='{font_abs}':" if os.path.exists(font_abs) else ""
             chunks_raw = [palabras[j:j+2] for j in range(0, len(palabras), 2)]
             tiempo_por_chunk = dur / max(len(chunks_raw), 1)
@@ -169,15 +167,15 @@ if st.button("🚀 CREAR VÍDEO 8K (V89)"):
             for j, p_list in enumerate(chunks_raw):
                 t_start = j * tiempo_por_chunk
                 t_end = t_start + tiempo_por_chunk
-                anim_size = f"if(lt(t,{t_start}+0.2),30+(65-30)*(t-{t_start})/0.2,65)"
                 
+                # ADIÓS AL ERROR: Tamaño FIJO 65 como en la V58. Sin fórmulas matemáticas que rompan FFmpeg.
                 if len(p_list) == 2 and (len(p_list[0]) + len(p_list[1]) > 12):
                     w1, w2 = p_list[0], p_list[1]
-                    subs_cmd.append(f"drawtext=text='{w1}':fontcolor={color_sub}:fontsize='{anim_size}':{font_cmd}borderw=5:bordercolor=black:shadowcolor=black@0.8:shadowx=4:shadowy=4:x=(w-tw)/2:y=(h-th)/2-40:enable='between(t,{t_start},{t_end})'")
-                    subs_cmd.append(f"drawtext=text='{w2}':fontcolor={color_sub}:fontsize='{anim_size}':{font_cmd}borderw=5:bordercolor=black:shadowcolor=black@0.8:shadowx=4:shadowy=4:x=(w-tw)/2:y=(h-th)/2+40:enable='between(t,{t_start},{t_end})'")
+                    subs_cmd.append(f"drawtext=text='{w1}':fontcolor={color_sub}:fontsize=65:{font_cmd}borderw=5:bordercolor=black:shadowcolor=black@0.8:shadowx=4:shadowy=4:x=(w-tw)/2:y=(h-th)/2-40:enable='between(t,{t_start},{t_end})'")
+                    subs_cmd.append(f"drawtext=text='{w2}':fontcolor={color_sub}:fontsize=65:{font_cmd}borderw=5:bordercolor=black:shadowcolor=black@0.8:shadowx=4:shadowy=4:x=(w-tw)/2:y=(h-th)/2+40:enable='between(t,{t_start},{t_end})'")
                 else:
                     frase = " ".join(p_list)
-                    subs_cmd.append(f"drawtext=text='{frase}':fontcolor={color_sub}:fontsize='{anim_size}':{font_cmd}borderw=5:bordercolor=black:shadowcolor=black@0.8:shadowx=4:shadowy=4:x=(w-tw)/2:y=(h-th)/2:enable='between(t,{t_start},{t_end})'")
+                    subs_cmd.append(f"drawtext=text='{frase}':fontcolor={color_sub}:fontsize=65:{font_cmd}borderw=5:bordercolor=black:shadowcolor=black@0.8:shadowx=4:shadowy=4:x=(w-tw)/2:y=(h-th)/2:enable='between(t,{t_start},{t_end})'")
             
             with open("taller/subs_filter.txt", "w") as f: f.write(",\n".join(subs_cmd))
 
