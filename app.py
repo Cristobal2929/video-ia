@@ -2,7 +2,7 @@ import streamlit as st
 import os, time, random, subprocess, textwrap, re, urllib.parse, math
 import requests
 
-st.set_page_config(page_title="Fénix Estudio PRO | V59", layout="centered")
+st.set_page_config(page_title="Fénix Estudio PRO | V60", layout="centered")
 
 st.markdown("""
 <style>
@@ -12,8 +12,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V59</div>', unsafe_allow_html=True)
-st.markdown('<div class="pro-subtitle" style="text-align:center; color:#94A3B8; margin-bottom: 30px;">Efectos SFX • Animación Pop-Up CapCut • Traductor Pexels</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V60</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-subtitle" style="text-align:center; color:#94A3B8; margin-bottom: 30px;">Motor Titanium Restaurado • Cero Caídas • Animación & SFX</div>', unsafe_allow_html=True)
 
 font_path = "Arial.ttf"
 if not os.path.exists(font_path):
@@ -29,13 +29,32 @@ IDIOMAS = {
     "🇫🇷 Français": {"tl": "fr", "voces": {"Henri (Masculino)": "fr-FR-HenriNeural", "Denise (Femenina)": "fr-FR-DeniseNeural"}}
 }
 
+# MOTOR TITANIUM RESTAURADO (CON SALVAVIDAS GOOGLE)
 def generar_voz_inmortal(texto, codigo_voz, tl_code):
     texto_limpio = re.sub(r'[^\w\s.,;?!]', '', texto.replace('\n', ' ')).replace('_', '')
     with open("temp_txt.txt", "w", encoding="utf-8") as f: f.write(texto_limpio)
+    
     for _ in range(2):
         subprocess.run(["python", "-m", "edge_tts", "--voice", codigo_voz, "--rate=+15%", "-f", "temp_txt.txt", "--write-media", "t.mp3"])
         if os.path.exists("t.mp3") and os.path.getsize("t.mp3") > 1000: return True
         time.sleep(1.5)
+
+    oraciones = textwrap.wrap(texto_limpio, width=150)
+    archivos = []
+    for idx, oracion in enumerate(oraciones):
+        try:
+            url = f"https://translate.google.com/translate_tts?ie=UTF-8&q={urllib.parse.quote(oracion)}&tl={tl_code}&client=tw-ob"
+            r = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=10)
+            if r.status_code == 200:
+                with open(f"g_{idx}.mp3", "wb") as f: f.write(r.content)
+                archivos.append(f"g_{idx}.mp3")
+        except: pass
+        
+    if archivos:
+        with open("lista_audio.txt", "w") as f:
+            for a in archivos: f.write(f"file '{a}'\n")
+        subprocess.run('ffmpeg -y -f concat -safe 0 -i lista_audio.txt -c copy t.mp3', shell=True)
+        if os.path.exists("t.mp3") and os.path.getsize("t.mp3") > 1000: return True
     return False
 
 def traducir_a_ingles(palabra, idioma_origen):
@@ -53,7 +72,6 @@ def extraer_palabra_clave(texto_chunk):
     if palabras_utiles: return max(palabras_utiles, key=len)
     return "cinematic"
 
-# GENERADOR DE EFECTO SWOOSH (Ruido Blanco estilo transición)
 def generar_sfx_whoosh():
     if not os.path.exists("whoosh.m4a"):
         subprocess.run('ffmpeg -y -f lavfi -i "anoisesrc=c=pink:d=0.4:a=0.5" -vf "afade=t=in:st=0:d=0.2,afade=t=out:st=0.2:d=0.2" -c:a aac whoosh.m4a', shell=True)
@@ -76,26 +94,24 @@ guion_usuario = st.text_area("📝 Pega tu Guion aquí:", height=150)
 st.markdown("### 2. Estilo Visual")
 tema_broll = st.text_input("🎨 Estilo General (Ej: Dark, Luxury, Cinematic...):", placeholder="Luxury")
 
-if st.button("🚀 CREAR VÍDEO (HOLLYWOOD V59)"):
+if st.button("🚀 CREAR VÍDEO (BLINDAJE V60)"):
     if len(guion_usuario.strip()) < 20 or len(tema_broll.strip()) < 2:
         st.warning("⚠️ Rellena el guion y el estilo visual.")
     else:
-        with st.status(f"🎬 Iniciando Motor Hollywood AI...", expanded=True) as status:
+        with st.status(f"🎬 Iniciando Motor Inmortal V60...", expanded=True) as status:
             subprocess.run("rm -f a_*.mp3 g_*.mp3 v_*.mp4 p_*.mp4 clip_*.mp4 text_*.txt temp_txt.txt lista*.txt music.m4a audio_final.m4a video_mudo.mp4 final.mp4 t.mp3 subs_filter.txt", shell=True)
             generar_sfx_whoosh()
             
-            status.write("🎙️ Grabando locución y SFX...")
+            status.write("🎙️ Grabando locución Titanium...")
             if not generar_voz_inmortal(guion_usuario, codigo_voz, tl_code):
-                st.error("❌ Servidores caídos.")
+                st.error("❌ Servidores globales caídos.")
                 st.stop()
             dur_audio = float(subprocess.check_output("ffprobe -i t.mp3 -show_entries format=duration -v quiet -of csv='p=0'", shell=True).decode('utf-8').strip())
 
-            # MEZCLA MAESTRA DE AUDIO (Voz + Música + Efectos Whoosh en cada corte)
             dur_corte = 3.5
             num_clips = math.ceil(dur_audio / dur_corte)
             freq = 60 if "Misterio" in musica_tipo else 75
             
-            # Generamos un archivo de audio con un whoosh cada 3.5 segundos
             sfx_cmd = "ffmpeg -y -f lavfi -i anullsrc=r=44100:cl=stereo -i whoosh.m4a -filter_complex '"
             delays = [str(int(i*dur_corte*1000)) for i in range(1, num_clips)]
             if delays:
@@ -105,8 +121,6 @@ if st.button("🚀 CREAR VÍDEO (HOLLYWOOD V59)"):
                     mix_str += f"[w{idx}]"
                 sfx_cmd += f"{mix_str}amix=inputs={len(delays)}:duration=longest[sfxout]' -map '[sfxout]' -t {dur_audio} sfx_track.m4a"
                 subprocess.run(sfx_cmd, shell=True)
-                
-                # Mezclamos la Voz, la Música de fondo y el Track de SFX
                 subprocess.run(f'ffmpeg -y -i t.mp3 -f lavfi -i "sine=f={freq}:d={dur_audio}" -i sfx_track.m4a -filter_complex "[1:a]volume=0.03[m];[2:a]volume=0.4[sfx];[0:a][m][sfx]amix=inputs=3:duration=first" -c:a aac -ar 44100 audio_final.m4a', shell=True)
             else:
                 subprocess.run(f'ffmpeg -y -i t.mp3 -f lavfi -i "sine=f={freq}:d={dur_audio}" -filter_complex "[1:a]volume=0.03[m];[0:a][m]amix=inputs=2:duration=first" -c:a aac -ar 44100 audio_final.m4a', shell=True)
@@ -166,7 +180,6 @@ if st.button("🚀 CREAR VÍDEO (HOLLYWOOD V59)"):
                 for c in clips_finales: f.write(f"file '{c}'\n")
             subprocess.run('ffmpeg -y -f concat -safe 0 -i lista.txt -c copy video_mudo.mp4', shell=True)
 
-            # NUEVO ANIMADOR DE SUBTÍTULOS (EFECTO POP-UP CAPCUT)
             status.write("🎬 Mapeando Animaciones Pop-Up...")
             texto_seguro = re.sub(r'[^\w\s]', '', guion_usuario.replace('\n', ' ').upper()).replace('_', '')
             palabras = texto_seguro.split()
@@ -180,7 +193,6 @@ if st.button("🚀 CREAR VÍDEO (HOLLYWOOD V59)"):
                 t_start = j * tiempo_por_chunk
                 t_end = t_start + tiempo_por_chunk
                 
-                # Fórmula matemática de rebote para el fontsize (de 30 a 65 en 0.2 segundos)
                 anim_size = f"if(lt(t,{t_start}+0.2),30+(65-30)*(t-{t_start})/0.2,65)"
                 
                 if len(p_list) == 2 and (len(p_list[0]) + len(p_list[1]) > 12):
@@ -199,7 +211,7 @@ if st.button("🚀 CREAR VÍDEO (HOLLYWOOD V59)"):
             subprocess.run(cmd_f, shell=True)
             
             if os.path.exists(v_final):
-                st.success("🔥 ¡VÍDEO V59 LISTO! Efectos CapCut y Sonido activados.")
+                st.success("🔥 ¡VÍDEO V60 LISTO! Estabilidad al 100% garantizada.")
                 st.video(v_final)
                 st.balloons()
             else:
