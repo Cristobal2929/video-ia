@@ -3,7 +3,7 @@ import os, time, subprocess, re, urllib.parse, shutil, math, random, gc
 import requests
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Fénix Studio V104", layout="centered")
+st.set_page_config(page_title="Fénix Studio V105", layout="centered")
 
 components.html("<script>if('wakeLock' in navigator){navigator.wakeLock.request('screen');}</script>", height=0)
 
@@ -17,7 +17,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V104 🛡️</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V105 🪶</div>', unsafe_allow_html=True)
 
 @st.cache_resource
 def get_font():
@@ -51,14 +51,13 @@ tema = st.text_input("🧠 ¿De qué trata el vídeo?:", placeholder="Ej: Las le
 color_sub = st.selectbox("🎨 Color de los Subtítulos:", ["yellow", "white", "#00FFD1"])
 estilo_v = st.text_input("🎨 Filtro de Imagen IA:", value="Luxury Cinematic 8k photography")
 
-if st.button("🚀 CREAR OBRA MAESTRA (CORTAFUEGOS)"):
+if st.button("🚀 CREAR OBRA MAESTRA (SIN COLAPSOS)"):
     if not tema: st.error("⚠️ Escribe un tema, jefe.")
     else:
         preparar()
         log = st.container()
         
         with log:
-            # 1. GENERACIÓN DE GUION BLINDADA
             st.markdown('<div class="msg">📝 Redactando guion (con límite estricto)...</div>', unsafe_allow_html=True)
             prompt_g = f"Escribe un guion corto para TikTok sobre {tema}. Solo el texto, maximo 50 palabras, sin emojis."
             try:
@@ -67,13 +66,11 @@ if st.button("🚀 CREAR OBRA MAESTRA (CORTAFUEGOS)"):
             except:
                 guion = "El éxito requiere disciplina y constancia. Nunca te rindas y sigue luchando por tus metas diarias."
             
-            # CORTAFUEGOS: Si la IA se vuelve loca, le cortamos el texto a 60 palabras exactas.
             lista_palabras_guion = guion.split()
             if len(lista_palabras_guion) > 60:
                 guion = " ".join(lista_palabras_guion[:60])
-                st.markdown('<div class="msg">✂️ IA intentó escribir un libro. Texto recortado por seguridad.</div>', unsafe_allow_html=True)
+                st.markdown('<div class="msg">✂️ Texto recortado por seguridad.</div>', unsafe_allow_html=True)
             
-            # 2. VOZ PRO
             st.markdown('<div class="msg">🎙️ Grabando voz de alta fidelidad...</div>', unsafe_allow_html=True)
             audio = "taller/audio.mp3"
             subprocess.run(f'edge-tts --voice es-MX-JorgeNeural --rate=+10% --text "{guion}" --write-media "{audio}"', shell=True)
@@ -83,12 +80,9 @@ if st.button("🚀 CREAR OBRA MAESTRA (CORTAFUEGOS)"):
                 dur = float(subprocess.check_output(f'ffprobe -i "{audio}" -show_entries format=duration -v quiet -of csv="p=0"', shell=True))
             except: pass
             
-            # CORTAFUEGOS DE DURACIÓN: Máximo 30 segundos de vídeo.
             if dur > 30.0: dur = 30.0
 
-            # 3. IMÁGENES AL COMPÁS
             n_clips = math.ceil(dur / 3.5)
-            # CORTAFUEGOS DE ESCENAS: Nunca más de 10 escenas.
             if n_clips > 10: n_clips = 10 
             
             t_clip = dur / n_clips
@@ -125,13 +119,12 @@ if st.button("🚀 CREAR OBRA MAESTRA (CORTAFUEGOS)"):
                         f"zoompan=z='1.15-0.001*on':x='(iw/4/d)*on':s=720x1280"
                     ])
                     vf = f"scale=1280:2275,{z_fx},format=yuv420p"
-                    subprocess.run(f'ffmpeg -y -loop 1 -i "{img}" -vf "{vf}" -t {t_clip} -c:v libx264 -preset ultrafast -r 24 "{vid}"', shell=True)
+                    subprocess.run(f'ffmpeg -y -loop 1 -i "{img}" -vf "{vf}" -t {t_clip} -c:v libx264 -preset ultrafast -threads 1 -r 24 "{vid}"', shell=True)
                     if os.path.exists(vid): clips.append(f"v_{i}.mp4")
                 
                 if os.path.exists(img): os.remove(img)
                 gc.collect()
 
-            # 4. UNIÓN Y SUBTÍTULOS DOBLE CAPA (V58)
             st.markdown('<div class="msg">🎬 Ensamblando con Subtítulos Dinámicos...</div>', unsafe_allow_html=True)
             with open("taller/lista.txt", "w") as f:
                 for c in clips: f.write(f"file '{c}'\n")
@@ -157,9 +150,13 @@ if st.button("🚀 CREAR OBRA MAESTRA (CORTAFUEGOS)"):
             with open("taller/subs_filter.txt", "w") as f: f.write(",\n".join(subs_cmd))
             
             final = "taller/master.mp4"
-            subprocess.run(f'ffmpeg -y -i "{mudo}" -i "{audio}" -filter_complex_script taller/subs_filter.txt -c:v libx264 -preset fast -t {dur} "{final}"', shell=True)
+            
+            # EL TRUCO ANTICOLAPSOS: -preset ultrafast -crf 28 -threads 1 obligan a usar poquísima RAM.
+            subprocess.run(f'ffmpeg -y -i "{mudo}" -i "{audio}" -filter_complex_script taller/subs_filter.txt -c:v libx264 -preset ultrafast -crf 28 -threads 1 -t {dur} "{final}"', shell=True)
             
             if os.path.exists(final):
-                st.markdown('<div class="info-card">🏆 VÍDEO COMPLETADO: ESTILO V58 + CORTAFUEGOS</div>', unsafe_allow_html=True)
+                st.markdown('<div class="info-card">🏆 VÍDEO COMPLETADO: ESTILO V58 (RENDERIZADO PLUMA)</div>', unsafe_allow_html=True)
                 with open(final, "rb") as f: st.video(f.read())
                 st.balloons()
+            else:
+                st.error("❌ El servidor se ha quedado sin memoria en el último segundo. Intenta con un tema que genere un guion más corto.")
