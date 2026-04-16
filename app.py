@@ -2,7 +2,7 @@ import streamlit as st
 import os, time, random, subprocess, textwrap, re, urllib.parse, math
 import requests
 
-st.set_page_config(page_title="Fénix Estudio PRO | V54", layout="centered")
+st.set_page_config(page_title="Fénix Estudio PRO | V55", layout="centered")
 
 st.markdown("""
 <style>
@@ -12,8 +12,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V54</div>', unsafe_allow_html=True)
-st.markdown('<div class="pro-subtitle" style="text-align:center; color:#94A3B8; margin-bottom: 30px;">Salto Cuántico Global • Multidioma Premium • B-Roll 4K</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V55</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-subtitle" style="text-align:center; color:#94A3B8; margin-bottom: 30px;">Bucle Infinito Anti-Apagones • Multidioma Premium • 4K Dinámico</div>', unsafe_allow_html=True)
 
 font_path = "Arial.ttf"
 if not os.path.exists(font_path):
@@ -23,7 +23,6 @@ if not os.path.exists(font_path):
     except: pass
 font_abs = os.path.abspath(font_path).replace('\\', '/')
 
-# DICCIONARIO GLOBAL DE IDIOMAS Y VOCES VIRALES
 IDIOMAS = {
     "🇪🇸 Español": {"tl": "es", "voces": {"Jorge (Latino)": "es-MX-JorgeNeural", "Elvira (España)": "es-ES-ElviraNeural", "Alvaro (España)": "es-ES-AlvaroNeural"}},
     "🇺🇸 English": {"tl": "en", "voces": {"Guy (Masculino US)": "en-US-GuyNeural", "Aria (Femenina US)": "en-US-AriaNeural", "Christopher (Masculino US)": "en-US-ChristopherNeural"}},
@@ -33,23 +32,17 @@ IDIOMAS = {
     "🇧🇷 Português": {"tl": "pt", "voces": {"Antonio (Brasil)": "pt-BR-AntonioNeural", "Francisca (Brasil)": "pt-BR-FranciscaNeural"}}
 }
 
-# --- MOTOR DE VOZ INTERNACIONAL ---
 def generar_voz_inmortal(texto, codigo_voz, tl_code):
-    # Limpieza universal que respeta los acentos de todos los idiomas
     texto_limpio = re.sub(r'[^\w\s.,;?!]', '', texto.replace('\n', ' ')).replace('_', '')
     with open("temp_txt.txt", "w", encoding="utf-8") as f: f.write(texto_limpio)
     
-    # INTENTO 1 y 2: Microsoft
     for _ in range(2):
         subprocess.run(["python", "-m", "edge_tts", "--voice", codigo_voz, "--rate=+15%", "-f", "temp_txt.txt", "--write-media", "t.mp3"])
-        if os.path.exists("t.mp3") and os.path.getsize("t.mp3") > 1000:
-            return True
+        if os.path.exists("t.mp3") and os.path.getsize("t.mp3") > 1000: return True
         time.sleep(1.5)
 
-    # INTENTO 3: Salvavidas Google (Adaptado al idioma seleccionado)
     oraciones = textwrap.wrap(texto_limpio, width=150)
     archivos = []
-    
     for idx, oracion in enumerate(oraciones):
         try:
             url = f"https://translate.google.com/translate_tts?ie=UTF-8&q={urllib.parse.quote(oracion)}&tl={tl_code}&client=tw-ob"
@@ -63,9 +56,7 @@ def generar_voz_inmortal(texto, codigo_voz, tl_code):
         with open("lista_audio.txt", "w") as f:
             for a in archivos: f.write(f"file '{a}'\n")
         subprocess.run('ffmpeg -y -f concat -safe 0 -i lista_audio.txt -c copy t.mp3', shell=True)
-        if os.path.exists("t.mp3") and os.path.getsize("t.mp3") > 1000:
-            return True
-            
+        if os.path.exists("t.mp3") and os.path.getsize("t.mp3") > 1000: return True
     return False
 
 with st.sidebar:
@@ -75,7 +66,6 @@ with st.sidebar:
     idioma_elegido = st.selectbox("🌐 Idioma del Vídeo", list(IDIOMAS.keys()))
     voces_disponibles = IDIOMAS[idioma_elegido]["voces"]
     nombre_voz = st.selectbox("🗣️ Voz del Locutor", list(voces_disponibles.keys()))
-    
     codigo_voz = voces_disponibles[nombre_voz]
     tl_code = IDIOMAS[idioma_elegido]["tl"]
 
@@ -85,58 +75,70 @@ with st.sidebar:
 st.markdown("### 1. El Guion")
 guion_usuario = st.text_area("📝 Pega tu Guion en el idioma elegido:", height=150)
 st.markdown("### 2. Temática Visual")
-tema_broll = st.text_input("🔍 ¿De qué va el vídeo? (En inglés encuentra mejores vídeos. Ej: Luxury cars, Money, Dark forest...):")
+tema_broll = st.text_input("🔍 ¿De qué va el vídeo? (En inglés encuentra mejores vídeos):")
 
-if st.button("🚀 CREAR VÍDEO GLOBAL (V54)"):
+if st.button("🚀 CREAR VÍDEO (ANTI-APAGONES V55)"):
     if len(guion_usuario.strip()) < 20 or len(tema_broll.strip()) < 3:
         st.warning("⚠️ Rellena todo el guion y el tema visual.")
     else:
-        with st.status(f"🎬 Generando vídeo en {idioma_elegido}...", expanded=True) as status:
+        with st.status(f"🎬 Generando vídeo sin pantallas negras...", expanded=True) as status:
             subprocess.run("rm -f a_*.mp3 g_*.mp3 v_*.mp4 p_*.mp4 text_*.txt temp_txt.txt lista*.txt music.m4a audio_final.m4a video_mudo.mp4 final.mp4 t.mp3 subs_filter.txt", shell=True)
             
-            # 1. VOZ MULTILINGÜE
             status.write("🎙️ Grabando locución nativa...")
             if not generar_voz_inmortal(guion_usuario, codigo_voz, tl_code):
-                st.error("❌ Servidores caídos mundialmente. Inténtalo en 5 minutos.")
+                st.error("❌ Servidores de voz caídos. Inténtalo en 5 minutos.")
                 st.stop()
             dur_audio = float(subprocess.check_output("ffprobe -i t.mp3 -show_entries format=duration -v quiet -of csv='p=0'", shell=True).decode('utf-8').strip())
 
-            # 2. AUDIO Y MÚSICA
             status.write("🎵 Mezclando banda sonora...")
             freq = 60 if "Misterio" in musica_tipo else 75
             subprocess.run(f'ffmpeg -y -i t.mp3 -f lavfi -i "sine=f={freq}:d={dur_audio}" -filter_complex "[1:a]volume=0.03[m];[0:a][m]amix=inputs=2:duration=first" -c:a aac -ar 44100 audio_final.m4a', shell=True)
 
-            # 3. VÍDEOS 4K B-ROLL
-            status.write("🎞️ Descargando metraje cinematográfico...")
+            status.write("🎞️ Descargando metraje cinematográfico (Con protección de bucle)...")
             pool_urls = []
             try:
-                # Buscamos en inglés por defecto para tener más resultados en Pexels
-                r = requests.get(f"https://api.pexels.com/videos/search?query={urllib.parse.quote(tema_broll + ' 4k motion')}&per_page=15&size=large&orientation=portrait", headers={"Authorization": pexels_key.strip()}, timeout=10).json()
+                # Forzamos busqueda HD pero aumentamos el timeout
+                r = requests.get(f"https://api.pexels.com/videos/search?query={urllib.parse.quote(tema_broll + ' 4k motion')}&per_page=15&size=large&orientation=portrait", headers={"Authorization": pexels_key.strip()}, timeout=15).json()
                 pool_urls = [v['video_files'][0]['link'] for v in r.get('videos', [])]
             except: pass
             
             dur_corte = 3.5
             num_clips = math.ceil(dur_audio / dur_corte)
             clips_finales = []
+            
             for i in range(num_clips):
                 v_url = pool_urls[i % len(pool_urls)] if pool_urls else None
                 t_clip = dur_corte if i < num_clips - 1 else dur_audio - (i * dur_corte)
                 if t_clip <= 0: continue
-                try:
-                    with open(f"clip_{i}.mp4", 'wb') as f: f.write(requests.get(v_url, timeout=10).content)
-                    vf = "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,colorchannelmixer=rr=0.7:gg=0.7:bb=0.7,format=yuv420p"
-                    subprocess.run(f'ffmpeg -y -ss 2 -i "clip_{i}.mp4" -vf "{vf}" -an -c:v libx264 -preset ultrafast -t {t_clip} "p_{i}.mp4"', shell=True)
-                except:
-                    subprocess.run(f'ffmpeg -y -f lavfi -i color=c=black:s=720x1280:d={t_clip}:r=30 -c:v libx264 -preset ultrafast -format yuv420p "p_{i}.mp4"', shell=True)
+                
+                exito = False
+                if v_url:
+                    try:
+                        # Timeout extendido a 30s para que no falle la descarga
+                        vid_data = requests.get(v_url, timeout=30).content
+                        with open(f"clip_{i}.mp4", 'wb') as f: f.write(vid_data)
+                        
+                        vf = "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,colorchannelmixer=rr=0.7:gg=0.7:bb=0.7,format=yuv420p"
+                        # MAGIA ANTI-APAGÓN: -stream_loop -1 hace que el vídeo se repita infinitamente si es muy corto
+                        subprocess.run(f'ffmpeg -y -stream_loop -1 -i "clip_{i}.mp4" -vf "{vf}" -an -c:v libx264 -preset ultrafast -t {t_clip} "p_{i}.mp4"', shell=True)
+                        if os.path.exists(f"p_{i}.mp4") and os.path.getsize(f"p_{i}.mp4") > 1000:
+                            exito = True
+                    except: pass
+                
+                # SISTEMA DE CLONADO: Si falla, copia el vídeo anterior para no dejar la pantalla en negro
+                if not exito:
+                    if len(clips_finales) > 0:
+                        subprocess.run(f"cp {clips_finales[-1]} p_{i}.mp4", shell=True)
+                    else:
+                        subprocess.run(f'ffmpeg -y -f lavfi -i color=c=#111827:s=720x1280:d={t_clip}:r=30 -c:v libx264 -preset ultrafast -format yuv420p "p_{i}.mp4"', shell=True)
+                
                 clips_finales.append(f"p_{i}.mp4")
 
             with open("lista.txt", "w") as f:
                 for c in clips_finales: f.write(f"file '{c}'\n")
             subprocess.run('ffmpeg -y -f concat -safe 0 -i lista.txt -c copy video_mudo.mp4', shell=True)
 
-            # 4. SUBTÍTULOS DOBLE CAPA (SOPORTA TODOS LOS IDIOMAS)
             status.write("🎬 Mapeando Textos Globales...")
-            # Ahora la limpieza respeta letras francesas, alemanas, portuguesas (ç, ã, ü, é...)
             texto_seguro = re.sub(r'[^\w\s]', '', guion_usuario.replace('\n', ' ').upper()).replace('_', '')
             palabras = texto_seguro.split()
             
@@ -160,14 +162,13 @@ if st.button("🚀 CREAR VÍDEO GLOBAL (V54)"):
             
             with open("subs_filter.txt", "w") as f: f.write(",\n".join(subs_cmd))
 
-            # 5. FINAL
-            status.write("✨ Exportando al mundo...")
+            status.write("✨ Renderizando Máster Definitivo...")
             v_final = f"output/v_{int(time.time())}.mp4"
             cmd_f = f"""ffmpeg -y -i video_mudo.mp4 -i audio_final.m4a -filter_complex_script subs_filter.txt -c:v libx264 -preset fast -crf 23 -c:a copy -t {dur_audio} "{v_final}" """
             subprocess.run(cmd_f, shell=True)
             
             if os.path.exists(v_final):
-                st.success("🔥 ¡VÍDEO INTERNACIONAL CREADO! Listo para reventar el algoritmo en otro país.")
+                st.success("🔥 ¡VÍDEO CREADO! Adiós a las pantallas negras y cortes de vídeo.")
                 st.video(v_final)
                 st.balloons()
             else:
