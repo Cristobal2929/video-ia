@@ -3,7 +3,7 @@ import os, time, subprocess, re, urllib.parse, shutil, math, random, gc
 import requests
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Fénix Studio V107", layout="centered")
+st.set_page_config(page_title="Fénix Studio V108", layout="centered")
 
 components.html("<script>if('wakeLock' in navigator){navigator.wakeLock.request('screen');}</script>", height=0)
 
@@ -17,7 +17,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V107 🪨</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V108 ⚙️</div>', unsafe_allow_html=True)
 
 @st.cache_resource
 def get_font():
@@ -51,7 +51,7 @@ tema = st.text_input("🧠 ¿De qué trata el vídeo?:", placeholder="Ej: Las le
 color_sub = st.selectbox("🎨 Color de los Subtítulos:", ["yellow", "white", "#00FFD1"])
 estilo_v = st.text_input("🎨 Filtro de Imagen IA:", value="Luxury Cinematic 8k photography")
 
-if st.button("🚀 CREAR OBRA MAESTRA (LA ROCA)"):
+if st.button("🚀 CREAR OBRA MAESTRA (RUTAS BLINDADAS)"):
     if not tema: st.error("⚠️ Escribe un tema, jefe.")
     else:
         preparar()
@@ -73,10 +73,8 @@ if st.button("🚀 CREAR OBRA MAESTRA (LA ROCA)"):
             st.markdown('<div class="msg">🎙️ Grabando voz y activando seguros...</div>', unsafe_allow_html=True)
             audio = "taller/audio.mp3"
             
-            # INTENTO DE GRABAR VOZ
             subprocess.run(f'edge-tts --voice es-MX-JorgeNeural --rate=+10% --text "{guion}" --write-media "{audio}"', shell=True)
             
-            # PARACAÍDAS V107: Si la voz falla, creamos audio mudo para que el código no explote
             if not os.path.exists(audio) or os.path.getsize(audio) < 100:
                 st.markdown('<div class="msg">⚠️ Servidor de voz saturado. Usando pista de emergencia.</div>', unsafe_allow_html=True)
                 subprocess.run(f'ffmpeg -y -f lavfi -i anullsrc=r=44100:cl=mono -t 15 -acodec libmp3lame "{audio}"', shell=True)
@@ -149,7 +147,10 @@ if st.button("🚀 CREAR OBRA MAESTRA (LA ROCA)"):
                     if clip_subs: vf += "," + ",".join(clip_subs)
                         
                     subprocess.run(f'ffmpeg -y -loop 1 -i "{img}" -vf "{vf}" -t {t_clip} -c:v libx264 -preset ultrafast -threads 1 -r 24 "{vid}"', shell=True)
-                    if os.path.exists(vid): clips.append(f"v_{i}.mp4")
+                    
+                    # EL GRAN FIX: Guardamos la RUTA ABSOLUTA del vídeo para que FFmpeg nunca se pierda
+                    if os.path.exists(vid): 
+                        clips.append(os.path.abspath(vid).replace('\\', '/'))
                 
                 if os.path.exists(img): os.remove(img)
                 gc.collect()
@@ -164,14 +165,14 @@ if st.button("🚀 CREAR OBRA MAESTRA (LA ROCA)"):
             final = "taller/master.mp4"
             
             if not os.path.exists(mudo):
-                st.error("❌ Fallo grave: No se generó el vídeo base.")
+                st.error("❌ Fallo grave: No se generó el vídeo base. Faltan piezas.")
             elif not os.path.exists(audio):
                 st.error("❌ Fallo grave: El archivo de audio desapareció.")
             else:
                 subprocess.run(f'ffmpeg -y -i "{mudo}" -i "{audio}" -c:v copy -c:a aac -shortest "{final}"', shell=True)
                 
                 if os.path.exists(final):
-                    st.markdown('<div class="info-card">🏆 VÍDEO COMPLETADO: LA ROCA (V107)</div>', unsafe_allow_html=True)
+                    st.markdown('<div class="info-card">🏆 VÍDEO COMPLETADO: ENGRANAJE PERFECTO (V108)</div>', unsafe_allow_html=True)
                     with open(final, "rb") as f: st.video(f.read())
                     st.balloons()
                 else:
