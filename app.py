@@ -3,7 +3,7 @@ import os, time, subprocess, re, urllib.parse, shutil, math, random, gc
 import requests
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Fénix Studio V117", layout="centered")
+st.set_page_config(page_title="Fénix Studio V118", layout="centered")
 
 components.html("<script>if('wakeLock' in navigator){navigator.wakeLock.request('screen');}</script>", height=0)
 
@@ -17,7 +17,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V117 🏦</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V118 🧠</div>', unsafe_allow_html=True)
 
 @st.cache_resource
 def get_font():
@@ -33,26 +33,46 @@ f_abs = get_font()
 
 PEXELS_API = "Ty0uFISh3APEAXIVcrFpSM7ZdwOeRElCuUgoG42EW6WVISRTEfqjm0BZ"
 
-def traducir_en(palabra):
-    try:
-        url = f"https://api.mymemory.translated.net/get?q={urllib.parse.quote(palabra)}&langpair=es|en"
-        return requests.get(url, timeout=5).json()['responseData']['translatedText']
-    except: return palabra
-
-def extraer_kw(texto):
-    palabras = re.sub(r'[^\w\s]', '', texto).split()
-    utiles = [p for p in palabras if len(p) > 4]
-    return max(utiles, key=len) if utiles else "cinematic"
+# EL CEREBRO SEMÁNTICO: Convierte palabras abstractas en imágenes de lujo
+def extraer_visual_logico(texto):
+    t = texto.lower()
+    if any(x in t for x in ["dinero", "riqueza", "millon", "oro", "ganar", "efectivo", "inversion", "pago"]): 
+        return "gold coins wealth luxury cinematic"
+    if any(x in t for x in ["mente", "pensar", "conocimiento", "aprender", "leer", "cerebro", "inteligencia", "idea"]): 
+        return "glowing brain galaxy universe cinematic"
+    if any(x in t for x in ["fuerte", "gym", "entrenar", "disciplina", "esfuerzo", "dolor", "trabajar"]): 
+        return "muscular man training dark cinematic"
+    if any(x in t for x in ["tiempo", "reloj", "hora", "futuro", "pronto", "tarde", "hoy"]): 
+        return "expensive luxury rolex watch macro"
+    if any(x in t for x in ["camino", "viaje", "meta", "llegar", "horizonte", "paso", "cima"]): 
+        return "man standing on epic mountain peak success"
+    if any(x in t for x in ["lider", "jefe", "equipo", "lobo", "leon", "rey", "dominar"]): 
+        return "alpha lion cinematic lighting 8k"
+    if any(x in t for x in ["coche", "motor", "velocidad", "rapido", "ferrari", "lamborghini"]): 
+        return "lamborghini supercar neon street night"
+    if any(x in t for x in ["casa", "mansion", "hogar", "vivir", "castillo"]): 
+        return "modern luxury mansion pool night cinematic"
+    if any(x in t for x in ["negocio", "empresa", "oficina", "traje", "reunion", "vender"]): 
+        return "successful businessman suit skyscraper window"
+    
+    # Si la frase no encaja en nada de arriba, elige un recurso de B-Roll de lujo aleatorio (siempre lógico)
+    return random.choice([
+        "luxury supercar driving dark", 
+        "millionaire luxury yacht ocean", 
+        "wall street stock market green arrows", 
+        "cyberpunk city neon lights", 
+        "gold bars inside bank vault"
+    ])
 
 def preparar():
     if os.path.exists("taller"): shutil.rmtree("taller")
     os.makedirs("taller", exist_ok=True)
     subprocess.run("pkill ffmpeg", shell=True)
 
-tema = st.text_input("🧠 Tema del vídeo:", placeholder="Ej: Mentalidad de tiburón")
+tema = st.text_input("🧠 Tema del vídeo:", placeholder="Ej: Hábitos de millonario")
 color_sub = st.selectbox("🎨 Color de los Subtítulos:", ["yellow", "white", "#00FFD1"])
 
-if st.button("🚀 CREAR VÍDEO (BANCO DE IA)"):
+if st.button("🚀 CREAR VÍDEO (CEREBRO SEMÁNTICO)"):
     if not tema: st.error("⚠️ Escribe un tema, jefe.")
     else:
         preparar()
@@ -65,7 +85,7 @@ if st.button("🚀 CREAR VÍDEO (BANCO DE IA)"):
                 guion_raw = requests.get(f"https://text.pollinations.ai/{urllib.parse.quote(prompt_g)}", timeout=10).text
                 guion = re.sub(r'[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ.,! ]', '', guion_raw).strip()
             except:
-                guion = "El éxito es constancia. Levántate, lucha por tus sueños y no mires atrás. Tú puedes."
+                guion = "El éxito es constancia. Levántate, lucha por tus sueños y no mires atrás. Tú puedes lograrlo."
                 
             guion = " ".join(guion.split()[:60])
             
@@ -90,30 +110,32 @@ if st.button("🚀 CREAR VÍDEO (BANCO DE IA)"):
 
             for i in range(n_clips):
                 txt_chunk = " ".join(palabras_guion[i*chunk_size:(i+1)*chunk_size])
-                kw_en = traducir_en(extraer_kw(txt_chunk))
-                st.markdown(f'<div class="msg">📸 Escena {i+1}/{n_clips}: Explorando Banco IA para "{kw_en.upper()}"...</div>', unsafe_allow_html=True)
+                
+                # APLICAMOS EL CEREBRO SEMÁNTICO
+                prompt_visual = extraer_visual_logico(txt_chunk)
+                
+                st.markdown(f'<div class="msg">📸 Escena {i+1}/{n_clips}: Lexica IA buscando "{prompt_visual.upper()}"...</div>', unsafe_allow_html=True)
                 
                 img = f"taller/i_{i}.jpg"
                 vid = f"taller/v_{i}.mp4"
                 exito_imagen = False
 
-                # --- MOTOR 1: BANCO DE IMÁGENES IA (LEXICA) ---
+                # --- MOTOR 1: LEXICA (Imágenes creadas por IA) ---
                 try:
-                    lexica_url = f"https://lexica.art/api/v1/search?q={urllib.parse.quote(kw_en + ' luxury cinematic masterpiece')}"
+                    lexica_url = f"https://lexica.art/api/v1/search?q={urllib.parse.quote(prompt_visual)}"
                     r_lex = requests.get(lexica_url, timeout=10).json()
                     if r_lex.get('images'):
-                        # Coge una imagen aleatoria entre las 8 mejores
-                        img_url = random.choice(r_lex['images'][:8])['src']
+                        img_url = random.choice(r_lex['images'][:6])['src']
                         with open(img, 'wb') as f: f.write(requests.get(img_url, timeout=10).content)
                         exito_imagen = True
                 except: pass
 
-                # --- MOTOR 2: PEXELS (FILTRADO POR ARTE IA) ---
+                # --- MOTOR 2: PEXELS (Backup de fotografías reales de lujo) ---
                 if not exito_imagen:
-                    st.markdown('<div class="msg">🔄 Buscando en reserva de Pexels IA...</div>', unsafe_allow_html=True)
+                    st.markdown('<div class="msg">🔄 Lexica saturada. Buscando en reserva de Pexels...</div>', unsafe_allow_html=True)
                     try:
                         headers = {"Authorization": PEXELS_API}
-                        url_p = f"https://api.pexels.com/v1/search?query={urllib.parse.quote(kw_en+' ai generated art')}&orientation=portrait&per_page=5"
+                        url_p = f"https://api.pexels.com/v1/search?query={urllib.parse.quote(prompt_visual)}&orientation=portrait&per_page=5"
                         r_p = requests.get(url_p, headers=headers, timeout=10).json()
                         if r_p.get('photos'):
                             img_url = random.choice(r_p['photos'])['src']['large2x']
@@ -121,13 +143,13 @@ if st.button("🚀 CREAR VÍDEO (BANCO DE IA)"):
                             exito_imagen = True
                     except: pass
 
-                # RENDERIZAR CLIP CON ZOOM LATERAL V58
+                # RENDERIZAR CLIP
                 if exito_imagen:
                     z_fx = random.choice(["zoompan=z='1.0+0.001*on':x='iw/4-(iw/4/d)*on'", "zoompan=z='1.15-0.001*on':x='(iw/4/d)*on'"])
                     vf = f"scale=1280:2275,{z_fx}:d={int(t_clip*24)}:s=720x1280,format=yuv420p"
                     subprocess.run(f'ffmpeg -y -loop 1 -i "{img}" -vf "{vf}" -t {t_clip} -c:v libx264 -preset ultrafast -r 24 "{vid}"', shell=True)
                 
-                # PARACAÍDAS FINAL
+                # PARACAÍDAS
                 if not os.path.exists(vid) or os.path.getsize(vid) < 1000:
                     if ultima_vid_exitosa: subprocess.run(f'cp "{ultima_vid_exitosa}" "{vid}"', shell=True)
                     else: subprocess.run(f'ffmpeg -y -f lavfi -i color=c=#1A1A1A:s=720x1280:d={t_clip}:r=24 -c:v libx264 -preset ultrafast -pix_fmt yuv420p "{vid}"', shell=True)
@@ -165,6 +187,6 @@ if st.button("🚀 CREAR VÍDEO (BANCO DE IA)"):
             subprocess.run(f'ffmpeg -y -i "{mudo}" -i "{audio}" -filter_complex_script taller/s.txt -c:v libx264 -preset ultrafast -crf 28 -threads 1 -t {dur} "{final}"', shell=True)
             
             if os.path.exists(final):
-                st.markdown('<div class="info-card">🏆 VÍDEO COMPLETADO (BANCO DE IA)</div>', unsafe_allow_html=True)
+                st.markdown('<div class="info-card">🏆 VÍDEO COMPLETADO: CEREBRO SEMÁNTICO ACTIVO</div>', unsafe_allow_html=True)
                 with open(final, "rb") as f: st.video(f.read())
                 st.balloons()
