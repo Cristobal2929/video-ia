@@ -1,10 +1,24 @@
 import streamlit as st
-import os, time, subprocess, re, urllib.parse, math
+import os, time, subprocess, re, urllib.parse
 import requests
 import tempfile
 import concurrent.futures
+import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Fénix Studio V72", layout="centered")
+st.set_page_config(page_title="Fénix Studio V73", layout="centered")
+
+# INYECCIÓN JAVASCRIPT ANTI-SUEÑO (Mantiene la pantalla encendida en móviles)
+components.html("""
+<script>
+if ('wakeLock' in navigator) {
+  let wakeLock = null;
+  const requestWakeLock = async () => {
+    try { wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {}
+  };
+  requestWakeLock();
+}
+</script>
+""", height=0)
 
 st.markdown("""
 <style>
@@ -14,7 +28,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V72 ⚡</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V73 ⚡</div>', unsafe_allow_html=True)
 
 @st.cache_resource
 def descargar_fuente():
@@ -49,14 +63,13 @@ def procesar_escena_turbo(args):
     try:
         r = requests.get(url, timeout=15)
         with open(img, 'wb') as f: f.write(r.content)
-        # ACELERACIÓN FFmpeg: preset ultrafast y threads auto
-        vf = f"scale=720:1280,format=yuv420p" 
+        vf = "scale=720:1280,format=yuv420p" 
         subprocess.run(f'ffmpeg -y -loop 1 -i "{img}" -vf "{vf}" -c:v libx264 -preset ultrafast -threads 0 -t {t} "{vid}"', shell=True)
         return vid
     except: return None
 
 tema = st.text_input("Tema del vídeo:")
-if st.button("🚀 GENERACIÓN TURBO"):
+if st.button("🚀 GENERACIÓN ANTI-SUEÑO"):
     if not tema: st.warning("Escribe un tema")
     else:
         timer_area = st.empty()
@@ -72,11 +85,10 @@ if st.button("🚀 GENERACIÓN TURBO"):
                         dur = float(subprocess.check_output(f'ffprobe -i "{audio}" -show_entries format=duration -v quiet -of csv="p=0"', shell=True))
                     except: pass
                 
-                # ESTIMACIÓN HONESTA (V72)
                 t_aprox = int(dur + 35) 
-                timer_area.markdown(f'<div class="time-card">⌛ TIEMPO REAL ESTIMADO: {t_aprox} SEG</div>', unsafe_allow_html=True)
+                timer_area.markdown(f'<div class="time-card">⌛ TIEMPO REAL ESTIMADO: {t_aprox} SEG<br>⚠️ NO CAMBIES DE APP HASTA TERMINAR</div>', unsafe_allow_html=True)
                 
-                n = 3 # Reducimos a 3 escenas para máxima velocidad sin perder calidad
+                n = 3
                 palabras = guion.split()[:n]
                 tareas = [(i, p, dur/n, tmp) for i, p in enumerate(palabras)]
                 
@@ -94,7 +106,6 @@ if st.button("🚀 GENERACIÓN TURBO"):
                 os.makedirs("output", exist_ok=True)
                 final = f"output/v_{int(time.time())}.mp4"
                 
-                # Subtítulos rápidos
                 sub = f"drawtext=text='{guion[:30]}...':fontcolor=white:fontsize=45:fontfile='{font_abs}':x=(w-tw)/2:y=(h-th)/2:borderw=2"
                 subprocess.run(f'ffmpeg -y -i "{v_mudo}" -i "{audio}" -vf "{sub}" -c:v libx264 -preset ultrafast -t {dur} "{final}"', shell=True)
                 
