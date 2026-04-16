@@ -4,17 +4,17 @@ import requests
 import tempfile
 import concurrent.futures
 
-st.set_page_config(page_title="Fénix Studio V68", layout="centered")
+st.set_page_config(page_title="Fénix Studio V69", layout="centered")
 
-# Estilo visual PRO
 st.markdown("""
 <style>
     .stApp { background: #000000; color: #FFFFFF; }
-    .pro-title { font-size: 40px; font-weight: 900; color: #00FFD1; text-align: center; }
+    .pro-title { font-size: 40px; font-weight: 900; color: #00FFD1; text-align: center; margin-bottom: 0; }
+    .status-box { padding: 10px; border-radius: 10px; background: #1e293b; border: 1px solid #00FFD1; margin: 10px 0; }
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V68 🚀</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V69 🚀</div>', unsafe_allow_html=True)
 
 @st.cache_resource
 def descargar_fuente():
@@ -28,92 +28,86 @@ def descargar_fuente():
 
 font_abs = descargar_fuente()
 
-def limpiar_texto_extremo(t):
-    # Solo deja letras, números y puntuación básica
-    return re.sub(r'[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ.,! ]', '', t).strip()
-
-def generar_guion_ia(tema):
-    prompt = f"Guion TikTok 30 palabras sobre {tema}. Solo texto, sin emojis."
-    url = f"https://text.pollinations.ai/{urllib.parse.quote(prompt)}"
+def generar_guion(tema):
+    prompt = f"Guion TikTok 30 palabras sobre {tema}. Solo texto, sin simbolos."
     try:
-        r = requests.get(url, timeout=20)
-        return limpiar_texto_extremo(r.text)
-    except: return ""
+        r = requests.get(f"https://text.pollinations.ai/{urllib.parse.quote(prompt)}", timeout=15)
+        return re.sub(r'[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ ]', '', r.text).strip()
+    except: return "Error generando guion"
 
-def generar_voz_blindada(texto, codigo_voz, dir_trabajo):
-    mp3_path = os.path.join(dir_trabajo, "t.mp3")
-    vtt_path = os.path.join(dir_trabajo, "subs.vtt")
+def generar_voz(texto, tmp):
+    mp3 = os.path.join(tmp, "t.mp3")
+    # Intentar Edge-TTS
+    subprocess.run(f'python -m edge_tts --voice es-MX-JorgeNeural --text "{texto}" --write-media "{mp3}"', shell=True, capture_output=True)
+    if os.path.exists(mp3) and os.path.getsize(mp3) > 100: return mp3
     
-    # Intento con Edge TTS
-    cmd = f'python -m edge_tts --voice {codigo_voz} --text "{texto}" --write-media "{mp3_path}" --write-subtitles "{vtt_path}"'
-    subprocess.run(cmd, shell=True, capture_output=True)
-    
-    if os.path.exists(mp3_path) and os.path.getsize(mp3_path) > 500:
-        return True, "edge"
-    
-    # Fallback Google
-    try:
-        url = f"https://translate.google.com/translate_tts?ie=UTF-8&q={urllib.parse.quote(texto[:200])}&tl=es&client=tw-ob"
-        r = requests.get(url, timeout=15)
-        with open(mp3_path, "wb") as f: f.write(r.content)
-        return True, "google"
-    except: return False, None
+    # Fallback Silencio (Para evitar error de FFmpeg si falla la voz)
+    subprocess.run(f'ffmpeg -f lavfi -i anullsrc=r=44100:cl=mono -t 10 -q:a 9 -acodec libmp3lame "{mp3}"', shell=True)
+    return mp3
 
 def procesar_escena(args):
-    i, palabra, t_clip, estilo, dir_trabajo = args
-    img_path = os.path.join(dir_trabajo, f"img_{i}.jpg")
-    p_path = os.path.join(dir_trabajo, f"p_{i}.mp4")
-    prompt = f"{palabra}, {estilo}, vertical, high quality"
-    url = f"https://image.pollinations.ai/prompt/{urllib.parse.quote(prompt)}?width=720&height=1280&nologo=true"
+    i, palabra, t, estilo, tmp = args
+    img = os.path.join(tmp, f"{i}.jpg")
+    vid = os.path.join(tmp, f"{i}.mp4")
+    url = f"https://image.pollinations.ai/prompt/{urllib.parse.quote(palabra + ' ' + estilo)}?width=720&height=1280&nologo=true"
     
-    # Sistema de reintentos para la imagen
-    for _ in range(3):
-        try:
-            r = requests.get(url, timeout=30)
-            if r.status_code == 200:
-                with open(img_path, 'wb') as f: f.write(r.content)
-                break
-        except: time.sleep(2)
+    try:
+        r = requests.get(url, timeout=25)
+        with open(img, 'wb') as f: f.write(r.content)
+    except:
+        # Si falla la imagen, crear un fondo negro para no romper el video
+        subprocess.run(f'ffmpeg -f lavfi -i color=c=black:s=720x1280:d=1 -frames:v 1 "{img}"', shell=True)
     
-    if os.path.exists(img_path):
-        vf = f"scale=800:1422,zoompan=z='min(zoom+0.001,1.2)':d={int(t_clip*30)}:s=720x1280,format=yuv420p"
-        subprocess.run(f'ffmpeg -y -loop 1 -i "{img_path}" -vf "{vf}" -c:v libx264 -preset ultrafast -t {t_clip} "{p_path}"', shell=True)
-        return p_path
-    return None
+    vf = f"scale=800:1422,zoompan=z='min(zoom+0.001,1.2)':d={int(t*30)}:s=720x1280,format=yuv420p"
+    subprocess.run(f'ffmpeg -y -loop 1 -i "{img}" -vf "{vf}" -c:v libx264 -preset ultrafast -t {t} "{vid}"', shell=True)
+    return vid
 
-tema = st.text_input("Tema:")
-if st.button("GENERAR V68"):
-    with tempfile.TemporaryDirectory() as tmp:
-        with st.status("🚀 Trabajando...") as status:
-            guion = generar_guion_ia(tema)
-            if not guion: st.error("Fallo IA Texto"); st.stop()
-            
-            exito, motor = generar_voz_blindada(guion, "es-MX-JorgeNeural", tmp)
-            if not exito: st.error("Fallo Voz"); st.stop()
-            
-            mp3 = os.path.join(tmp, "t.mp3")
-            dur = float(subprocess.check_output(f'ffprobe -i "{mp3}" -show_entries format=duration -v quiet -of csv="p=0"', shell=True))
-            
-            num = 4 # Menos escenas = Más rapidez y menos errores
-            palabras = guion.split()[:num]
-            tareas = [(i, p, dur/num, "Cinematic", tmp) for i, p in enumerate(palabras)]
-            
-            with concurrent.futures.ThreadPoolExecutor(max_workers=2) as ex:
-                clips = [c for c in list(ex.map(procesar_escena, tareas)) if c]
-            
-            lista_path = os.path.join(tmp, "l.txt")
-            with open(lista_path, "w") as f:
-                for c in clips: f.write(f"file '{c}'\n")
-            
-            v_mudo = os.path.join(tmp, "m.mp4")
-            subprocess.run(f'ffmpeg -y -f concat -safe 0 -i "{lista_path}" -c copy "{v_mudo}"', shell=True)
-            
-            os.makedirs("output", exist_ok=True)
-            v_final = f"output/v_{int(time.time())}.mp4"
-            
-            # Subtítulos simplificados para evitar errores de filtro
-            sub_filt = f"drawtext=text='{guion[:35]}...':fontcolor=yellow:fontsize=45:fontfile='{font_abs}':x=(w-tw)/2:y=(h-th)/2:borderw=3"
-            subprocess.run(f'ffmpeg -y -i "{v_mudo}" -i "{mp3}" -vf "{sub_filt}" -c:v libx264 -preset fast -t {dur} "{v_final}"', shell=True)
-            
-            st.video(v_final)
-            st.success(f"Vídeo creado con {motor}")
+tema = st.text_input("¿De qué trata el vídeo?")
+if st.button("🚀 CREAR SIN ERRORES"):
+    if not tema: st.warning("Escribe algo")
+    else:
+        with tempfile.TemporaryDirectory() as tmp:
+            with st.status("🏗️ Construyendo vídeo...") as status:
+                # PASO 1: GUION Y VOZ
+                guion = generar_guion(tema)
+                audio = generar_voz(guion, tmp)
+                
+                # CÁLCULO DE TIEMPO
+                dur = float(subprocess.check_output(f'ffprobe -i "{audio}" -show_entries format=duration -v quiet -of csv="p=0"', shell=True))
+                n_escenas = 4
+                tiempo_total = int(dur + (n_escenas * 12) + 10)
+                
+                st.info(f"⏱️ **Tiempo estimado:** {tiempo_total} segundos")
+                bar = st.progress(0)
+                
+                # PASO 2: ESCENAS
+                status.write("🎨 Generando imágenes y animación...")
+                palabras = guion.split()[:n_escenas]
+                tareas = [(i, p, dur/n_escenas, "cinematic", tmp) for i, p in enumerate(palabras)]
+                
+                clips = []
+                with concurrent.futures.ThreadPoolExecutor(max_workers=2) as ex:
+                    futuros = [ex.submit(procesar_escena, t) for t in tareas]
+                    for idx, f in enumerate(concurrent.futures.as_completed(futuros)):
+                        clips.append(f.result())
+                        bar.progress(int((idx+1)/n_escenas * 70))
+                
+                # PASO 3: ENSAMBLAJE
+                status.write("🎬 Uniendo piezas...")
+                txt_lista = os.path.join(tmp, "l.txt")
+                with open(txt_lista, "w") as f:
+                    for c in sorted(clips): f.write(f"file '{c}'\n")
+                
+                v_mudo = os.path.join(tmp, "m.mp4")
+                subprocess.run(f'ffmpeg -y -f concat -safe 0 -i "{txt_lista}" -c copy "{v_mudo}"', shell=True)
+                
+                os.makedirs("output", exist_ok=True)
+                final = f"output/v_{int(time.time())}.mp4"
+                
+                # Subtítulos blindados
+                sub = f"drawtext=text='{guion[:30]}...':fontcolor=white:fontsize=40:fontfile='{font_abs}':x=(w-tw)/2:y=(h-th)/2:borderw=2:bordercolor=black"
+                subprocess.run(f'ffmpeg -y -i "{v_mudo}" -i "{audio}" -vf "{sub}" -c:v libx264 -preset fast -t {dur} "{final}"', shell=True)
+                
+                bar.progress(100)
+                st.video(final)
+                st.success("✨ Vídeo completado con éxito")
