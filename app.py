@@ -2,9 +2,10 @@ import streamlit as st
 import os, time, subprocess, re, urllib.parse, shutil
 import requests
 import base64
+import concurrent.futures
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Fénix Studio V78", layout="centered")
+st.set_page_config(page_title="Fénix Studio V79", layout="centered")
 
 components.html("""
 <script>
@@ -22,12 +23,12 @@ st.markdown("""
 <style>
     .stApp { background: #000000; color: #FFFFFF; }
     .pro-title { font-size: 40px; font-weight: 900; color: #00FFD1; text-align: center; }
-    .ok-card { padding: 15px; border-radius: 10px; background: #064e3b; border: 2px solid #00FFD1; text-align: center; color: #00FFD1; font-weight: bold;}
+    .speed-card { padding: 15px; border-radius: 10px; background: #1e3a8a; border: 2px solid #3b82f6; text-align: center; color: #60a5fa; font-weight: bold;}
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V78 ☢️</div>', unsafe_allow_html=True)
-st.markdown('<div style="text-align:center; color:#94A3B8; margin-bottom:20px;">Motor Base64 (Anti-Cuelgues) Activado</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V79 🚀</div>', unsafe_allow_html=True)
+st.markdown('<div style="text-align:center; color:#94A3B8; margin-bottom:20px;">Twin-Turbo Base64 Activado</div>', unsafe_allow_html=True)
 
 @st.cache_resource
 def descargar_fuente():
@@ -47,19 +48,30 @@ def generar_guion(tema):
     try:
         r = requests.get(url, timeout=12)
         return re.sub(r'[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ ]', '', r.text).strip()
-    except: return "Aprende a ser el mejor en lo que haces desde hoy mismo"
+    except: return "El secreto del exito esta en no rendirse nunca jamas"
 
 def preparar_entorno():
     if os.path.exists("taller"): shutil.rmtree("taller")
     os.makedirs("taller", exist_ok=True)
 
+# Nueva función para descargar rápido en paralelo
+def descargar_imagen(args):
+    i, palabra = args
+    img = f"taller/img_{i}.jpg"
+    url = f"https://image.pollinations.ai/prompt/{urllib.parse.quote(palabra + ' cinematic vertical dark')}?width=540&height=960&nologo=true"
+    try:
+        r = requests.get(url, timeout=20)
+        with open(img, 'wb') as f: f.write(r.content)
+        return img
+    except: return None
+
 tema = st.text_input("Tema del vídeo:")
-if st.button("🚀 INICIAR GENERACIÓN INFALIBLE"):
+if st.button("⚡ CREAR RÁPIDO Y SEGURO"):
     if not tema: st.warning("Escribe un tema")
     else:
         preparar_entorno()
         
-        with st.status("🛠️ Ejecutando bypass de seguridad...", expanded=True) as status:
+        with st.status("🚀 Procesando a máxima velocidad...", expanded=True) as status:
             
             status.write("🧠 1/4: Guion...")
             guion = generar_guion(tema)
@@ -76,47 +88,45 @@ if st.button("🚀 INICIAR GENERACIÓN INFALIBLE"):
             except: pass
             
             n_escenas = 3
-            clips = []
             palabras = guion.split()[:n_escenas]
             
-            status.write(f"🎨 3/4: Creando {n_escenas} escenas (Resolución 540p Optimizada)...")
+            # ACELERADOR 1: Descarga en paralelo
+            status.write("📥 3/4: Descargando imágenes simultáneamente...")
+            tareas_img = [(i, p) for i, p in enumerate(palabras)]
+            with concurrent.futures.ThreadPoolExecutor(max_workers=3) as ex:
+                imgs_descargadas = list(ex.map(descargar_imagen, tareas_img))
             
-            for i, p in enumerate(palabras):
-                status.write(f"⏳ Procesando imagen {i+1}...")
-                img = f"taller/img_{i}.jpg"
+            # ACELERADOR 2: Animación secuencial con 2 núcleos
+            status.write(f"🎨 Animando con efecto cinemático (Doble Núcleo)...")
+            clips = []
+            dur_frames = int((dur/n_escenas) * 20)
+            
+            for i, img in enumerate(imgs_descargadas):
+                if not img or not os.path.exists(img): continue
                 vid = f"taller/vid_{i}.mp4"
-                url = f"https://image.pollinations.ai/prompt/{urllib.parse.quote(p + ' cinematic vertical')}?width=540&height=960&nologo=true"
-                
-                try:
-                    r = requests.get(url, timeout=20)
-                    with open(img, 'wb') as f: f.write(r.content)
-                    
-                    dur_frames = int((dur/n_escenas) * 20)
-                    # Zoompan en resolución segura (540x960) a 20 FPS
-                    vf = f"scale=600:1066,zoompan=z='min(zoom+0.001,1.1)':d={dur_frames}:s=540x960:fps=20,format=yuv420p" 
-                    subprocess.run(f'ffmpeg -y -loop 1 -i "{img}" -vf "{vf}" -c:v libx264 -preset ultrafast -threads 1 -t {dur/n_escenas} "{vid}"', shell=True)
-                    if os.path.exists(vid): clips.append(vid)
-                except: pass
+                vf = f"scale=600:1066,zoompan=z='min(zoom+0.001,1.1)':d={dur_frames}:s=540x960:fps=20,format=yuv420p" 
+                subprocess.run(f'ffmpeg -y -loop 1 -i "{img}" -vf "{vf}" -c:v libx264 -preset ultrafast -threads 2 -t {dur/n_escenas} "{vid}"', shell=True)
+                if os.path.exists(vid): clips.append(vid)
             
             if not clips: st.error("Error al descargar imágenes."); st.stop()
             
-            status.write("🎬 4/4: Exportación por Base64...")
+            status.write("🎬 4/4: Exportación Final Rápida...")
             lista_txt = "taller/lista.txt"
             with open(lista_txt, "w") as f:
                 for c in clips: f.write(f"file '../{c}'\n")
             
             v_mudo = "taller/mudo.mp4"
-            subprocess.run(f'ffmpeg -y -f concat -safe 0 -i "{lista_txt}" -c copy -threads 1 "{v_mudo}"', shell=True)
+            subprocess.run(f'ffmpeg -y -f concat -safe 0 -i "{lista_txt}" -c copy -threads 2 "{v_mudo}"', shell=True)
             
             final_path = "taller/master.mp4"
             sub_f = f"drawtext=text='{guion[:30]}...':fontcolor=white:fontsize=35:fontfile='{font_abs}':x=(w-tw)/2:y=(h-th)/2:borderw=2"
-            subprocess.run(f'ffmpeg -y -i "{v_mudo}" -i "{audio}" -vf "{sub_f}" -c:v libx264 -preset ultrafast -threads 1 -t {dur} "{final_path}"', shell=True)
+            # Renderizado final con 2 hilos para mayor velocidad
+            subprocess.run(f'ffmpeg -y -i "{v_mudo}" -i "{audio}" -vf "{sub_f}" -c:v libx264 -preset ultrafast -threads 2 -t {dur} "{final_path}"', shell=True)
             
             if os.path.exists(final_path) and os.path.getsize(final_path) > 1000:
                 with open(final_path, "rb") as f:
                     video_bytes = f.read()
                 
-                # BYPASS DE STREAMLIT: Convertimos a Base64 y usamos HTML puro
                 b64_video = base64.b64encode(video_bytes).decode()
                 video_html = f'''
                     <video width="100%" controls autoplay loop style="border: 2px solid #00FFD1; border-radius: 10px;">
@@ -125,8 +135,8 @@ if st.button("🚀 INICIAR GENERACIÓN INFALIBLE"):
                     </video>
                 '''
                 
-                status.update(label="✅ Proceso completado al 100%", state="complete")
-                st.markdown('<div class="ok-card">🎉 ¡AQUÍ TIENES TU VÍDEO!</div><br>', unsafe_allow_html=True)
+                status.update(label="✅ Proceso completado en tiempo récord", state="complete")
+                st.markdown('<div class="speed-card">⚡ ¡AQUÍ TIENES TU VÍDEO!</div><br>', unsafe_allow_html=True)
                 st.markdown(video_html, unsafe_allow_html=True)
             else:
-                st.error("Error crítico de memoria en FFmpeg. Intenta con un tema distinto.")
+                st.error("Error al exportar. Intenta de nuevo.")
