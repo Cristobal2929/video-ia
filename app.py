@@ -4,17 +4,17 @@ import requests
 import tempfile
 import concurrent.futures
 
-st.set_page_config(page_title="Fénix Studio V70", layout="centered")
+st.set_page_config(page_title="Fénix Studio V71", layout="centered")
 
 st.markdown("""
 <style>
     .stApp { background: #000000; color: #FFFFFF; }
-    .pro-title { font-size: 40px; font-weight: 900; color: #00FFD1; text-align: center; margin-bottom: 10px; }
-    .time-card { padding: 20px; border-radius: 15px; background: #111827; border: 2px solid #00FFD1; text-align: center; margin: 15px 0; }
+    .pro-title { font-size: 40px; font-weight: 900; color: #00FFD1; text-align: center; margin-bottom: 20px; }
+    .time-card { padding: 15px; border-radius: 10px; background: #111827; border: 1px solid #00FFD1; text-align: center; margin-bottom: 20px; color: #00FFD1; font-family: monospace; }
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V70 🚀</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V71 🚀</div>', unsafe_allow_html=True)
 
 @st.cache_resource
 def descargar_fuente():
@@ -53,19 +53,16 @@ def procesar_escena(args):
         return vid
     except: return None
 
-tema = st.text_input("¿Qué vídeo quieres hoy?")
-if st.button("🚀 CREAR VÍDEO (V70)"):
-    if not tema: st.warning("Escribe un tema primero")
+tema = st.text_input("¿Qué quieres crear hoy?")
+if st.button("🚀 INICIAR PROCESO SEGURO"):
+    if not tema: st.warning("Escribe un tema")
     else:
-        # PANTALLA DE CARGA INICIAL
-        tiempo_container = st.empty()
-        with tiempo_container.container():
-            st.markdown('<div class="time-card">⏳ <b>Calculando presupuesto de tiempo...</b></div>', unsafe_allow_html=True)
+        # Usamos un solo contenedor para evitar errores de Node
+        info_area = st.empty()
         
         with tempfile.TemporaryDirectory() as tmp:
-            with st.status("🛠️ Construyendo...", expanded=True) as status:
+            with st.status("🛠️ Ejecutando motores de IA...", expanded=True) as status:
                 
-                # ESTIMACIÓN VISIBLE
                 guion = generar_guion(tema)
                 audio = generar_voz(guion, tmp)
                 
@@ -76,15 +73,13 @@ if st.button("🚀 CREAR VÍDEO (V70)"):
                     except: pass
                 
                 n_escenas = 4
-                t_aprox = int(dur + (n_escenas * 10) + 15)
+                t_aprox = int(dur + (n_escenas * 12) + 10)
                 
-                # AQUÍ SE MUESTRA EL TIEMPO CLARAMENTE
-                tiempo_container.markdown(f'<div class="time-card">⏳ <b>TIEMPO RESTANTE:</b> ~{t_aprox} segundos<br><small>No cierres la ventana, la IA está trabajando para ti.</small></div>', unsafe_allow_html=True)
+                # Actualizamos el área de info sin borrar nodos antiguos
+                info_area.markdown(f'<div class="time-card">⏳ TIEMPO ESTIMADO: {t_aprox} SEG</div>', unsafe_allow_html=True)
                 
-                bar = st.progress(10)
+                bar = st.progress(5)
                 
-                # PROCESO DE ESCENAS
-                status.write("🎨 Pintando imágenes únicas...")
                 palabras = guion.split()[:n_escenas]
                 tareas = [(i, p, dur/n_escenas, "cinematic", tmp) for i, p in enumerate(palabras)]
                 
@@ -96,8 +91,7 @@ if st.button("🚀 CREAR VÍDEO (V70)"):
                         if res: clips.append(res)
                         bar.progress(20 + int((idx+1)/n_escenas * 60))
                 
-                # ENSAMBLAJE
-                status.write("🎬 Masterizando vídeo final...")
+                status.write("🎬 Masterizando vídeo...")
                 txt_lista = os.path.join(tmp, "l.txt")
                 with open(txt_lista, "w") as f:
                     for c in sorted(clips): f.write(f"file '{c}'\n")
@@ -108,10 +102,11 @@ if st.button("🚀 CREAR VÍDEO (V70)"):
                 os.makedirs("output", exist_ok=True)
                 final = f"output/v_{int(time.time())}.mp4"
                 
-                sub = f"drawtext=text='{guion[:35]}...':fontcolor=white:fontsize=45:fontfile='{font_abs}':x=(w-tw)/2:y=(h-th)/2:borderw=3:bordercolor=black"
+                sub = f"drawtext=text='{guion[:30]}...':fontcolor=white:fontsize=45:fontfile='{font_abs}':x=(w-tw)/2:y=(h-th)/2:borderw=3"
                 subprocess.run(f'ffmpeg -y -i "{v_mudo}" -i "{audio}" -vf "{sub}" -c:v libx264 -preset fast -t {dur} "{final}"', shell=True)
                 
-                tiempo_container.empty() # Borramos el contador al terminar
+                bar.progress(100)
+                info_area.markdown('<div class="time-card">✅ PROCESO COMPLETADO</div>', unsafe_allow_html=True)
+                
                 st.video(final)
-                st.success("🔥 ¡VÍDEO COMPLETADO!")
                 st.balloons()
