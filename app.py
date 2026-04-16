@@ -3,7 +3,7 @@ import os, time, subprocess, re, urllib.parse, shutil, math, random
 import requests
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Fénix Studio V93", layout="centered")
+st.set_page_config(page_title="Fénix Studio V94", layout="centered")
 
 components.html("""
 <script>
@@ -26,8 +26,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V93 🎥</div>', unsafe_allow_html=True)
-st.markdown('<div style="text-align:center; color:#94A3B8; margin-bottom: 30px;">Director de Fotografía IA • Cortes Secos Virales • Audio Perfecto</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V94 🎥</div>', unsafe_allow_html=True)
+st.markdown('<div style="text-align:center; color:#94A3B8; margin-bottom: 30px;">Motor de Imagen Turbo • Cortes Secos • Audio Perfecto</div>', unsafe_allow_html=True)
 
 @st.cache_resource
 def descargar_fuente():
@@ -78,7 +78,6 @@ duracion_opcion = st.selectbox("⏱️ Duración del Vídeo:", [
     "Largo (~60 segundos)"
 ])
 
-# TIPOS DE PLANOS PARA FORZAR VARIEDAD VISUAL
 TIPOS_DE_PLANO = [
     "wide establishing shot", 
     "extreme close-up detail", 
@@ -87,7 +86,7 @@ TIPOS_DE_PLANO = [
     "medium portrait shot"
 ]
 
-if st.button("🚀 CREAR VÍDEO 8K (V93)"):
+if st.button("🚀 CREAR VÍDEO 8K (V94)"):
     if not tema: st.warning("⚠️ Escribe un tema para la IA.")
     else:
         preparar_entorno()
@@ -145,36 +144,45 @@ if st.button("🚀 CREAR VÍDEO 8K (V93)"):
                 
                 tipo_plano = random.choice(TIPOS_DE_PLANO)
                 status.write(f"⏳ Escena {i+1}: '{palabra_en}' ({tipo_plano})...")
-                time.sleep(3.5) 
                 
                 img = f"taller/img_{i}.jpg"
                 vid = f"taller/vid_{i}.mp4"
                 
                 seed_aleatorio = random.randint(1, 999999)
                 prompt_ia = f"{palabra_en}, {tipo_plano}, {estilo_visual}, 8k resolution, Unreal Engine 5 render, masterpiece, cinematic lighting, highly detailed"
-                url = f"https://image.pollinations.ai/prompt/{urllib.parse.quote(prompt_ia)}?width=720&height=1280&nologo=true&seed={seed_aleatorio}"
+                
+                # NUEVO MOTOR DE IMAGEN: Usando una API más estable
+                url = f"https://image.pollinations.ai/prompt/{urllib.parse.quote(prompt_ia)}?width=720&height=1280&nologo=true&seed={seed_aleatorio}&model=flux"
                 
                 exito = False
-                try:
-                    r = requests.get(url, timeout=20)
-                    if r.status_code == 200:
-                        with open(img, 'wb') as f: f.write(r.content)
-                        
-                        # Zoom aleatorio (hacia adelante o hacia atrás) súper fluido
+                for intento in range(3): # Reintentar hasta 3 veces si falla
+                    try:
+                        r = requests.get(url, timeout=30)
+                        if r.status_code == 200 and len(r.content) > 1000: # Asegurarse de que no descargó un archivo vacío
+                            with open(img, 'wb') as f: f.write(r.content)
+                            exito = True
+                            break
+                    except: pass
+                    time.sleep(2) # Esperar un poco antes de reintentar
+                
+                if exito:
+                    try:
                         zoom_dir = random.choice(["z='1.0+0.001*on'", "z='1.3-0.001*on'"])
                         vf = f"scale=800:1422,zoompan={zoom_dir}:d={dur_frames}:s=720x1280:fps=24,format=yuv420p" 
                         subprocess.run(f'ffmpeg -y -loop 1 -i "{img}" -vf "{vf}" -c:v libx264 -preset ultrafast -crf 26 -threads 1 -t {t_por_escena} "{vid}"', shell=True)
-                        
-                        if os.path.exists(vid): exito = True
-                        if os.path.exists(img): os.remove(img)
-                except: pass
+                        if os.path.exists(vid): pass
+                        else: exito = False
+                    except: exito = False
                 
                 if not exito:
+                    status.write(f"⚠️ Fallo al generar imagen, usando clip anterior...")
                     if i > 0 and os.path.exists(f"taller/vid_{i-1}.mp4"):
                         subprocess.run(f'cp taller/vid_{i-1}.mp4 "{vid}"', shell=True)
                     else:
-                        subprocess.run(f'ffmpeg -y -f lavfi -i color=c=#111827:s=720x1280:d={t_por_escena}:r=24 -c:v libx264 -preset ultrafast "{vid}"', shell=True)
+                         # Si falla el primero, al menos poner un color no tan feo como negro
+                        subprocess.run(f'ffmpeg -y -f lavfi -i color=c=#1A1A1A:s=720x1280:d={t_por_escena}:r=24 -c:v libx264 -preset ultrafast "{vid}"', shell=True)
                 
+                if os.path.exists(img): os.remove(img)
                 clips_finales.append(f"taller/vid_{i}.mp4")
 
             status.write("🎬 Uniendo secuencias con cortes secos virales...")
