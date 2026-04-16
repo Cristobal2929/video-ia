@@ -2,7 +2,7 @@ import streamlit as st
 import os, time, random, subprocess, textwrap, re, urllib.parse, math
 import requests
 
-st.set_page_config(page_title="Fénix Estudio PRO | V60", layout="centered")
+st.set_page_config(page_title="Fénix Estudio PRO | V58", layout="centered")
 
 st.markdown("""
 <style>
@@ -12,8 +12,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V60</div>', unsafe_allow_html=True)
-st.markdown('<div class="pro-subtitle" style="text-align:center; color:#94A3B8; margin-bottom: 30px;">Motor Titanium Restaurado • Cero Caídas • Animación & SFX</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V58</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-subtitle" style="text-align:center; color:#94A3B8; margin-bottom: 30px;">Cerebro Bilingüe • Viñeta Cinemática • Calidad de Agencia</div>', unsafe_allow_html=True)
 
 font_path = "Arial.ttf"
 if not os.path.exists(font_path):
@@ -29,7 +29,6 @@ IDIOMAS = {
     "🇫🇷 Français": {"tl": "fr", "voces": {"Henri (Masculino)": "fr-FR-HenriNeural", "Denise (Femenina)": "fr-FR-DeniseNeural"}}
 }
 
-# MOTOR TITANIUM RESTAURADO (CON SALVAVIDAS GOOGLE)
 def generar_voz_inmortal(texto, codigo_voz, tl_code):
     texto_limpio = re.sub(r'[^\w\s.,;?!]', '', texto.replace('\n', ' ')).replace('_', '')
     with open("temp_txt.txt", "w", encoding="utf-8") as f: f.write(texto_limpio)
@@ -57,6 +56,7 @@ def generar_voz_inmortal(texto, codigo_voz, tl_code):
         if os.path.exists("t.mp3") and os.path.getsize("t.mp3") > 1000: return True
     return False
 
+# TRADUCTOR INTERNO AUTOMÁTICO
 def traducir_a_ingles(palabra, idioma_origen):
     if "English" in idioma_origen: return palabra
     try:
@@ -71,10 +71,6 @@ def extraer_palabra_clave(texto_chunk):
     palabras_utiles = [p for p in palabras if len(p) > 4]
     if palabras_utiles: return max(palabras_utiles, key=len)
     return "cinematic"
-
-def generar_sfx_whoosh():
-    if not os.path.exists("whoosh.m4a"):
-        subprocess.run('ffmpeg -y -f lavfi -i "anoisesrc=c=pink:d=0.4:a=0.5" -vf "afade=t=in:st=0:d=0.2,afade=t=out:st=0.2:d=0.2" -c:a aac whoosh.m4a', shell=True)
 
 with st.sidebar:
     st.header("🌍 Mercado Global")
@@ -94,38 +90,25 @@ guion_usuario = st.text_area("📝 Pega tu Guion aquí:", height=150)
 st.markdown("### 2. Estilo Visual")
 tema_broll = st.text_input("🎨 Estilo General (Ej: Dark, Luxury, Cinematic...):", placeholder="Luxury")
 
-if st.button("🚀 CREAR VÍDEO (BLINDAJE V60)"):
+if st.button("🚀 CREAR VÍDEO (CEREBRO BILINGÜE V58)"):
     if len(guion_usuario.strip()) < 20 or len(tema_broll.strip()) < 2:
         st.warning("⚠️ Rellena el guion y el estilo visual.")
     else:
-        with st.status(f"🎬 Iniciando Motor Inmortal V60...", expanded=True) as status:
+        with st.status(f"🎬 Leyendo, Traduciendo y Creando Magia...", expanded=True) as status:
             subprocess.run("rm -f a_*.mp3 g_*.mp3 v_*.mp4 p_*.mp4 clip_*.mp4 text_*.txt temp_txt.txt lista*.txt music.m4a audio_final.m4a video_mudo.mp4 final.mp4 t.mp3 subs_filter.txt", shell=True)
-            generar_sfx_whoosh()
             
-            status.write("🎙️ Grabando locución Titanium...")
+            status.write("🎙️ Grabando locución...")
             if not generar_voz_inmortal(guion_usuario, codigo_voz, tl_code):
-                st.error("❌ Servidores globales caídos.")
+                st.error("❌ Servidores caídos.")
                 st.stop()
             dur_audio = float(subprocess.check_output("ffprobe -i t.mp3 -show_entries format=duration -v quiet -of csv='p=0'", shell=True).decode('utf-8').strip())
 
+            status.write("🎵 Mezclando audio...")
+            freq = 60 if "Misterio" in musica_tipo else 75
+            subprocess.run(f'ffmpeg -y -i t.mp3 -f lavfi -i "sine=f={freq}:d={dur_audio}" -filter_complex "[1:a]volume=0.03[m];[0:a][m]amix=inputs=2:duration=first" -c:a aac -ar 44100 audio_final.m4a', shell=True)
+            
             dur_corte = 3.5
             num_clips = math.ceil(dur_audio / dur_corte)
-            freq = 60 if "Misterio" in musica_tipo else 75
-            
-            sfx_cmd = "ffmpeg -y -f lavfi -i anullsrc=r=44100:cl=stereo -i whoosh.m4a -filter_complex '"
-            delays = [str(int(i*dur_corte*1000)) for i in range(1, num_clips)]
-            if delays:
-                mix_str = ""
-                for idx, delay in enumerate(delays):
-                    sfx_cmd += f"[1:a]adelay={delay}|{delay}[w{idx}];"
-                    mix_str += f"[w{idx}]"
-                sfx_cmd += f"{mix_str}amix=inputs={len(delays)}:duration=longest[sfxout]' -map '[sfxout]' -t {dur_audio} sfx_track.m4a"
-                subprocess.run(sfx_cmd, shell=True)
-                subprocess.run(f'ffmpeg -y -i t.mp3 -f lavfi -i "sine=f={freq}:d={dur_audio}" -i sfx_track.m4a -filter_complex "[1:a]volume=0.03[m];[2:a]volume=0.4[sfx];[0:a][m][sfx]amix=inputs=3:duration=first" -c:a aac -ar 44100 audio_final.m4a', shell=True)
-            else:
-                subprocess.run(f'ffmpeg -y -i t.mp3 -f lavfi -i "sine=f={freq}:d={dur_audio}" -filter_complex "[1:a]volume=0.03[m];[0:a][m]amix=inputs=2:duration=first" -c:a aac -ar 44100 audio_final.m4a', shell=True)
-
-            status.write("🎞️ Descargando Pexels y traduciendo conceptos...")
             clips_finales = []
             palabras_guion = guion_usuario.split()
             chunk_size = max(len(palabras_guion) // num_clips, 1)
@@ -136,9 +119,11 @@ if st.button("🚀 CREAR VÍDEO (BLINDAJE V60)"):
                 texto_del_clip = " ".join(palabras_guion[start_idx:end_idx])
                 
                 palabra_es = extraer_palabra_clave(texto_del_clip)
+                # TRADUCCIÓN AUTOMÁTICA
                 palabra_en = traducir_a_ingles(palabra_es, idioma_elegido)
                 
                 query_busqueda = urllib.parse.quote(f"{palabra_en} {tema_broll} 4k")
+                status.write(f"🔍 Escena {i+1}: '{palabra_es}' traducido a '{palabra_en}'. Descargando...")
 
                 t_clip = dur_corte if i < num_clips - 1 else (dur_audio - (i * dur_corte)) + 1.0 
                 if t_clip <= 0: t_clip = 1.0
@@ -171,16 +156,18 @@ if st.button("🚀 CREAR VÍDEO (BLINDAJE V60)"):
                         clips_finales.append(f"p_{i}.mp4")
                         continue
                 
+                # NUEVO: FILTRO VIGNETTE (Viñeta para darle un toque dramático de película)
                 vf = "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,colorchannelmixer=rr=0.7:gg=0.7:bb=0.7,vignette=PI/3,format=yuv420p"
                 subprocess.run(f'ffmpeg -y -stream_loop -1 -i "clip_{i}.mp4" -vf "{vf}" -an -c:v libx264 -r 30 -preset ultrafast -t {t_clip} "p_{i}.mp4"', shell=True)
                 
-                if os.path.exists(f"p_{i}.mp4"): clips_finales.append(f"p_{i}.mp4")
+                if os.path.exists(f"p_{i}.mp4"):
+                    clips_finales.append(f"p_{i}.mp4")
 
             with open("lista.txt", "w") as f:
                 for c in clips_finales: f.write(f"file '{c}'\n")
             subprocess.run('ffmpeg -y -f concat -safe 0 -i lista.txt -c copy video_mudo.mp4', shell=True)
 
-            status.write("🎬 Mapeando Animaciones Pop-Up...")
+            status.write("🎬 Textos...")
             texto_seguro = re.sub(r'[^\w\s]', '', guion_usuario.replace('\n', ' ').upper()).replace('_', '')
             palabras = texto_seguro.split()
             
@@ -192,26 +179,23 @@ if st.button("🚀 CREAR VÍDEO (BLINDAJE V60)"):
             for j, p_list in enumerate(chunks_raw):
                 t_start = j * tiempo_por_chunk
                 t_end = t_start + tiempo_por_chunk
-                
-                anim_size = f"if(lt(t,{t_start}+0.2),30+(65-30)*(t-{t_start})/0.2,65)"
-                
                 if len(p_list) == 2 and (len(p_list[0]) + len(p_list[1]) > 12):
                     w1, w2 = p_list[0], p_list[1]
-                    subs_cmd.append(f"drawtext=text='{w1}':fontcolor={color_sub}:fontsize='{anim_size}':{font_cmd}borderw=5:bordercolor=black:shadowcolor=black@0.8:shadowx=4:shadowy=4:x=(w-tw)/2:y=(h-th)/2-40:enable='between(t,{t_start},{t_end})'")
-                    subs_cmd.append(f"drawtext=text='{w2}':fontcolor={color_sub}:fontsize='{anim_size}':{font_cmd}borderw=5:bordercolor=black:shadowcolor=black@0.8:shadowx=4:shadowy=4:x=(w-tw)/2:y=(h-th)/2+40:enable='between(t,{t_start},{t_end})'")
+                    subs_cmd.append(f"drawtext=text='{w1}':fontcolor={color_sub}:fontsize=65:{font_cmd}borderw=5:bordercolor=black:shadowcolor=black@0.8:shadowx=4:shadowy=4:x=(w-tw)/2:y=(h-th)/2-40:enable='between(t,{t_start},{t_end})'")
+                    subs_cmd.append(f"drawtext=text='{w2}':fontcolor={color_sub}:fontsize=65:{font_cmd}borderw=5:bordercolor=black:shadowcolor=black@0.8:shadowx=4:shadowy=4:x=(w-tw)/2:y=(h-th)/2+40:enable='between(t,{t_start},{t_end})'")
                 else:
                     frase = " ".join(p_list)
-                    subs_cmd.append(f"drawtext=text='{frase}':fontcolor={color_sub}:fontsize='{anim_size}':{font_cmd}borderw=5:bordercolor=black:shadowcolor=black@0.8:shadowx=4:shadowy=4:x=(w-tw)/2:y=(h-th)/2:enable='between(t,{t_start},{t_end})'")
+                    subs_cmd.append(f"drawtext=text='{frase}':fontcolor={color_sub}:fontsize=65:{font_cmd}borderw=5:bordercolor=black:shadowcolor=black@0.8:shadowx=4:shadowy=4:x=(w-tw)/2:y=(h-th)/2:enable='between(t,{t_start},{t_end})'")
             
             with open("subs_filter.txt", "w") as f: f.write(",\n".join(subs_cmd))
 
-            status.write("✨ Renderizando Máster Final...")
+            status.write("✨ Máster Final...")
             v_final = f"output/v_{int(time.time())}.mp4"
             cmd_f = f"""ffmpeg -y -i video_mudo.mp4 -i audio_final.m4a -filter_complex_script subs_filter.txt -c:v libx264 -preset fast -crf 23 -c:a copy -t {dur_audio} "{v_final}" """
             subprocess.run(cmd_f, shell=True)
             
             if os.path.exists(v_final):
-                st.success("🔥 ¡VÍDEO V60 LISTO! Estabilidad al 100% garantizada.")
+                st.success("🔥 ¡VÍDEO V58 LISTO! Calidad Hollywood desbloqueada.")
                 st.video(v_final)
                 st.balloons()
             else:
