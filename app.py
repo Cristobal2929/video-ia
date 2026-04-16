@@ -3,9 +3,8 @@ import os, time, subprocess, re, urllib.parse, shutil, math, random, gc
 import requests
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Fénix Studio V101", layout="centered")
+st.set_page_config(page_title="Fénix Studio V104", layout="centered")
 
-# Mantener la pantalla encendida para procesos largos
 components.html("<script>if('wakeLock' in navigator){navigator.wakeLock.request('screen');}</script>", height=0)
 
 st.markdown("""
@@ -18,7 +17,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V101 🎥</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V104 🛡️</div>', unsafe_allow_html=True)
 
 @st.cache_resource
 def get_font():
@@ -48,22 +47,31 @@ def preparar():
     os.makedirs("taller", exist_ok=True)
     subprocess.run("pkill ffmpeg", shell=True)
 
-tema = st.text_input("🧠 ¿De qué trata el vídeo? (IA Guion):", placeholder="Ej: Las leyes del éxito millonario")
+tema = st.text_input("🧠 ¿De qué trata el vídeo?:", placeholder="Ej: Las leyes del éxito millonario")
 color_sub = st.selectbox("🎨 Color de los Subtítulos:", ["yellow", "white", "#00FFD1"])
 estilo_v = st.text_input("🎨 Filtro de Imagen IA:", value="Luxury Cinematic 8k photography")
 
-if st.button("🚀 CREAR OBRA MAESTRA (V58 STYLE)"):
+if st.button("🚀 CREAR OBRA MAESTRA (CORTAFUEGOS)"):
     if not tema: st.error("⚠️ Escribe un tema, jefe.")
     else:
         preparar()
         log = st.container()
         
         with log:
-            # 1. GENERACIÓN DE GUION
-            st.markdown('<div class="msg">📝 Redactando guion al compás del tema...</div>', unsafe_allow_html=True)
-            prompt_g = f"Escribe un guion motivador para TikTok sobre {tema}. Solo el texto del locutor, 75 palabras, sin emojis."
-            guion_raw = requests.get(f"https://text.pollinations.ai/{urllib.parse.quote(prompt_g)}").text
-            guion = re.sub(r'[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ.,! ]', '', guion_raw).strip()
+            # 1. GENERACIÓN DE GUION BLINDADA
+            st.markdown('<div class="msg">📝 Redactando guion (con límite estricto)...</div>', unsafe_allow_html=True)
+            prompt_g = f"Escribe un guion corto para TikTok sobre {tema}. Solo el texto, maximo 50 palabras, sin emojis."
+            try:
+                guion_raw = requests.get(f"https://text.pollinations.ai/{urllib.parse.quote(prompt_g)}", timeout=15).text
+                guion = re.sub(r'[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ.,! ]', '', guion_raw).strip()
+            except:
+                guion = "El éxito requiere disciplina y constancia. Nunca te rindas y sigue luchando por tus metas diarias."
+            
+            # CORTAFUEGOS: Si la IA se vuelve loca, le cortamos el texto a 60 palabras exactas.
+            lista_palabras_guion = guion.split()
+            if len(lista_palabras_guion) > 60:
+                guion = " ".join(lista_palabras_guion[:60])
+                st.markdown('<div class="msg">✂️ IA intentó escribir un libro. Texto recortado por seguridad.</div>', unsafe_allow_html=True)
             
             # 2. VOZ PRO
             st.markdown('<div class="msg">🎙️ Grabando voz de alta fidelidad...</div>', unsafe_allow_html=True)
@@ -75,20 +83,25 @@ if st.button("🚀 CREAR OBRA MAESTRA (V58 STYLE)"):
                 dur = float(subprocess.check_output(f'ffprobe -i "{audio}" -show_entries format=duration -v quiet -of csv="p=0"', shell=True))
             except: pass
             
-            # 3. IMÁGENES AL COMPÁS (Escenas de 3.5 segundos)
+            # CORTAFUEGOS DE DURACIÓN: Máximo 30 segundos de vídeo.
+            if dur > 30.0: dur = 30.0
+
+            # 3. IMÁGENES AL COMPÁS
             n_clips = math.ceil(dur / 3.5)
+            # CORTAFUEGOS DE ESCENAS: Nunca más de 10 escenas.
+            if n_clips > 10: n_clips = 10 
+            
             t_clip = dur / n_clips
             clips = []
-            palabras_guion = guion.split()
-            chunk_size = max(len(palabras_guion) // n_clips, 1)
+            palabras_guion_final = guion.split()
+            chunk_size = max(len(palabras_guion_final) // n_clips, 1)
 
             for i in range(n_clips):
-                # Extraer la idea de lo que se está diciendo en este momento
-                txt_chunk = " ".join(palabras_guion[i*chunk_size:(i+1)*chunk_size])
+                txt_chunk = " ".join(palabras_guion_final[i*chunk_size:(i+1)*chunk_size])
                 kw_es = extraer_kw(txt_chunk)
                 kw_en = traducir_en(kw_es)
                 
-                st.markdown(f'<div class="msg">📸 Escena {i+1}: IA buscando "{kw_en.upper()}"...</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="msg">📸 Escena {i+1}/{n_clips}: IA buscando "{kw_en.upper()}"...</div>', unsafe_allow_html=True)
                 
                 img = f"taller/i_{i}.jpg"
                 vid = f"taller/v_{i}.mp4"
@@ -98,7 +111,7 @@ if st.button("🚀 CREAR OBRA MAESTRA (V58 STYLE)"):
                     seed = random.randint(1, 999999)
                     url_ia = f"https://image.pollinations.ai/prompt/{urllib.parse.quote(kw_en+' '+estilo_v)}?width=720&height=1280&nologo=true&seed={seed}"
                     try:
-                        time.sleep(3.5) # Delay para evitar bloqueo
+                        time.sleep(3.5) 
                         r = requests.get(url_ia, timeout=30)
                         if r.status_code == 200 and len(r.content) > 5000:
                             with open(img, 'wb') as f: f.write(r.content)
@@ -107,8 +120,6 @@ if st.button("🚀 CREAR OBRA MAESTRA (V58 STYLE)"):
                     except: pass
 
                 if exito_ia:
-                    # EFECTO ZOOM LATERAL PRO (Ken Burns mejorado)
-                    # Variamos entre zoom in + pan izquierda y zoom out + pan derecha
                     z_fx = random.choice([
                         f"zoompan=z='1.0+0.001*on':x='iw/4-(iw/4/d)*on':s=720x1280",
                         f"zoompan=z='1.15-0.001*on':x='(iw/4/d)*on':s=720x1280"
@@ -120,7 +131,7 @@ if st.button("🚀 CREAR OBRA MAESTRA (V58 STYLE)"):
                 if os.path.exists(img): os.remove(img)
                 gc.collect()
 
-            # 4. UNIÓN Y SUBTÍTULOS DOBLE CAPA (IGUAL QUE V58)
+            # 4. UNIÓN Y SUBTÍTULOS DOBLE CAPA (V58)
             st.markdown('<div class="msg">🎬 Ensamblando con Subtítulos Dinámicos...</div>', unsafe_allow_html=True)
             with open("taller/lista.txt", "w") as f:
                 for c in clips: f.write(f"file '{c}'\n")
@@ -128,7 +139,6 @@ if st.button("🚀 CREAR OBRA MAESTRA (V58 STYLE)"):
             mudo = "taller/mudo.mp4"
             subprocess.run(f'ffmpeg -y -f concat -safe 0 -i taller/lista.txt -c copy "{mudo}"', shell=True)
             
-            # Cálculo de tiempos para palabras (Doble Capa)
             palabras_sub = re.sub(r'[^\w\s]', '', guion.upper()).split()
             chunks_sub = [palabras_sub[j:j+2] for j in range(0, len(palabras_sub), 2)]
             t_por_chunk = dur / max(len(chunks_sub), 1)
@@ -138,11 +148,9 @@ if st.button("🚀 CREAR OBRA MAESTRA (V58 STYLE)"):
                 ts = j * t_por_chunk
                 te = ts + t_por_chunk
                 if len(p_list) == 2 and (len(p_list[0]) + len(p_list[1]) > 10):
-                    # Palabra arriba y palabra abajo
                     subs_cmd.append(f"drawtext=text='{p_list[0]}':fontcolor={color_sub}:fontsize=65:fontfile='{f_abs}':borderw=5:bordercolor=black:x=(w-tw)/2:y=(h-th)/2-45:enable='between(t,{ts},{te})'")
                     subs_cmd.append(f"drawtext=text='{p_list[1]}':fontcolor={color_sub}:fontsize=65:fontfile='{f_abs}':borderw=5:bordercolor=black:x=(w-tw)/2:y=(h-th)/2+45:enable='between(t,{ts},{te})'")
                 else:
-                    # Una sola frase o palabra centrada
                     frase = " ".join(p_list)
                     subs_cmd.append(f"drawtext=text='{frase}':fontcolor={color_sub}:fontsize=65:fontfile='{f_abs}':borderw=5:bordercolor=black:x=(w-tw)/2:y=(h-th)/2:enable='between(t,{ts},{te})'")
             
@@ -152,6 +160,6 @@ if st.button("🚀 CREAR OBRA MAESTRA (V58 STYLE)"):
             subprocess.run(f'ffmpeg -y -i "{mudo}" -i "{audio}" -filter_complex_script taller/subs_filter.txt -c:v libx264 -preset fast -t {dur} "{final}"', shell=True)
             
             if os.path.exists(final):
-                st.markdown('<div class="info-card">🏆 VÍDEO COMPLETADO: ESTILO V58 + IA 8K</div>', unsafe_allow_html=True)
+                st.markdown('<div class="info-card">🏆 VÍDEO COMPLETADO: ESTILO V58 + CORTAFUEGOS</div>', unsafe_allow_html=True)
                 with open(final, "rb") as f: st.video(f.read())
                 st.balloons()
