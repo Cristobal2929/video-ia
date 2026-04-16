@@ -2,7 +2,7 @@ import streamlit as st
 import os, time, random, subprocess, textwrap, re, urllib.parse, math
 import requests
 
-st.set_page_config(page_title="Fénix Estudio PRO | V51", layout="centered")
+st.set_page_config(page_title="Fénix Estudio PRO | V52", layout="centered")
 
 st.markdown("""
 <style>
@@ -12,8 +12,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V51</div>', unsafe_allow_html=True)
-st.markdown('<div class="pro-subtitle" style="text-align:center; color:#94A3B8; margin-bottom: 30px;">Doble Capa de Texto • Sin Errores de Letra • 4K Dinámico</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V52</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-subtitle" style="text-align:center; color:#94A3B8; margin-bottom: 30px;">Motor Titanium • Salvavidas Google Restaurado • Cero Caídas</div>', unsafe_allow_html=True)
 
 font_path = "Arial.ttf"
 if not os.path.exists(font_path):
@@ -23,10 +23,38 @@ if not os.path.exists(font_path):
     except: pass
 font_abs = os.path.abspath(font_path).replace('\\', '/')
 
+# --- MOTOR DE VOZ TITANIUM (INDESTRUCTIBLE) ---
 def generar_voz_inmortal(texto, codigo_voz):
-    with open("temp_txt.txt", "w", encoding="utf-8") as f: f.write(texto)
-    subprocess.run(["python", "-m", "edge_tts", "--voice", codigo_voz, "--rate=+15%", "-f", "temp_txt.txt", "--write-media", "t.mp3"])
-    if os.path.exists("t.mp3") and os.path.getsize("t.mp3") > 1000: return True
+    texto_limpio = re.sub(r'[^A-Za-zÁÉÍÓÚáéíóúÑñ0-9\s.,;?!]', '', texto)
+    with open("temp_txt.txt", "w", encoding="utf-8") as f: f.write(texto_limpio)
+    
+    # INTENTO 1 y 2: Microsoft (Edge-TTS)
+    for _ in range(2):
+        subprocess.run(["python", "-m", "edge_tts", "--voice", codigo_voz, "--rate=+15%", "-f", "temp_txt.txt", "--write-media", "t.mp3"])
+        if os.path.exists("t.mp3") and os.path.getsize("t.mp3") > 1000:
+            return True
+        time.sleep(1.5)
+
+    # INTENTO 3: Salvavidas Google Translate (Corte inteligente a 150 caracteres para evitar bloqueos)
+    oraciones = textwrap.wrap(texto_limpio, width=150)
+    archivos = []
+    
+    for idx, oracion in enumerate(oraciones):
+        try:
+            url = f"https://translate.google.com/translate_tts?ie=UTF-8&q={urllib.parse.quote(oracion)}&tl=es&client=tw-ob"
+            r = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=10)
+            if r.status_code == 200:
+                with open(f"g_{idx}.mp3", "wb") as f: f.write(r.content)
+                archivos.append(f"g_{idx}.mp3")
+        except: pass
+        
+    if archivos:
+        with open("lista_audio.txt", "w") as f:
+            for a in archivos: f.write(f"file '{a}'\n")
+        subprocess.run('ffmpeg -y -f concat -safe 0 -i lista_audio.txt -c copy t.mp3', shell=True)
+        if os.path.exists("t.mp3") and os.path.getsize("t.mp3") > 1000:
+            return True
+            
     return False
 
 with st.sidebar:
@@ -44,28 +72,30 @@ guion_usuario = st.text_area("📝 Pega tu Guion:", height=150)
 st.markdown("### 2. Temática Visual")
 tema_broll = st.text_input("🔍 ¿De qué va el vídeo? (Ej: Dinero, Terror, Espacio...):")
 
-if st.button("🚀 CREAR VÍDEO (FIX TEXTO V51)"):
+if st.button("🚀 CREAR VÍDEO (MOTOR TITANIUM)"):
     if len(guion_usuario.strip()) < 20 or len(tema_broll.strip()) < 3:
         st.warning("⚠️ Rellena todo.")
     else:
-        with st.status("🎬 Renderizando sin errores de texto...", expanded=True) as status:
+        with st.status("🎬 Generando audio indestructible...", expanded=True) as status:
             subprocess.run("rm -f a_*.mp3 g_*.mp3 v_*.mp4 p_*.mp4 text_*.txt temp_txt.txt lista*.txt music.m4a audio_final.m4a video_mudo.mp4 final.mp4 t.mp3 subs_filter.txt", shell=True)
             
-            # 1. VOZ ACELERADA
+            # 1. VOZ ACELERADA TITANIUM
             if not generar_voz_inmortal(guion_usuario, codigo_voz):
-                st.error("Servidor caído.")
+                st.error("❌ Todos los servidores (Microsoft y Google) están caídos mundialmente. Inténtalo en 5 minutos.")
                 st.stop()
             dur_audio = float(subprocess.check_output("ffprobe -i t.mp3 -show_entries format=duration -v quiet -of csv='p=0'", shell=True).decode('utf-8').strip())
 
-            # 2. AUDIO
+            # 2. AUDIO Y MÚSICA
+            status.write("🎵 Mezclando banda sonora...")
             freq = 60 if "Misterio" in musica_tipo else 75
             subprocess.run(f'ffmpeg -y -i t.mp3 -f lavfi -i "sine=f={freq}:d={dur_audio}" -filter_complex "[1:a]volume=0.03[m];[0:a][m]amix=inputs=2:duration=first" -c:a aac -ar 44100 audio_final.m4a', shell=True)
 
             # 3. VÍDEOS 4K B-ROLL
+            status.write("🎞️ Descargando B-Roll 4K...")
             pool_urls = []
             try:
                 r = requests.get(f"https://api.pexels.com/videos/search?query={urllib.parse.quote(tema_broll + ' 4k motion')}&per_page=15&size=large&orientation=portrait&locale=es-ES", headers={"Authorization": pexels_key.strip()}, timeout=10).json()
-                pool_urls = [v['video_files'][0]['link'] for v in r['videos']]
+                pool_urls = [v['video_files'][0]['link'] for v in r.get('videos', [])]
             except: pass
             
             dur_corte = 3.5
@@ -87,8 +117,8 @@ if st.button("🚀 CREAR VÍDEO (FIX TEXTO V51)"):
                 for c in clips_finales: f.write(f"file '{c}'\n")
             subprocess.run('ffmpeg -y -f concat -safe 0 -i lista.txt -c copy video_mudo.mp4', shell=True)
 
-            # 4. MOTOR DE SUBTÍTULOS V51 (DOBLE CAPA INDEPENDIENTE)
-            status.write("🎬 Aplicando algoritmo de doble capa...")
+            # 4. SUBTÍTULOS DOBLE CAPA (SIN ERRORES DE LETRA)
+            status.write("🎬 Mapeando Textos CapCut...")
             txt_m = guion_usuario.upper().replace('Á','A').replace('É','E').replace('Í','I').replace('Ó','O').replace('Ú','U').replace('Ñ','N')
             txt_m = re.sub(r'[^A-Z0-9\s]', '', txt_m)
             palabras = txt_m.split()
@@ -96,7 +126,6 @@ if st.button("🚀 CREAR VÍDEO (FIX TEXTO V51)"):
             subs_cmd = []
             font_cmd = f"fontfile='{font_abs}':" if os.path.exists(font_path) else ""
             
-            # Agrupamos de 2 en 2
             chunks_raw = [palabras[j:j+2] for j in range(0, len(palabras), 2)]
             tiempo_por_chunk = dur_audio / max(len(chunks_raw), 1)
             
@@ -104,26 +133,25 @@ if st.button("🚀 CREAR VÍDEO (FIX TEXTO V51)"):
                 t_start = j * tiempo_por_chunk
                 t_end = t_start + tiempo_por_chunk
                 
-                # Si las dos palabras juntas son largas (>12 letras), hacemos doble capa
                 if len(p_list) == 2 and (len(p_list[0]) + len(p_list[1]) > 12):
                     word1, word2 = p_list[0], p_list[1]
-                    # Capa 1: Palabra arriba
                     subs_cmd.append(f"drawtext=text='{word1}':fontcolor={color_sub}:fontsize=65:{font_cmd}borderw=5:bordercolor=black:shadowcolor=black@0.8:shadowx=4:shadowy=4:x=(w-tw)/2:y=(h-th)/2-40:enable='between(t,{t_start},{t_end})'")
-                    # Capa 2: Palabra abajo
                     subs_cmd.append(f"drawtext=text='{word2}':fontcolor={color_sub}:fontsize=65:{font_cmd}borderw=5:bordercolor=black:shadowcolor=black@0.8:shadowx=4:shadowy=4:x=(w-tw)/2:y=(h-th)/2+40:enable='between(t,{t_start},{t_end})'")
                 else:
-                    # Si son cortas, van en la misma linea normal
                     frase = " ".join(p_list)
                     subs_cmd.append(f"drawtext=text='{frase}':fontcolor={color_sub}:fontsize=65:{font_cmd}borderw=5:bordercolor=black:shadowcolor=black@0.8:shadowx=4:shadowy=4:x=(w-tw)/2:y=(h-th)/2:enable='between(t,{t_start},{t_end})'")
             
             with open("subs_filter.txt", "w") as f: f.write(",\n".join(subs_cmd))
 
             # 5. FINAL
+            status.write("✨ Renderizando MP4...")
             v_final = f"output/v_{int(time.time())}.mp4"
             cmd_f = f"""ffmpeg -y -i video_mudo.mp4 -i audio_final.m4a -filter_complex_script subs_filter.txt -c:v libx264 -preset fast -crf 23 -c:a copy -t {dur_audio} "{v_final}" """
             subprocess.run(cmd_f, shell=True)
             
             if os.path.exists(v_final):
-                st.success("🔥 ¡VÍDEO PERFECTO! Adiós a la letra N.")
+                st.success("🔥 ¡VÍDEO CREADO! Superados los bloqueos de servidor.")
                 st.video(v_final)
                 st.balloons()
+            else:
+                st.error("❌ Fallo en el renderizado final.")
