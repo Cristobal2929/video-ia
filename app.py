@@ -4,7 +4,7 @@ import requests
 import tempfile
 import concurrent.futures
 
-st.set_page_config(page_title="Fénix Estudio PRO | V62", layout="centered")
+st.set_page_config(page_title="Fénix Estudio PRO | V63", layout="centered")
 
 st.markdown("""
 <style>
@@ -14,8 +14,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V62</div>', unsafe_allow_html=True)
-st.markdown('<div class="pro-subtitle" style="text-align:center; color:#94A3B8; margin-bottom: 30px;">Tolerancia a Fallos • Sync VTT • Audio de Estudio</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V63</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-subtitle" style="text-align:center; color:#94A3B8; margin-bottom: 30px;">Vídeos Reales Dinámicos • Tolerancia a Fallos • Audio Estudio</div>', unsafe_allow_html=True)
 
 @st.cache_resource
 def descargar_fuente():
@@ -59,7 +59,6 @@ def generar_voz_inmortal(texto, codigo_voz, tl_code, dir_trabajo):
     with open(txt_path, "w", encoding="utf-8") as f: f.write(texto_limpio)
 
     error_log = ""
-    # INTENTO 1: MOTOR PREMIUM EDGE (Da VTT)
     for _ in range(2):
         cmd = ["python", "-m", "edge_tts", "--voice", codigo_voz, "--rate=+15%", "-f", txt_path, "--write-media", mp3_path, "--write-subtitles", vtt_path]
         res = subprocess.run(cmd, capture_output=True, text=True)
@@ -68,7 +67,6 @@ def generar_voz_inmortal(texto, codigo_voz, tl_code, dir_trabajo):
         error_log = res.stderr
         time.sleep(1.5)
         
-    # INTENTO 2 (FALLBACK): GOOGLE (Sin VTT) - Salvavidas
     oraciones = textwrap.wrap(texto_limpio, width=150)
     archivos = []
     for idx, oracion in enumerate(oraciones):
@@ -138,7 +136,8 @@ def procesar_escena(args):
         subprocess.run(f'ffmpeg -y -f lavfi -i color=c=#111827:s=720x1280:d={t_clip}:r=30 -c:v libx264 -preset ultrafast -format yuv420p "{p_path}"', shell=True)
         return (i, p_path, palabra_es, palabra_en)
 
-    vf = "scale=800:1422,zoompan=z='min(zoom+0.0015,1.2)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=300:s=720x1280:fps=30,colorchannelmixer=rr=0.7:gg=0.7:bb=0.7,vignette=PI/3,format=yuv420p"
+    # CORRECCIÓN V63: Se eliminó el "zoompan" que congelaba el vídeo. Se restaura el escalado en movimiento original.
+    vf = "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,colorchannelmixer=rr=0.7:gg=0.7:bb=0.7,vignette=PI/3,format=yuv420p"
     subprocess.run(f'ffmpeg -y -stream_loop -1 -i "{clip_path}" -vf "{vf}" -an -c:v libx264 -r 30 -preset ultrafast -t {t_clip} "{p_path}"', shell=True)
     return (i, p_path, palabra_es, palabra_en)
 
@@ -160,14 +159,14 @@ guion_usuario = st.text_area("📝 Pega tu Guion aquí:", height=150)
 st.markdown("### 2. Estilo Visual")
 tema_broll = st.text_input("🎨 Estilo General (Ej: Dark, Luxury, Cinematic...):", placeholder="Luxury")
 
-if st.button("🚀 CREAR VÍDEO (CEREBRO BILINGÜE V62)"):
+if st.button("🚀 CREAR VÍDEO (CEREBRO BILINGÜE V63)"):
     if len(guion_usuario.strip()) < 20 or len(tema_broll.strip()) < 2:
         st.warning("⚠️ Rellena el guion y el estilo visual.")
     elif not pexels_key:
         st.error("⚠️ Falta la API Key de Pexels en la barra lateral.")
     else:
         with tempfile.TemporaryDirectory() as dir_trabajo:
-            with st.status(f"🎬 Iniciando Motor V62 (High-Ticket)...", expanded=True) as status:
+            with st.status(f"🎬 Iniciando Motor V63...", expanded=True) as status:
                 
                 status.write("🎙️ Grabando locución y masterizando audio...")
                 exito_audio, motor_usado = generar_voz_inmortal(guion_usuario, codigo_voz, tl_code, dir_trabajo)
@@ -194,7 +193,7 @@ if st.button("🚀 CREAR VÍDEO (CEREBRO BILINGÜE V62)"):
                 chunk_size = max(len(palabras_guion) // num_clips, 1)
                 
                 tareas = []
-                status.write(f"⚡ Descargando y animando {num_clips} escenas...")
+                status.write(f"⚡ Descargando vídeos dinámicos en paralelo...")
                 for i in range(num_clips):
                     start_idx = i * chunk_size
                     end_idx = start_idx + chunk_size if i < num_clips - 1 else len(palabras_guion)
@@ -240,7 +239,6 @@ if st.button("🚀 CREAR VÍDEO (CEREBRO BILINGÜE V62)"):
                             frase = " ".join([w[2] for w in p_list])
                             subs_cmd.append(f"drawtext=text='{frase}':fontcolor={color_sub}:fontsize=65:{font_cmd}borderw=5:bordercolor=black:shadowcolor=black@0.8:shadowx=4:shadowy=4:x=(w-tw)/2:y=(h-th)/2:enable='between(t,{t_start},{t_end})'")
                 else:
-                    # Degradación a subtítulos estáticos estándar
                     chunks_raw = [palabras[j:j+2] for j in range(0, len(palabras), 2)]
                     tiempo_por_chunk = dur_audio / max(len(chunks_raw), 1)
                     for j, p_list in enumerate(chunks_raw):
@@ -264,7 +262,7 @@ if st.button("🚀 CREAR VÍDEO (CEREBRO BILINGÜE V62)"):
                 subprocess.run(cmd_f, shell=True)
 
             if os.path.exists(v_final):
-                st.success("🔥 ¡VÍDEO V62 LISTO!")
+                st.success("🔥 ¡VÍDEO V63 LISTO! Movimiento real de vídeo restaurado.")
                 st.video(v_final)
                 st.balloons()
             else:
