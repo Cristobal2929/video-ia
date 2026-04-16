@@ -2,9 +2,10 @@ import streamlit as st
 import os, time, subprocess, re, urllib.parse, shutil
 import requests
 import base64
+import gc
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Fénix Studio V81", layout="centered")
+st.set_page_config(page_title="Fénix Studio V82", layout="centered")
 
 components.html("""
 <script>
@@ -27,7 +28,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V81 🎥</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V82 🪠</div>', unsafe_allow_html=True)
+st.markdown('<div style="text-align:center; color:#94A3B8; margin-bottom:20px;">Sistema Anti-Atascos y Anti-Ban Activado</div>', unsafe_allow_html=True)
 
 @st.cache_resource
 def descargar_fuente():
@@ -42,10 +44,10 @@ def descargar_fuente():
 font_abs = descargar_fuente()
 
 def generar_guion(tema, longitud_palabras):
-    prompt = f"Guion TikTok {longitud_palabras} palabras sobre {tema}. Solo texto, sin emojis."
+    prompt = f"Guion TikTok {longitud_palabras} palabras sobre {tema}. Solo texto plano."
     url = f"https://text.pollinations.ai/{urllib.parse.quote(prompt)}"
     try:
-        r = requests.get(url, timeout=15)
+        r = requests.get(url, timeout=10)
         return re.sub(r'[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ.,! ]', '', r.text).strip()
     except: return "El exito depende de tu esfuerzo diario. No te rindas nunca."
 
@@ -54,31 +56,19 @@ def preparar_entorno():
     os.makedirs("taller", exist_ok=True)
 
 tema = st.text_input("Tema del vídeo:")
-duracion_opcion = st.selectbox("Duración del Vídeo:", [
-    "Corto (~15 segundos)", 
-    "Medio (~30 segundos)", 
-    "Largo (~60 segundos)"
-])
+duracion_opcion = st.selectbox("Duración del Vídeo:", ["Corto (~15 segundos)", "Medio (~30 segundos)"])
 
-if st.button("🚀 CREAR VÍDEO A MEDIDA"):
+if st.button("🚀 CREAR SIN ATASCOS"):
     if not tema: st.warning("Escribe un tema")
     else:
         preparar_entorno()
         
-        # Ajustamos el tamaño del guion según la opción elegida
-        if "15" in duracion_opcion:
-            palabras_target = 35
-            n_escenas = 4
-        elif "30" in duracion_opcion:
-            palabras_target = 70
-            n_escenas = 8
-        else:
-            palabras_target = 130
-            n_escenas = 15
+        palabras_target = 35 if "15" in duracion_opcion else 70
+        n_escenas = 4 if "15" in duracion_opcion else 8
             
-        with st.status(f"🎬 Iniciando producción ({duracion_opcion})...", expanded=True) as status:
+        with st.status(f"🎬 Producción blindada ({duracion_opcion})...", expanded=True) as status:
             
-            status.write("🧠 Redactando guion a medida...")
+            status.write("🧠 Redactando guion...")
             guion = generar_guion(tema, palabras_target)
             
             status.write("🎙️ Grabando voz...")
@@ -87,23 +77,20 @@ if st.button("🚀 CREAR VÍDEO A MEDIDA"):
             if not os.path.exists(audio) or os.path.getsize(audio) < 100:
                 subprocess.run(f'ffmpeg -y -f lavfi -i anullsrc=r=44100:cl=mono -t 10 -acodec libmp3lame "{audio}"', shell=True)
             
-            dur = 10.0
+            dur = 12.0
             try:
                 dur = float(subprocess.check_output(f'ffprobe -i "{audio}" -show_entries format=duration -v quiet -of csv="p=0"', shell=True))
             except: pass
             
-            # Repartimos el tiempo total entre las escenas
             t_por_escena = dur / n_escenas
-            dur_frames = int(t_por_escena * 15) # 15 FPS para no saturar
+            dur_frames = int(t_por_escena * 15)
             
-            status.write(f"🎨 Creando {n_escenas} escenas secuenciales (Maratón)...")
+            status.write(f"🎨 Creando {n_escenas} escenas (Con sistema Anti-Atascos)...")
             clips = []
             
-            # Extraemos palabras clave para buscar las imágenes
             palabras_limpias = [p for p in guion.split() if len(p) > 3]
             if len(palabras_limpias) < n_escenas: palabras_limpias = guion.split() * n_escenas
             
-            # PROCESAMIENTO SECUENCIAL CON LIMPIEZA DE MEMORIA
             for i in range(n_escenas):
                 palabra = palabras_limpias[i]
                 status.write(f"⏳ Escena {i+1}/{n_escenas}...")
@@ -112,23 +99,36 @@ if st.button("🚀 CREAR VÍDEO A MEDIDA"):
                 vid = f"taller/vid_{i}.mp4"
                 url = f"https://image.pollinations.ai/prompt/{urllib.parse.quote(palabra + ' cinematic vertical')}?width=480&height=854&nologo=true"
                 
+                # TIMEOUT ESTRICTO Y MANEJO DE ERRORES PARA QUE NO SE CUELGUE
                 try:
-                    r = requests.get(url, timeout=15)
-                    with open(img, 'wb') as f: f.write(r.content)
-                    
-                    # Zoompan a 480p, 15fps. Un solo hilo para no reventar la RAM.
+                    r = requests.get(url, timeout=12) # Si en 12s no descarga, aborta y pasa al plan B
+                    if r.status_code == 200 and len(r.content) > 1000:
+                        with open(img, 'wb') as f: f.write(r.content)
+                    else:
+                        raise Exception("Imagen corrupta")
+                except:
+                    # PLAN B: Fondo de emergencia si la API falla
+                    subprocess.run(f'ffmpeg -y -f lavfi -i color=c=#111827:s=480x854:d=1 -frames:v 1 "{img}"', shell=True)
+                
+                try:
                     vf = f"scale=500:888,zoompan=z='min(zoom+0.001,1.1)':d={dur_frames}:s=480x854:fps=15,format=yuv420p" 
-                    subprocess.run(f'ffmpeg -y -loop 1 -i "{img}" -vf "{vf}" -c:v libx264 -preset ultrafast -crf 28 -threads 1 -t {t_por_escena} "{vid}"', shell=True)
-                    
-                    if os.path.exists(vid): 
-                        clips.append(vid)
-                    
-                    # RESPIRACIÓN DE MEMORIA: Borramos la imagen inmediatamente
-                    if os.path.exists(img): os.remove(img)
-                except Exception as e:
+                    # TIMEOUT EN FFMPEG: Si tarda más de 25s, lo matamos y avanzamos
+                    subprocess.run(f'ffmpeg -y -loop 1 -i "{img}" -vf "{vf}" -c:v libx264 -preset ultrafast -crf 28 -threads 1 -t {t_por_escena} "{vid}"', shell=True, timeout=25)
+                except subprocess.TimeoutExpired:
+                    pass # Ignoramos el atasco y avanzamos
+                except Exception:
                     pass
+                    
+                if os.path.exists(vid): 
+                    clips.append(vid)
+                
+                if os.path.exists(img): os.remove(img)
+                
+                # FORZAMOS LA LIMPIEZA DE MEMORIA Y PAUSAMOS PARA NO SER BANEADOS
+                gc.collect()
+                time.sleep(1.5) 
             
-            status.write("🎬 Uniendo las piezas del vídeo...")
+            status.write("🎬 Ensamblando piezas...")
             lista_txt = "taller/lista.txt"
             with open(lista_txt, "w") as f:
                 for c in clips: f.write(f"file '../{c}'\n")
@@ -136,11 +136,10 @@ if st.button("🚀 CREAR VÍDEO A MEDIDA"):
             v_mudo = "taller/mudo.mp4"
             subprocess.run(f'ffmpeg -y -f concat -safe 0 -i "{lista_txt}" -c copy "{v_mudo}"', shell=True)
             
-            status.write("✨ Añadiendo subtítulos y comprimiendo...")
+            status.write("✨ Render final...")
             final_path = "taller/master.mp4"
             sub_f = f"drawtext=text='{guion[:25]}...':fontcolor=white:fontsize=28:fontfile='{font_abs}':x=(w-tw)/2:y=(h-th)/2:borderw=1.5"
             
-            # Compresión final fuerte para que Base64 no bloquee el navegador en vídeos de 1 minuto
             subprocess.run(f'ffmpeg -y -i "{v_mudo}" -i "{audio}" -vf "{sub_f}" -c:v libx264 -preset ultrafast -crf 30 -threads 1 -t {dur} "{final_path}"', shell=True)
             
             if os.path.exists(final_path) and os.path.getsize(final_path) > 1000:
@@ -158,4 +157,4 @@ if st.button("🚀 CREAR VÍDEO A MEDIDA"):
                 st.markdown('<div class="info-card">🎉 VÍDEO EXPORTADO. Haz clic derecho o mantén pulsado para descargar.</div>', unsafe_allow_html=True)
                 st.markdown(video_html, unsafe_allow_html=True)
             else:
-                st.error("Error al exportar. El vídeo era demasiado largo para la RAM actual.")
+                st.error("Error al exportar. Servidor sobrecargado.")
