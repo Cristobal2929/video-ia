@@ -2,19 +2,19 @@ import streamlit as st
 import os, time, random, subprocess, textwrap, re, urllib.parse
 import requests
 
-st.set_page_config(page_title="Fénix Viral PRO | LA VERDADERA", layout="centered")
+st.set_page_config(page_title="Fénix Viral PRO | V32", layout="centered")
 
 st.markdown("""
 <style>
     .stApp { background: linear-gradient(135deg, #09090b 0%, #111827 100%); color: #F8FAFC; }
-    .pro-title { font-size: 40px; font-weight: 900; background: -webkit-linear-gradient(45deg, #FFD700, #FFA500); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: center; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 2px;}
+    .pro-title { font-size: 40px; font-weight: 900; background: -webkit-linear-gradient(45deg, #FFD700, #00FF00); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: center; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 2px;}
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX DEFINITIVO</div>', unsafe_allow_html=True)
-st.markdown('<div class="pro-subtitle" style="text-align:center; color:#94A3B8; margin-bottom: 30px;">La fusión de todas las versiones perfectas. Cero errores.</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX DUAL ENGINE</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-subtitle" style="text-align:center; color:#94A3B8; margin-bottom: 30px;">Salvavidas de Google Integrado • Cero Caídas de Red</div>', unsafe_allow_html=True)
 
-# 1. ESCUDO DE FUENTE (Evita que el texto desaparezca o crashee en la nube)
+# 1. ESCUDO DE FUENTE
 font_path = "Arial.ttf"
 if not os.path.exists(font_path):
     try:
@@ -23,8 +23,7 @@ if not os.path.exists(font_path):
     except: pass
 
 def limpiar_orden(orden):
-    orden_limpia = re.sub(r'[^A-Za-zÁÉÍÓÚáéíóúÑñ0-9\s]', '', orden)
-    return orden_limpia.strip()
+    return re.sub(r'[^A-Za-zÁÉÍÓÚáéíóúÑñ0-9\s]', '', orden).strip()
 
 def detectar_nicho(tema):
     t = tema.lower()
@@ -32,7 +31,6 @@ def detectar_nicho(tema):
     if any(w in t for w in ["dinero", "negocio", "invertir", "rico", "millonario", "cripto", "empresa"]): return "NEGOCIOS"
     return "UNIVERSAL"
 
-# 2. EL CEREBRO INMORTAL Y BILINGÜE
 def generar_master_guion(tema, nicho):
     tema = tema.upper()
     if nicho == "TERROR":
@@ -60,15 +58,39 @@ def generar_master_guion(tema, nicho):
             {"t": "Abre los ojos y no te dejes manipular nunca mas. Siguenos para mas secretos.", "s": "epic cinematic lighting nature"}
         ]
 
+# --- EL SALVAVIDAS DUAL (El antídoto contra los baneos de IP) ---
+def generar_voz_segura(texto, archivo_salida):
+    texto_limpio = re.sub(r'[^A-Za-zÁÉÍÓÚáéíóúÑñ0-9\s.,]', '', texto)
+    
+    with open("temp_txt.txt", "w", encoding="utf-8") as f:
+        f.write(texto_limpio)
+
+    # PLAN A: Intentamos usar a Microsoft (Álvaro)
+    subprocess.run(f'edge-tts --voice es-ES-AlvaroNeural --rate=0% -f temp_txt.txt --write-media "{archivo_salida}"', shell=True)
+    
+    if os.path.exists(archivo_salida) and os.path.getsize(archivo_salida) > 0:
+        return "Microsoft"
+    
+    # PLAN B: Si la IP está baneada en Streamlit, usamos Google directamente
+    try:
+        url_google = f"https://translate.google.com/translate_tts?ie=UTF-8&q={urllib.parse.quote(texto_limpio)}&tl=es&client=tw-ob"
+        res = requests.get(url_google, headers={"User-Agent": "Mozilla/5.0"}, timeout=10)
+        if res.status_code == 200:
+            with open(archivo_salida, 'wb') as f:
+                f.write(res.content)
+            return "Google"
+    except: pass
+    
+    return False
+
 with st.sidebar:
     st.header("⚙️ Configuración")
     pexels_key = st.text_input("🔑 API Pexels:", value="Ty0uFISh3APEAXIVcrFpSM7ZdwOeRElCuUgoG42EW6WVISRTEfqjm0BZ", type="password")
     color_sub = st.selectbox("🎨 Color de Letra", ["yellow", "white", "cyan", "#00FF87"])
 
-if orden := st.chat_input("Dime el tema (La Versión Definitiva):"):
-    with st.status(f"🚀 Forjando el Fénix Definitivo sobre '{orden}'...", expanded=True) as status:
-        # Limpieza total inicial
-        subprocess.run("rm -f a_*.mp3 v_*.mp4 s_*.mp4 text_*.txt guion_*.txt lista.txt music.mp3 final.mp4 base.mp4", shell=True)
+if orden := st.chat_input("Dime el tema (El Motor Dual garantiza tu vídeo):"):
+    with st.status(f"🚀 Forjando vídeo sobre '{orden}'...", expanded=True) as status:
+        subprocess.run("rm -f a_*.mp3 v_*.mp4 s_*.mp4 text_*.txt temp_txt.txt lista.txt music.mp3 final.mp4 base.mp4", shell=True)
         
         tema_limpio = limpiar_orden(orden)
         nicho = detectar_nicho(orden)
@@ -82,16 +104,11 @@ if orden := st.chat_input("Dime el tema (La Versión Definitiva):"):
             busqueda_ingles = esc["s"]
             status.write(f"🎬 Procesando Escena {i+1}/5...")
 
-            # 3. VOZ BLINDADA (Nube Streamlit Segura)
-            texto_voz = re.sub(r'[^A-Za-zÁÉÍÓÚáéíóúÑñ0-9\s.,]', '', texto_frase)
-            with open(f"guion_{i}.txt", "w", encoding="utf-8") as f: f.write(texto_voz)
+            # 3. VOZ DUAL: Anti-Caídas
+            motor = generar_voz_segura(texto_frase, f"a_{i}.mp3")
             
-            # Ejecución por array (Imposible que de error de comillas en Linux)
-            comando_voz = ["python", "-m", "edge_tts", "--voice", "es-ES-AlvaroNeural", "--rate=0%", "-f", f"guion_{i}.txt", "--write-media", f"a_{i}.mp3"]
-            subprocess.run(comando_voz)
-            
-            if not os.path.exists(f"a_{i}.mp3"):
-                st.error(f"❌ Los servidores de voz fallaron en la escena {i+1}. Inténtalo de nuevo.")
+            if not motor:
+                st.error(f"❌ Fallo global de servidores en la escena {i+1}. Ni Microsoft ni Google responden.")
                 st.stop()
             
             # Cálculo de tiempo exacto
@@ -100,13 +117,13 @@ if orden := st.chat_input("Dime el tema (La Versión Definitiva):"):
                 duracion = float(dur_str)
             except: duracion = 3.5
 
-            # 4. SUBTÍTULOS ESTILO TIKTOK (Textwrap para no cortar palabras)
+            # 4. SUBTÍTULOS ESTILO TIKTOK
             texto_mayus = texto_frase.upper().replace('Á','A').replace('É','E').replace('Í','I').replace('Ó','O').replace('Ú','U').replace('Ñ','N')
             texto_mayus = re.sub(r'[^A-Z0-9\s.,]', '', texto_mayus)
-            texto_envuelto = textwrap.fill(texto_mayus, width=22) # Corta línea matemáticamente
+            texto_envuelto = textwrap.fill(texto_mayus, width=22)
             with open(f"text_{i}.txt", "w", encoding="utf-8") as f: f.write(texto_envuelto)
 
-            # 5. PEXELS INTELIGENTE
+            # 5. PEXELS
             v_url = None
             try:
                 r = requests.get(f"https://api.pexels.com/videos/search?query={urllib.parse.quote(busqueda_ingles)}&per_page=5&orientation=portrait", headers={"Authorization": pexels_key.strip()}, timeout=5).json()
@@ -119,9 +136,8 @@ if orden := st.chat_input("Dime el tema (La Versión Definitiva):"):
             except:
                 subprocess.run(f'ffmpeg -y -f lavfi -i color=c=black:s=720x1280:d=1:r=30 -c:v libx264 -preset ultrafast v_{i}.mp4', shell=True)
 
-            # 6. RENDERIZADOR UNIVERSAL (El arreglo de la pantalla negra)
+            # 6. RENDERIZADOR UNIVERSAL
             font_cmd = f"fontfile='{font_path}':" if os.path.exists(font_path) else ""
-            # -stream_loop -1 hace que un vídeo corto dure lo que dura el audio. format=yuv420p hace que se vea en Chrome.
             cmd_scene = f"""ffmpeg -y -stream_loop -1 -i v_{i}.mp4 -i a_{i}.mp3 -vf "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,format=yuv420p,drawtext=textfile='text_{i}.txt':fontcolor={color_sub}:fontsize=45:{font_cmd}box=1:boxcolor=black@0.6:boxborderw=15:borderw=2:bordercolor=black:line_spacing=12:x=(w-tw)/2:y=(h-th)/2,fps=30" -c:v libx264 -preset ultrafast -c:a aac -ar 44100 -ac 2 -t {duracion} s_{i}.mp4"""
             subprocess.run(cmd_scene, shell=True)
             
@@ -131,7 +147,7 @@ if orden := st.chat_input("Dime el tema (La Versión Definitiva):"):
                 st.error(f"❌ FFmpeg falló en la escena {i+1}.")
                 st.stop()
 
-        # 7. UNIÓN Y MÚSICA (Nivel Agencia)
+        # 7. UNIÓN Y MÚSICA
         status.write("✨ Fusionando la Obra Maestra...")
         with open("lista.txt", "w") as f:
             for c in clips_finales: f.write(f"file '{c}'\n")
@@ -145,12 +161,11 @@ if orden := st.chat_input("Dime el tema (La Versión Definitiva):"):
         v_final = f"output/v_{int(time.time())}.mp4"
         frecuencia = 60 if nicho == "TERROR" else 75
         
-        # Mezclamos música ambiental SIN tocar el codec de vídeo para no corromperlo
         cmd_final = f"""ffmpeg -y -i base.mp4 -f lavfi -i "sine=f={frecuencia}:d=120" -filter_complex "[1:a]volume=0.03[m];[0:a][m]amix=inputs=2:duration=first" -c:v copy -c:a aac -ar 44100 -ac 2 "{v_final}" """
         subprocess.run(cmd_final, shell=True)
         
         if os.path.exists(v_final):
-            st.success("✅ EL FÉNIX HA RENACIDO. Tu vídeo definitivo está listo.")
+            st.success("✅ VÍDEO DEFINITIVO LISTO. (Baneos de IP superados con éxito).")
             st.video(v_final)
             st.balloons()
         else:
