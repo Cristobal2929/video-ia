@@ -3,7 +3,7 @@ import os, time, subprocess, re, urllib.parse, shutil, math, random, gc
 import requests
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Fénix Studio V156", layout="centered")
+st.set_page_config(page_title="Fénix Studio V157", layout="centered")
 components.html("<script>if('wakeLock' in navigator){navigator.wakeLock.request('screen');}</script>", height=0)
 
 st.markdown("""
@@ -13,10 +13,11 @@ st.markdown("""
     .msg { color: #00FFD1; font-family: 'Courier New', monospace; font-size: 14px; margin-bottom: 8px; border-left: 3px solid #FFD700; padding-left: 12px; }
     .info-card { padding: 15px; border-radius: 12px; background: #0f172a; border: 1px solid #00FFD1; text-align: center; color: #00FFD1; margin-top: 25px; font-weight: bold;}
     .stButton>button { width: 100%; background: linear-gradient(45deg, #00FFD1, #0088ff); color: white; border: none; font-weight: 900; height: 55px; border-radius: 12px; font-size: 18px;}
+    .error-box { background: #4a0000; color: #ffcccc; padding: 10px; font-family: monospace; font-size: 10px; border-radius: 5px; margin-top: 10px; white-space: pre-wrap; word-wrap: break-word;}
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V156 🛡️🦅</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V157 👁️⚡</div>', unsafe_allow_html=True)
 
 @st.cache_resource
 def get_font():
@@ -26,14 +27,12 @@ def get_font():
             r = requests.get("https://github.com/matomo-org/travis-scripts/raw/master/fonts/Arial.ttf")
             with open(p, "wb") as f: f.write(r.content)
         except: pass
-    return os.path.abspath(p).replace('\\', '/')
+    return "font.ttf" # RUTA RELATIVA: Evita errores de sintaxis en FFmpeg
 
-f_abs = get_font()
 PEXELS_API = "Ty0uFISh3APEAXIVcrFpSM7ZdwOeRElCuUgoG42EW6WVISRTEfqjm0BZ"
 
 def limpiar_texto_tts(t):
     t = re.sub(r'(tool_calls|recalc|words|assistant|reasoning|thought|count|slightly|above|remove|piece|adjust|instruction|script|here|is|english)', '', t, flags=re.I)
-    # Dejamos la puntuación básica para que Jorge respire al hablar
     t = re.sub(r'[^a-zA-ZáéíóúÁÉÍÓÚñÑ.,! ]', '', t)
     return re.sub(r'\s+', ' ', t).strip()
 
@@ -50,28 +49,27 @@ def preparar():
     os.makedirs("taller", exist_ok=True)
     subprocess.run("pkill ffmpeg", shell=True)
 
+f_abs = get_font()
 tema = st.text_input("🧠 Tema del vídeo:", placeholder="Ej: Hábitos de titan")
 color_sub = st.selectbox("🎨 Color Subtítulos:", ["yellow", "white", "#00FFD1"])
 
-if st.button("🚀 CREAR VÍDEO (SISTEMA PURIFICADOR)"):
+if st.button("🚀 CREAR VÍDEO (SISTEMA CHIVATO)"):
     if not tema: st.error("⚠️ Escribe un tema")
     else:
         preparar()
         log = st.container()
         
         with log:
-            # 1. GUION Y VOZ
-            st.markdown('<div class="msg">📝 IA redactando guion y limpiando errores...</div>', unsafe_allow_html=True)
-            prompt_g = f"Escribe una frase motivacional y agresiva sobre {tema} para TikTok. Solo español. Maximo 75 palabras."
+            st.markdown('<div class="msg">📝 IA redactando guion y purificando...</div>', unsafe_allow_html=True)
+            prompt_g = f"Escribe una frase motivacional sobre {tema} para TikTok. Solo español. Maximo 75 palabras."
             
             try:
                 g_raw = requests.get(f"https://text.pollinations.ai/{urllib.parse.quote(prompt_g)}", timeout=20).text
                 guion = limpiar_texto_tts(g_raw)
-            except:
-                guion = "El éxito se construye con paciencia y disciplina. Empieza hoy mismo tu camino a la cima."
-            if len(guion) < 10: guion = "La disciplina es el puente entre tus metas y tus logros."
+            except: guion = "El éxito es la suma de pequeños esfuerzos diarios."
+            if len(guion) < 5: guion = "La disciplina te lleva donde la motivación no alcanza."
             
-            st.markdown('<div class="msg">🎙️ Grabando voz y descargando música...</div>', unsafe_allow_html=True)
+            st.markdown('<div class="msg">🎙️ Grabando voz y bajando audio...</div>', unsafe_allow_html=True)
             audio_voz = "taller/voz.mp3"
             subprocess.run(f'edge-tts --voice es-MX-JorgeNeural --rate=+0% --text "{guion}" --write-media "{audio_voz}"', shell=True)
             
@@ -82,15 +80,13 @@ if st.button("🚀 CREAR VÍDEO (SISTEMA PURIFICADOR)"):
             try: dur = float(subprocess.check_output(f'ffprobe -i "{audio_voz}" -show_entries format=duration -v quiet -of csv="p=0"', shell=True))
             except: dur = 20.0
 
-            st.markdown('<div class="msg">🎧 Pre-mezclando pista maestra en formato seguro...</div>', unsafe_allow_html=True)
-            audio_mezcla = "taller/mezcla.aac"
+            st.markdown('<div class="msg">🎧 Mezclando MP3 Maestro Seguro...</div>', unsafe_allow_html=True)
+            audio_mezcla = "taller/mezcla.mp3" # GUARDAMOS EN MP3 PARA CERO CONFLICTOS
             fade_st = max(0, dur - 2)
-            subprocess.run(f'ffmpeg -y -i "{audio_voz}" -i "{musica_file}" -filter_complex "[1:a]volume=0.15,afade=t=out:st={fade_st}:d=2[m];[0:a][m]amix=inputs=2:duration=first" -c:a aac -threads 1 "{audio_mezcla}"', shell=True)
+            subprocess.run(f'ffmpeg -y -i "{audio_voz}" -i "{musica_file}" -filter_complex "[1:a]volume=0.15,afade=t=out:st={fade_st}:d=2[m];[0:a][m]amix=inputs=2:duration=first" -c:a libmp3lame -threads 1 "{audio_mezcla}"', shell=True)
 
-            # EL PURIFICADOR: Extraemos las palabras y les quitamos TODA la puntuación
             palabras_puras = re.sub(r'[^a-zA-ZáéíóúÁÉÍÓÚñÑ ]', '', guion).upper().split()
 
-            # 2. CAPTURA DE VÍDEOS (PEXELS V134)
             n_clips = min(math.ceil(dur / 3.2), 12) 
             t_clip = dur / n_clips
             clips = []
@@ -100,7 +96,7 @@ if st.button("🚀 CREAR VÍDEO (SISTEMA PURIFICADOR)"):
                 pal_clip = palabras_puras[i*chunk_size:(i+1)*chunk_size] if i < n_clips - 1 else palabras_puras[i*chunk_size:]
                 txt_chunk = " ".join(pal_clip)
                 kw = extraer_kw(txt_chunk, i)
-                st.markdown(f'<div class="msg">🎥 Escena {i+1}/{n_clips}: Recortando "{kw.upper()}"...</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="msg">🎥 Escena {i+1}/{n_clips}: Limpiando "{kw.upper()}"...</div>', unsafe_allow_html=True)
                 
                 raw_vid, vid = f"taller/raw_{i}.mp4", f"taller/v_{i}.mp4"
                 exito_vid = False
@@ -108,12 +104,10 @@ if st.button("🚀 CREAR VÍDEO (SISTEMA PURIFICADOR)"):
                     headers = {"Authorization": PEXELS_API}
                     url_p = f"https://api.pexels.com/videos/search?query={urllib.parse.quote(kw)}&orientation=portrait&per_page=1"
                     r_p = requests.get(url_p, headers=headers, timeout=12).json()
-                    if r_p.get('videos'):
-                        v_url = r_p['videos'][0]['video_files'][0]['link']
-                        with open(raw_vid, 'wb') as f: f.write(requests.get(v_url).content)
-                        # Recorte limpio, sin audio, mismo formato
-                        subprocess.run(f'ffmpeg -y -stream_loop -1 -i "{raw_vid}" -t {t_clip} -vf "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,setsar=1,format=yuv420p" -c:v libx264 -preset ultrafast -r 24 -an -threads 1 "{vid}"', shell=True)
-                        if os.path.exists(vid): exito_vid = True
+                    v_url = r_p['videos'][0]['video_files'][0]['link']
+                    with open(raw_vid, 'wb') as f: f.write(requests.get(v_url).content)
+                    subprocess.run(f'ffmpeg -y -stream_loop -1 -i "{raw_vid}" -t {t_clip} -vf "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,setsar=1,format=yuv420p" -c:v libx264 -preset ultrafast -r 24 -an -threads 1 "{vid}"', shell=True)
+                    if os.path.exists(vid): exito_vid = True
                 except: pass
 
                 if not exito_vid:
@@ -123,33 +117,36 @@ if st.button("🚀 CREAR VÍDEO (SISTEMA PURIFICADOR)"):
                 if os.path.exists(raw_vid): os.remove(raw_vid)
                 gc.collect()
 
-            # 3. ENSAMBLADO Y SUBTÍTULOS (MOTOR V133)
-            st.markdown('<div class="msg">🎬 Ensamblando piezas...</div>', unsafe_allow_html=True)
+            st.markdown('<div class="msg">🎬 Ensamblando piezas base...</div>', unsafe_allow_html=True)
             with open("taller/lista.txt", "w") as f:
                 for c in clips: f.write(f"file '{c}'\n")
             
             mudo = "taller/mudo.mp4"
             subprocess.run(f'ffmpeg -y -f concat -safe 0 -i taller/lista.txt -c copy "{mudo}"', shell=True)
             
-            # Subtítulos con texto purificado (imposible que rompan el código)
             chunks_sub = [palabras_puras[j:j+2] for j in range(0, len(palabras_puras), 2)]
             t_ch = dur / max(len(chunks_sub), 1)
-            f_s = f"fontfile='{f_abs}':" if os.path.exists(f_abs) else ""
             subs = []
             for j, p in enumerate(chunks_sub):
                 ts, te = j * t_ch, (j + 1) * t_ch
                 txt_draw = ' '.join(p)
-                subs.append(f"drawtext=text='{txt_draw}':fontcolor={color_sub}:fontsize=70:{f_s}borderw=5:bordercolor=black:x=(w-tw)/2:y=(h-th)/2:enable='between(t,{ts},{te})'")
+                subs.append(f"drawtext=text='{txt_draw}':fontfile='{f_abs}':fontcolor={color_sub}:fontsize=70:borderw=5:bordercolor=black:x=(w-tw)/2:y=(h-th)/2:enable='between(t,{ts},{te})'")
             
             with open("taller/s.txt", "w") as f: f.write(",\n".join(subs))
             final = "taller/master.mp4"
             
-            st.markdown('<div class="msg">✨ Tatuando subtítulos y masterizando final...</div>', unsafe_allow_html=True)
-            subprocess.run(f'ffmpeg -y -i "{mudo}" -i "{audio_mezcla}" -filter_complex_script taller/s.txt -c:v libx264 -preset ultrafast -crf 28 -c:a copy -threads 1 -t {dur} "{final}"', shell=True)
+            st.markdown('<div class="msg">✨ Masterizado final (Con reporte de errores activado)...</div>', unsafe_allow_html=True)
+            
+            # EL COMANDO DEFINITIVO: filter_script:v para aplicar al vídeo, y mapas explícitos
+            cmd_final = f'ffmpeg -y -i "{mudo}" -i "{audio_mezcla}" -filter_script:v taller/s.txt -map 0:v:0 -map 1:a:0 -c:v libx264 -preset ultrafast -crf 28 -c:a copy -threads 1 -t {dur} "{final}"'
+            
+            # EJECUTAMOS Y ATRAPAMOS EL ERROR SI LO HAY
+            proceso = subprocess.run(cmd_final, shell=True, capture_output=True, text=True)
             
             if os.path.exists(final):
-                st.markdown('<div class="info-card">🏆 VÍDEO PURIFICADO COMPLETADO</div>', unsafe_allow_html=True)
+                st.markdown('<div class="info-card">🏆 VÍDEO MAESTRO COMPLETADO SIN FALLOS</div>', unsafe_allow_html=True)
                 with open(final, "rb") as f: st.video(f.read())
                 st.balloons()
             else:
-                st.error("❌ Fénix Caído. Contacta con el equipo.")
+                st.error("❌ Fénix Caído. El servidor ha escupido este error exacto:")
+                st.markdown(f'<div class="error-box">{proceso.stderr}</div>', unsafe_allow_html=True)
