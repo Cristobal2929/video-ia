@@ -3,7 +3,7 @@ import os, time, subprocess, re, urllib.parse, shutil, math, random, gc
 import requests
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Fénix Studio V175", layout="centered")
+st.set_page_config(page_title="Fénix Studio V176", layout="centered")
 components.html("<script>if('wakeLock' in navigator){navigator.wakeLock.request('screen');}</script>", height=0)
 
 st.markdown("""
@@ -15,7 +15,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V175 🦅🎯</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V176 🦅🎬</div>', unsafe_allow_html=True)
 
 @st.cache_resource
 def get_font():
@@ -39,13 +39,13 @@ def descargar_musica_inteligente(ruta, tema):
     except: return False
 
 def purificar(t):
-    if "<div" in t.lower(): return "El silencio del hospital esconde secretos que nadie quiere despertar."
+    if "<div" in t.lower() or "doctype" in t.lower(): return "El destino no se espera, se conquista con cada decisión."
     return re.sub(r'[^a-zA-ZáéíóúÁÉÍÓÚñÑ.,! ]', '', t).strip()
 
 f_abs = get_font()
-tema = st.text_input("🧠 Guion exacto:", placeholder="Ej: Terror en un hospital abandonado...")
+tema = st.text_input("🧠 Tema del vídeo:", placeholder="Ej: Terror en el hospital o Negocios de lujo...")
 
-if st.button("🚀 GENERAR VÍDEO SINCRONIZADO"):
+if st.button("🚀 CREAR VÍDEO (SÓLO CLIPS DE ACCIÓN)"):
     if not tema: st.error("Escribe algo")
     else:
         if os.path.exists("taller"): shutil.rmtree("taller")
@@ -53,7 +53,7 @@ if st.button("🚀 GENERAR VÍDEO SINCRONIZADO"):
         
         log = st.container()
         with log:
-            st.markdown('<div class="msg">📝 Creando historia...</div>', unsafe_allow_html=True)
+            st.markdown('<div class="msg">📝 Generando guion potente...</div>', unsafe_allow_html=True)
             try:
                 g_raw = requests.get(f"https://text.pollinations.ai/{urllib.parse.quote(tema + '. Solo español. Max 65 palabras.')}").text
                 guion = purificar(g_raw)
@@ -68,33 +68,44 @@ if st.button("🚀 GENERAR VÍDEO SINCRONIZADO"):
             
             dur = float(subprocess.check_output(f'ffprobe -i "{audio_voz}" -show_entries format=duration -v quiet -of csv="p=0"', shell=True))
             mezcla = "taller/mezcla.mp3"
-            subprocess.run(f'ffmpeg -y -i "{audio_voz}" -i "{musica}" -filter_complex "[1:a]volume=0.08,afade=t=out:st={dur-2}:d=2[m];[0:a][m]amix=inputs=2:duration=first" "{mezcla}" > /dev/null 2>&1', shell=True)
+            subprocess.run(f'ffmpeg -y -i "{audio_voz}" -i "{musica}" -filter_complex "[1:a]volume=0.10,afade=t=out:st={dur-2}:d=2[m];[0:a][m]amix=inputs=2:duration=first" "{mezcla}" > /dev/null 2>&1', shell=True)
 
-            palabras = guion.split()
-            n_clips = min(math.ceil(dur / 3.0), 10)
+            palabras = guion.upper().split()
+            n_clips = min(math.ceil(dur / 2.8), 14) # Clips más cortos para más dinamismo
             t_clip = dur / n_clips
             clips = []
 
             for i in range(n_clips):
                 frag = " ".join(palabras[i*len(palabras)//n_clips : (i+1)*len(palabras)//n_clips])
-                # AJUSTE CLAVE: Buscar exactamente lo que dice el fragmento del guion
-                busqueda = f"{frag} horror" if any(x in tema.lower() for x in ["miedo", "terror", "hospital"]) else f"{frag} luxury"
-                st.markdown(f'<div class="msg">🎥 Buscando fondo para: "{frag[:30]}..."</div>', unsafe_allow_html=True)
+                # BUSCADOR MEJORADO: Forzamos vídeos reales con términos de movimiento
+                query = f"{frag} action" if not any(x in tema.lower() for x in ["miedo", "terror"]) else f"{frag} scary movement"
+                st.markdown(f'<div class="msg">🎥 Escena {i+1}: Cazando metraje real de "{frag[:20]}..."</div>', unsafe_allow_html=True)
                 
                 vid = f"taller/v_{i}.mp4"
                 try:
                     h = {"Authorization": PEXELS_API}
-                    res = requests.get(f"https://api.pexels.com/videos/search?query={urllib.parse.quote(busqueda)}&orientation=portrait&per_page=5", headers=h).json()
-                    v_url = random.choice(res['videos'])['video_files'][0]['link']
+                    # Petición específica de VÍDEOS a la API
+                    res = requests.get(f"https://api.pexels.com/videos/search?query={urllib.parse.quote(query)}&orientation=portrait&per_page=10", headers=h).json()
                     
-                    sub = [palabras[j:j+2] for j in range(i*len(palabras)//n_clips, (i+1)*len(palabras)//n_clips, 2)]
-                    t_p = t_clip / max(len(sub), 1)
-                    filtros = []
-                    for k, p in enumerate(sub):
-                        filtros.append(f"drawtext=text='{' '.join(p).upper()}':fontfile='{f_abs}':fontcolor=white:fontsize=70:borderw=5:bordercolor=black:x=(w-tw)/2:y=(h-th)/2:enable='between(t,{k*t_p},{(k+1)*t_p})'")
+                    # Filtramos para asegurar que no nos den basura
+                    v_url = None
+                    for v_item in res['videos']:
+                        if v_item['duration'] > 3: # Aseguramos que el vídeo tenga duración
+                            v_url = v_item['video_files'][0]['link']
+                            break
                     
-                    vf = f"scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,setsar=1,{','.join(filtros)}"
-                    subprocess.run(f'ffmpeg -y -i "{v_url}" -t {t_clip} -vf "{vf}" -c:v libx264 -preset ultrafast -an "{vid}" > /dev/null 2>&1', shell=True)
+                    if not v_url: v_url = res['videos'][0]['video_files'][0]['link']
+
+                    # Subtítulos de 2 líneas integrados de nuevo
+                    sub_split = [palabras[j:j+2] for j in range(i*len(palabras)//n_clips, (i+1)*len(palabras)//n_clips, 2)]
+                    t_p = t_clip / max(len(sub_split), 1)
+                    draws = []
+                    for k, p in enumerate(sub_split):
+                        t_txt = " ".join(p)
+                        draws.append(f"drawtext=text='{t_txt}':fontfile='{f_abs}':fontcolor=white:fontsize=75:borderw=5:bordercolor=black:x=(w-tw)/2:y=(h-th)/2:enable='between(t,{k*t_p},{(k+1)*t_p})'")
+                    
+                    vf = f"scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,setsar=1,{','.join(draws)}"
+                    subprocess.run(f'ffmpeg -y -ss 1 -i "{v_url}" -t {t_clip} -vf "{vf}" -c:v libx264 -preset ultrafast -an "{vid}" > /dev/null 2>&1', shell=True)
                     clips.append(os.path.abspath(vid))
                 except: pass
 
