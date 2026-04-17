@@ -3,7 +3,7 @@ import os, time, subprocess, re, urllib.parse, shutil, math, random, gc
 import requests
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Fénix Studio V168", layout="centered")
+st.set_page_config(page_title="Fénix Studio V169", layout="centered")
 components.html("<script>if('wakeLock' in navigator){navigator.wakeLock.request('screen');}</script>", height=0)
 
 st.markdown("""
@@ -16,7 +16,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V168 🦅🎶</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V169 🦅🎚️</div>', unsafe_allow_html=True)
 
 @st.cache_resource
 def get_font():
@@ -30,11 +30,10 @@ def get_font():
 
 PEXELS_API = "Ty0uFISh3APEAXIVcrFpSM7ZdwOeRElCuUgoG42EW6WVISRTEfqjm0BZ"
 
-# BIBLIOTECA REFORZADA CON PIXABAY (Enlaces directos a los archivos)
+# BIBLIOTECA DE MÚSICA SELECCIONADA
 MUSICA_PIXABAY = [
-    "https://cdn.pixabay.com/download/audio/2021/05/20/audio_f31f9b3b8e.mp3?filename=dance-playful-night-51078.mp3", # La que tú querías
+    "https://cdn.pixabay.com/download/audio/2021/05/20/audio_f31f9b3b8e.mp3?filename=dance-playful-night-51078.mp3",
     "https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3?filename=inspiring-cinematic-ambient-11619.mp3",
-    "https://cdn.pixabay.com/download/audio/2021/11/25/audio_91b12b556b.mp3?filename=powerful-beat-12179.mp3",
     "https://upload.wikimedia.org/wikipedia/commons/4/4c/A_Hero_Steps_Forward.mp3"
 ]
 
@@ -57,9 +56,9 @@ def limpiar_texto(t):
 
 def extraer_kw(texto, i):
     t = texto.lower()
-    if any(x in t for x in ["dinero", "millonario", "negocio"]): return "luxury business"
-    if any(x in t for x in ["gym", "fuerte", "disciplina"]): return "fitness motivation"
-    fallbacks = ["luxury lifestyle", "modern office", "private jet", "rolex", "city sky"]
+    if any(x in t for x in ["dinero", "negocio", "millonario"]): return "luxury business"
+    if any(x in t for x in ["gym", "fuerte", "entrenar"]): return "fitness motivation"
+    fallbacks = ["luxury lifestyle", "modern mansion", "private jet", "rolex", "city sky"]
     return fallbacks[i % len(fallbacks)]
 
 def preparar():
@@ -68,44 +67,45 @@ def preparar():
     subprocess.run("pkill ffmpeg", shell=True)
 
 f_abs = get_font()
-tema = st.text_input("🧠 Tema del vídeo:", placeholder="Ej: Hábitos de titan")
+tema = st.text_input("🧠 Tema del vídeo:", placeholder="Ej: Hábitos de éxito")
 color_sub = st.selectbox("🎨 Color Subtítulos:", ["yellow", "white", "#00FFD1"])
 
-if st.button("🚀 CREAR VÍDEO (MOTOR PIXABAY)"):
+if st.button("🚀 CREAR VÍDEO (VOLUMEN AJUSTADO)"):
     if not tema: st.error("⚠️ Escribe un tema")
     else:
         preparar()
         log = st.container()
         with log:
-            st.markdown('<div class="msg">📝 Redactando guion y purificando...</div>', unsafe_allow_html=True)
-            p_g = f"Escribe una frase de éxito sobre {tema} para TikTok. Solo español. Maximo 75 palabras."
+            st.markdown('<div class="msg">📝 Redactando guion...</div>', unsafe_allow_html=True)
+            p_g = f"Escribe una frase motivacional de éxito sobre {tema} para TikTok. Solo español. Maximo 75 palabras."
             try:
                 g_raw = requests.get(f"https://text.pollinations.ai/{urllib.parse.quote(p_g)}", timeout=20).text
                 guion = limpiar_texto(g_raw)
-            except: guion = "El éxito es la suma de pequeños esfuerzos diarios."
+            except: guion = "La disciplina es el puente entre tus metas y tus logros."
             
-            st.markdown('<div class="msg">🎙️ Jorge grabando voz...</div>', unsafe_allow_html=True)
+            st.markdown('<div class="msg">🎙️ Grabando voz de Jorge...</div>', unsafe_allow_html=True)
             audio_voz = "taller/voz.mp3"
             subprocess.run(f'edge-tts --voice es-MX-JorgeNeural --text "{guion}" --write-media "{audio_voz}"', shell=True)
             
-            st.markdown('<div class="msg">🎵 Descargando música directa de Pixabay...</div>', unsafe_allow_html=True)
+            st.markdown('<div class="msg">🎵 Descargando música...</div>', unsafe_allow_html=True)
             musica_file = "taller/bg.mp3"
             descargar_musica(musica_file)
 
             try: dur = float(subprocess.check_output(f'ffprobe -i "{audio_voz}" -show_entries format=duration -v quiet -of csv="p=0"', shell=True))
             except: dur = 15.0
 
-            st.markdown('<div class="msg">🎧 Consolidando audio maestro...</div>', unsafe_allow_html=True)
+            st.markdown('<div class="msg">🎧 Mezclando audio (Música al 10%)...</div>', unsafe_allow_html=True)
             audio_mezcla = "taller/mezcla.mp3"
             fade_st = max(0, dur - 2)
             if os.path.exists(musica_file):
-                subprocess.run(f'ffmpeg -y -i "{audio_voz}" -i "{musica_file}" -filter_complex "[1:a]volume=0.20,afade=t=out:st={fade_st}:d=2[m];[0:a][m]amix=inputs=2:duration=first" -c:a libmp3lame -threads 1 "{audio_mezcla}" > /dev/null 2>&1', shell=True)
+                # AJUSTE: volume=0.10 para que sea más floja la música
+                subprocess.run(f'ffmpeg -y -i "{audio_voz}" -i "{musica_file}" -filter_complex "[1:a]volume=0.10,afade=t=out:st={fade_st}:d=2[m];[0:a][m]amix=inputs=2:duration=first" -c:a libmp3lame -threads 1 "{audio_mezcla}" > /dev/null 2>&1', shell=True)
             
             if not os.path.exists(audio_mezcla) or os.path.getsize(audio_mezcla) < 1000:
                 shutil.copy(audio_voz, audio_mezcla)
 
             palabras_puras = re.sub(r'[^a-zA-ZáéíóúÁÉÍÓÚñÑ ]', '', guion).upper().split()
-            n_clips = min(math.ceil(dur / 3.4), 10) 
+            n_clips = min(math.ceil(dur / 3.0), 12) 
             t_clip = dur / n_clips
             clips = []
             chunk_size = max(len(palabras_puras) // n_clips, 1)
@@ -123,7 +123,6 @@ if st.button("🚀 CREAR VÍDEO (MOTOR PIXABAY)"):
                 text_filters = []
                 for j, p in enumerate(chunks_sub):
                     ts, te = j * t_pair, (j + 1) * t_pair
-                    # Doble línea inteligente
                     if len(p) == 2 and (len(p[0]) + len(p[1]) > 10):
                         text_filters.append(f"drawtext=text='{p[0]}':fontfile='{f_abs}':fontcolor={color_sub}:fontsize=70:borderw=5:bordercolor=black:x=(w-tw)/2:y=(h-th)/2-45:enable='between(t,{ts},{te})'")
                         text_filters.append(f"drawtext=text='{p[1]}':fontfile='{f_abs}':fontcolor={color_sub}:fontsize=70:borderw=5:bordercolor=black:x=(w-tw)/2:y=(h-th)/2+45:enable='between(t,{ts},{te})'")
@@ -154,6 +153,6 @@ if st.button("🚀 CREAR VÍDEO (MOTOR PIXABAY)"):
             subprocess.run(f'ffmpeg -y -f concat -safe 0 -i taller/lista.txt -i "{audio_mezcla}" -map 0:v -map 1:a -c:v libx264 -preset ultrafast -crf 28 -c:a aac -threads 1 -t {dur} "{final}" > /dev/null 2>&1', shell=True)
             
             if os.path.exists(final):
-                st.markdown('<div class="info-card">🏆 VÍDEO COMPLETADO CON MÚSICA DE PIXABAY</div>', unsafe_allow_html=True)
+                st.markdown('<div class="info-card">🏆 VÍDEO CON MÚSICA EQUILIBRADA COMPLETADO</div>', unsafe_allow_html=True)
                 with open(final, "rb") as f: st.video(f.read())
                 st.balloons()
