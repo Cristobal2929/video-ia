@@ -3,7 +3,7 @@ import os, time, subprocess, re, urllib.parse, shutil, math, random, gc
 import requests
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Fénix Studio V153", layout="centered")
+st.set_page_config(page_title="Fénix Studio V154", layout="centered")
 components.html("<script>if('wakeLock' in navigator){navigator.wakeLock.request('screen');}</script>", height=0)
 
 st.markdown("""
@@ -16,7 +16,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V153 🦅🎵</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V154 ⚙️💎</div>', unsafe_allow_html=True)
 
 @st.cache_resource
 def get_font():
@@ -34,13 +34,16 @@ PEXELS_API = "Ty0uFISh3APEAXIVcrFpSM7ZdwOeRElCuUgoG42EW6WVISRTEfqjm0BZ"
 def traducir_en(palabra):
     try:
         url = f"https://api.mymemory.translated.net/get?q={urllib.parse.quote(palabra)}&langpair=es|en"
-        return requests.get(url, timeout=5).json()['responseData']['translatedText']
+        res = requests.get(url, timeout=5).json()['responseData']['translatedText']
+        # Limpieza extrema para que el traductor no meta puntos ni comas raras
+        return re.sub(r'[^a-zA-Z0-9 ]', '', res)
     except: return palabra
 
 def extraer_kw(texto):
     palabras = re.sub(r'[^\w\s]', '', texto).split()
     utiles = [p for p in palabras if len(p) > 4]
-    return max(utiles, key=len) if utiles else "luxury"
+    kw = max(utiles, key=len) if utiles else "luxury"
+    return re.sub(r'[^a-zA-Z0-9 ]', '', kw)
 
 def preparar():
     if os.path.exists("taller"): shutil.rmtree("taller")
@@ -50,7 +53,7 @@ def preparar():
 tema = st.text_input("🧠 Tema del vídeo:", placeholder="Ej: Hábitos de éxito")
 color_sub = st.selectbox("🎨 Color de los Subtítulos:", ["yellow", "white", "#00FFD1"])
 
-if st.button("🚀 CREAR VÍDEO (MOTOR V133 + MÚSICA)"):
+if st.button("🚀 CREAR VÍDEO (ENGRANAJE PERFECTO)"):
     if not tema: st.error("⚠️ Escribe un tema")
     else:
         preparar()
@@ -58,7 +61,7 @@ if st.button("🚀 CREAR VÍDEO (MOTOR V133 + MÚSICA)"):
         
         with log:
             st.markdown('<div class="msg">📝 IA redactando guion puro...</div>', unsafe_allow_html=True)
-            prompt_g = f"Escribe UNICAMENTE el texto que debe decir el locutor sobre {tema}. No añadas notas, ni instrucciones, ni palabras en ingles. Solo el mensaje en español fluido. Maximo 85 palabras."
+            prompt_g = f"Escribe UNICAMENTE el texto que debe decir el locutor sobre {tema}. No añadas notas, ni instrucciones. Solo el mensaje en español fluido. Maximo 85 palabras."
             
             try:
                 guion_raw = requests.get(f"https://text.pollinations.ai/{urllib.parse.quote(prompt_g)}", timeout=20).text
@@ -66,6 +69,8 @@ if st.button("🚀 CREAR VÍDEO (MOTOR V133 + MÚSICA)"):
                 guion = re.sub(r'[^a-zA-ZáéíóúÁÉÍÓÚñÑ.,! ]', '', guion).strip()
             except:
                 guion = "El éxito se construye con paciencia y disciplina. Empieza hoy mismo tu camino a la cima."
+            
+            if not guion: guion = "La disciplina es el puente entre tus metas y tus logros."
             
             st.markdown('<div class="msg">🎙️ Grabando voz y descargando música...</div>', unsafe_allow_html=True)
             audio_voz = "taller/voz.mp3"
@@ -78,13 +83,11 @@ if st.button("🚀 CREAR VÍDEO (MOTOR V133 + MÚSICA)"):
             try: dur = float(subprocess.check_output(f'ffprobe -i "{audio_voz}" -show_entries format=duration -v quiet -of csv="p=0"', shell=True))
             except: dur = 20.0
 
-            # MAGIA V153: Mezclamos el audio ANTES de tocar el vídeo.
             st.markdown('<div class="msg">🎧 Mezclando pista de audio maestra...</div>', unsafe_allow_html=True)
             audio = "taller/audio.mp3"
             fade_st = max(0, dur - 2)
             subprocess.run(f'ffmpeg -y -i "{audio_voz}" -i "{musica_file}" -filter_complex "[1:a]volume=0.15,afade=t=out:st={fade_st}:d=2[m];[0:a][m]amix=inputs=2:duration=first" -c:a libmp3lame -threads 1 "{audio}"', shell=True)
 
-            # CÓDIGO 100% IDÉNTICO A LA V133 DE AQUÍ EN ADELANTE
             n_clips = min(math.ceil(dur / 3.2), 15) 
             t_clip = dur / n_clips
             clips = []
@@ -95,7 +98,7 @@ if st.button("🚀 CREAR VÍDEO (MOTOR V133 + MÚSICA)"):
             for i in range(n_clips):
                 txt_chunk = " ".join(palabras_guion[i*chunk_size:(i+1)*chunk_size])
                 kw_en = traducir_en(extraer_kw(txt_chunk))
-                st.markdown(f'<div class="msg">🎥 Escena {i+1}/{n_clips}: Recortando "{kw_en.upper()}"...</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="msg">🎥 Escena {i+1}/{n_clips}: Limpiando vídeo de "{kw_en.upper()}"...</div>', unsafe_allow_html=True)
                 
                 raw_vid, vid = f"taller/raw_{i}.mp4", f"taller/v_{i}.mp4"
                 exito_vid = False
@@ -111,18 +114,21 @@ if st.button("🚀 CREAR VÍDEO (MOTOR V133 + MÚSICA)"):
 
                 if exito_vid:
                     vf = "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,setsar=1,format=yuv420p"
-                    subprocess.run(f'ffmpeg -y -stream_loop -1 -i "{raw_vid}" -t {t_clip} -vf "{vf}" -c:v libx264 -preset ultrafast -r 24 -threads 1 "{vid}"', shell=True)
+                    # LA CLAVE: -an (quita audio fantasma) y -r 24 (iguala frames)
+                    subprocess.run(f'ffmpeg -y -stream_loop -1 -i "{raw_vid}" -t {t_clip} -vf "{vf}" -c:v libx264 -preset ultrafast -r 24 -an -threads 1 "{vid}"', shell=True)
                 
                 if not os.path.exists(vid):
-                    if ultima_vid_exitosa: subprocess.run(f'cp "{ultima_vid_exitosa}" "{vid}"', shell=True)
-                    else: subprocess.run(f'ffmpeg -y -f lavfi -i color=c=#1A1A1A:s=720x1280:d={t_clip}:r=24 -c:v libx264 -preset ultrafast -threads 1 "{vid}"', shell=True)
+                    if ultima_vid_exitosa: 
+                        subprocess.run(f'cp "{ultima_vid_exitosa}" "{vid}"', shell=True)
+                    else: 
+                        subprocess.run(f'ffmpeg -y -f lavfi -i color=c=#1A1A1A:s=720x1280:d={t_clip}:r=24 -c:v libx264 -preset ultrafast -pix_fmt yuv420p -an -threads 1 "{vid}"', shell=True)
 
                 clips.append(os.path.abspath(vid).replace('\\', '/'))
                 ultima_vid_exitosa = vid
                 if os.path.exists(raw_vid): os.remove(raw_vid)
                 gc.collect()
 
-            st.markdown('<div class="msg">🎬 Ensamblado final V133 puro...</div>', unsafe_allow_html=True)
+            st.markdown('<div class="msg">🎬 Ensamblando bloques idénticos...</div>', unsafe_allow_html=True)
             with open("taller/lista.txt", "w") as f:
                 for c in clips: f.write(f"file '{c}'\n")
             
@@ -145,12 +151,12 @@ if st.button("🚀 CREAR VÍDEO (MOTOR V133 + MÚSICA)"):
             with open("taller/s.txt", "w") as f: f.write(",\n".join(subs))
             final = "taller/master.mp4"
             
-            # EL COMANDO ORIGINAL DE LA V133 (Sin -map ni tonterías que lo rompen)
-            subprocess.run(f'ffmpeg -y -i "{mudo}" -i "{audio}" -filter_complex_script taller/s.txt -c:v libx264 -preset ultrafast -crf 28 -threads 1 -t {dur} "{final}"', shell=True)
+            # COMANDO FINAL ASEGURADO (Copiar audio para evitar conflictos)
+            subprocess.run(f'ffmpeg -y -i "{mudo}" -i "{audio}" -filter_complex_script taller/s.txt -map 0:v -map 1:a -c:v libx264 -preset ultrafast -crf 28 -c:a copy -threads 1 -t {dur} "{final}"', shell=True)
             
             if os.path.exists(final):
-                st.markdown('<div class="info-card">🏆 VÍDEO V133 + MÚSICA COMPLETADO</div>', unsafe_allow_html=True)
+                st.markdown('<div class="info-card">🏆 VÍDEO COMPLETO (¡ENGRANAJE PERFECTO!)</div>', unsafe_allow_html=True)
                 with open(final, "rb") as f: st.video(f.read())
                 st.balloons()
             else:
-                st.error("❌ Error de renderizado.")
+                st.error("❌ Error de renderizado final.")
