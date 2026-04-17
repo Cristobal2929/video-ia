@@ -3,10 +3,7 @@ import os, time, subprocess, re, urllib.parse, shutil, math, random, gc
 import requests
 import streamlit.components.v1 as components
 
-# INSTALAMOS LA LIBRERÍA DE PYTHON yt-dlp EN SEGUNDO PLANO
-subprocess.run("pip install yt-dlp -q", shell=True)
-
-st.set_page_config(page_title="Fénix Studio V191", layout="centered")
+st.set_page_config(page_title="Fénix Studio V192", layout="centered")
 components.html("<script>if('wakeLock' in navigator){navigator.wakeLock.request('screen');}</script>", height=0)
 
 st.markdown("""
@@ -20,7 +17,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V191 🦅🐍</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V192 🦅👑</div>', unsafe_allow_html=True)
 
 @st.cache_resource
 def get_font():
@@ -34,28 +31,26 @@ def get_font():
 
 PEXELS_API = "Ty0uFISh3APEAXIVcrFpSM7ZdwOeRElCuUgoG42EW6WVISRTEfqjm0BZ"
 
-# EL NUEVO MOTOR DE PYTHON PARA MÚSICA (yt-dlp)
-def descargar_musica_python(ruta, tipo):
-    # Busca dinámicamente en YouTube el primer resultado sin copyright y lo baja en mp3
-    if tipo == "terror":
-        query = "horror creepy ambient background music no copyright short"
-    else:
-        query = "epic cinematic motivation background music no copyright short"
-    
-    cmd = f'yt-dlp "ytsearch1:{query}" -x --audio-format mp3 --max-filesize 15M -o "{ruta}"'
-    subprocess.run(cmd, shell=True)
-    
-    if os.path.exists(ruta) and os.path.getsize(ruta) > 10000:
-        return True
+MUSICA_TERROR = ["https://ia800104.us.archive.org/1/items/HorrorAmbience_201901/Horror%20Ambience.mp3"]
+MUSICA_NEGOCIO = ["https://ia801400.us.archive.org/1/items/A_Hero_Steps_Forward/A_Hero_Steps_Forward.mp3"]
+
+def descargar_musica(ruta, tipo):
+    urls = MUSICA_TERROR if tipo == "terror" else MUSICA_NEGOCIO
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+    for u in urls:
+        try:
+            r = requests.get(u, headers=headers, timeout=15)
+            if r.status_code == 200 and len(r.content) > 50000:
+                with open(ruta, "wb") as f: f.write(r.content)
+                return True
+        except: pass
     return False
 
 GUIONES_TERROR = [
-    "Cierra los ojos. Imagina que estás solo en tu casa. De repente, escuchas un susurro desde el pasillo. Te giras lentamente, y ahí está... la sombra que te ha estado observando todo este tiempo. Quieres gritar, pero no tienes voz.",
-    "Dicen que si te despiertas a las 3 de la madrugada sin razón, es porque alguien te está mirando fijamente desde la esquina de tu habitación. No abras los ojos. Hazte el dormido. Porque si la miras, nunca te dejará ir."
+    "Cierra los ojos. Imagina que estás solo en tu casa. De repente, escuchas un susurro desde el pasillo. Te giras lentamente, y ahí está... la sombra que te ha estado observando todo este tiempo. Quieres gritar, pero no tienes voz."
 ]
 GUIONES_GYM = [
-    "El noventa y nueve por ciento de la gente se rinde justo antes de lograrlo. Pero tú no eres del montón. Levántate, ponte las zapatillas y ve a sudar. El dolor que sientes hoy, es la fuerza que tendrás mañana. No hay excusas.",
-    "Nadie va a hacer el trabajo por ti. Nadie te va a regalar el cuerpo de tus sueños. Tienes que ganártelo en cada repetición, en cada gota de sudor. Mírate al espejo y prométete que hoy vas a darlo absolutamente todo."
+    "El noventa y nueve por ciento de la gente se rinde justo antes de lograrlo. Pero tú no eres del montón. Levántate, ponte las zapatillas y ve a sudar. El dolor que sientes hoy, es la fuerza que tendrás mañana. No hay excusas."
 ]
 GUIONES_NEGOCIO = [
     "Te dijeron que era imposible. Se rieron de tus ideas. Hoy tú construyes tu imperio mientras ellos siguen perdiendo el tiempo. La libertad financiera no se sueña, se trabaja cada maldito día. El mundo es de los que toman acción."
@@ -63,19 +58,19 @@ GUIONES_NEGOCIO = [
 
 def purificar_guion_fluido(t, fallback_text):
     t_low = t.lower()
-    # FILTRO NUCLEAR ANTI-HTML: Si ve cualquier pista de programación web, lo descarta
-    if "doctype" in t_low or "html" in t_low or "<div" in t_low or "cloudflare" in t_low or "{" in t_low or "error" in t_low:
+    if any(x in t_low for x in ["<div", "doctype", "html", "class=", "error"]):
         return fallback_text
     
     texto_limpio = t
-    cortes = ["support pollinations", "powered by", "free text api", "coffee to keep"]
+    # FILTRO LETAL: A la mínima que vea la marca, corta todo lo que va detrás
+    cortes = ["pollinations", "support", "powered", "http", "www", ".ai", "free text", "api"]
     for corte in cortes:
         if corte.lower() in texto_limpio.lower():
             texto_limpio = texto_limpio[:texto_limpio.lower().index(corte.lower())]
 
     texto_limpio = re.sub(r'[^a-zA-ZáéíóúÁÉÍÓÚñÑ.,! ]', '', texto_limpio).strip()
     
-    if len(texto_limpio.split()) < 15 or not texto_limpio.endswith(('.', '!', '?')):
+    if len(texto_limpio.split()) < 15:
         return fallback_text
     return texto_limpio
 
@@ -93,29 +88,31 @@ color_sub = st.selectbox("🎨 Color Subtítulos:", ["yellow", "white", "#FF3E3E
 st.markdown("---")
 tema_prompt = st.text_input("🧠 Tema para guion de IA:", placeholder="Ej: Hábitos millonarios...")
 guion_personalizado = st.text_area("📝 O guion EXACTO (mín 15 palabras):", placeholder="Pega tu texto aquí y el bot lo usará literalmente.", height=120)
+st.markdown("---")
+archivo_musica = st.file_uploader("🎵 Sube tu propia música MP3 (OPCIONAL - Recomendado si fallan los servidores)", type=["mp3", "wav"])
 
-if st.button("🚀 CREAR VÍDEO (LIBRERÍA PYTHON V191)"):
+if st.button("🚀 CREAR VÍDEO (CONTROL ABSOLUTO V192)"):
     preparar()
     log = st.container()
     with log:
         if categoria == "Terror / Misterio":
             tipo_musica = "terror"
             voz = "es-ES-AlvaroNeural"
-            kws = ["scary dark", "abandoned building", "creepy forest", "horror night"]
+            kws = ["scary dark", "abandoned building", "creepy forest"]
             fallback_lista = GUIONES_TERROR
-            vol_musica = "0.15"
+            vol_musica = "0.08"
         elif categoria == "Gym / Motivación":
             tipo_musica = "negocio" 
             voz = "es-MX-JorgeNeural"
-            kws = ["gym workout", "fitness motivation", "heavy weights training", "running athlete"]
+            kws = ["gym workout", "fitness motivation", "heavy weights training"]
             fallback_lista = GUIONES_GYM
-            vol_musica = "0.20"
+            vol_musica = "0.10"
         else: 
             tipo_musica = "negocio"
             voz = "es-MX-JorgeNeural"
-            kws = ["luxury lifestyle", "dubai skyline", "private jet", "expensive supercar"]
+            kws = ["luxury lifestyle", "dubai skyline", "private jet"]
             fallback_lista = GUIONES_NEGOCIO
-            vol_musica = "0.20"
+            vol_musica = "0.10"
 
         fallback_texto = random.choice(fallback_lista)
         
@@ -123,23 +120,31 @@ if st.button("🚀 CREAR VÍDEO (LIBRERÍA PYTHON V191)"):
             if len(guion_personalizado.strip().split()) < 15:
                 st.error("⚠️ Tu guion personalizado es muy corto (mínimo 15 palabras).")
                 st.stop()
-            st.markdown('<div class="msg">📝 Usando tu guion personalizado exacto...</div>', unsafe_allow_html=True)
+            st.markdown('<div class="msg">📝 Usando tu guion personalizado...</div>', unsafe_allow_html=True)
             guion_final = guion_personalizado.strip()
         elif tema_prompt.strip():
-            st.markdown('<div class="msg">🧠 Pidiendo a la IA que redacte un guion (Filtro Nuclear Activado)...</div>', unsafe_allow_html=True)
-            prompt = f"Escribe un guion fluido, intenso y completo para TikTok sobre: {tema_prompt}. Debe tener entre 45 y 70 palabras. Asegúrate de que termine con una frase conclusiva, con punto final. Solo español."
+            st.markdown('<div class="msg">🧠 Pidiendo a la IA que redacte un guion limpio...</div>', unsafe_allow_html=True)
+            prompt = f"Escribe un guion para TikTok sobre: {tema_prompt}. Debe tener entre 45 y 70 palabras. Sin enlaces. Sin palabras en ingles. Solo español."
             try:
                 g_raw = requests.get(f"https://text.pollinations.ai/{urllib.parse.quote(prompt)}", timeout=25).text
                 guion_final = purificar_guion_fluido(g_raw, fallback_texto)
             except: 
                 guion_final = fallback_texto
         else:
-            st.markdown('<div class="msg">🎲 Usando guion viral de la biblioteca garantizada.</div>', unsafe_allow_html=True)
+            st.markdown('<div class="msg">🎲 Usando guion de la biblioteca...</div>', unsafe_allow_html=True)
             guion_final = fallback_texto
 
-        st.markdown('<div class="msg">🎵 Biblioteca yt-dlp buscando música en YouTube...</div>', unsafe_allow_html=True)
         musica_file = "taller/bg.mp3"
-        exito_mus = descargar_musica_python(musica_file, tipo_musica)
+        exito_mus = False
+        
+        if archivo_musica is not None:
+            st.markdown('<div class="msg">🎵 Usando la música que has subido...</div>', unsafe_allow_html=True)
+            with open(musica_file, "wb") as f:
+                f.write(archivo_musica.getbuffer())
+            exito_mus = True
+        else:
+            st.markdown('<div class="msg">🎵 Descargando música de respaldo...</div>', unsafe_allow_html=True)
+            exito_mus = descargar_musica(musica_file, tipo_musica)
 
         st.markdown('<div class="msg">🎙️ Grabando locución...</div>', unsafe_allow_html=True)
         audio_voz = "taller/voz.mp3"
@@ -153,7 +158,7 @@ if st.button("🚀 CREAR VÍDEO (LIBRERÍA PYTHON V191)"):
         if exito_mus:
             subprocess.run(f'ffmpeg -y -i "{audio_voz}" -i "{musica_file}" -filter_complex "[1:a]volume={vol_musica},afade=t=out:st={fade_st}:d=2[m];[0:a][m]amix=inputs=2:duration=first" -c:a libmp3lame "{audio_mezcla}" > /dev/null 2>&1', shell=True)
         else:
-            st.warning("⚠️ No se pudo descargar audio de YouTube. Usando solo voz.")
+            st.warning("⚠️ No se pudo obtener música. Renderizando solo con voz.")
             shutil.copy(audio_voz, audio_mezcla)
 
         palabras = guion_final.upper().split()
@@ -188,17 +193,14 @@ if st.button("🚀 CREAR VÍDEO (LIBRERÍA PYTHON V191)"):
             try:
                 h = {"Authorization": PEXELS_API}
                 res = requests.get(f"https://api.pexels.com/videos/search?query={urllib.parse.quote(kw)}&orientation=portrait&per_page=20", headers=h, timeout=10).json()
-                
                 videos_validos = [v for v in res.get('videos', []) if v.get('duration', 0) > 3 and v.get('id') not in st.session_state['videos_usados']]
                 
                 if videos_validos:
                     v_elegido = random.choice(videos_validos)
                     st.session_state['videos_usados'].append(v_elegido['id'])
                     v_url = v_elegido['video_files'][0]['link']
-                    
                     v_data = requests.get(v_url, timeout=15).content
                     with open(raw_vid, 'wb') as f: f.write(v_data)
-                    
                     subprocess.run(f'ffmpeg -y -stream_loop -1 -i "{raw_vid}" -t {t_clip} -filter_script:v taller/f_{i}.txt -c:v libx264 -preset ultrafast -r 24 -an -threads 1 "{vid}" > /dev/null 2>&1', shell=True)
                     if os.path.exists(vid): exito_vid = True
             except: pass
@@ -214,14 +216,10 @@ if st.button("🚀 CREAR VÍDEO (LIBRERÍA PYTHON V191)"):
         with open("taller/lista.txt", "w") as f:
             for c in clips: f.write(f"file '{c}'\n")
         
-        if dur < 8.0:
-            st.error(f"❌ Fallo: El vídeo final duraría solo {dur:.1f}s. Demasiado corto. Revisa tu prompt o guion.")
-            st.stop()
-
         final = "taller/master.mp4"
         subprocess.run(f'ffmpeg -y -f concat -safe 0 -i taller/lista.txt -i "{audio_mezcla}" -map 0:v -map 1:a -c:v libx264 -preset ultrafast -crf 28 -r 24 -t {dur} "{final}" > /dev/null 2>&1', shell=True)
         
         if os.path.exists(final):
-            st.markdown('<div class="info-card">🏆 VÍDEO CON YOUTUBE-DLP COMPLETADO</div>', unsafe_allow_html=True)
+            st.markdown('<div class="info-card">🏆 VÍDEO COMPLETADO</div>', unsafe_allow_html=True)
             with open(final, "rb") as f: st.video(f.read())
             st.balloons()
