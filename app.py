@@ -3,7 +3,7 @@ import os, time, subprocess, re, urllib.parse, shutil, math, random, gc
 import requests
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Fénix Studio V163", layout="centered")
+st.set_page_config(page_title="Fénix Studio V164", layout="centered")
 components.html("<script>if('wakeLock' in navigator){navigator.wakeLock.request('screen');}</script>", height=0)
 
 st.markdown("""
@@ -16,7 +16,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V163 🦅✍️</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V164 🦅🎧</div>', unsafe_allow_html=True)
 
 @st.cache_resource
 def get_font():
@@ -50,14 +50,16 @@ def preparar():
 f_abs = get_font()
 tema = st.text_input("🧠 Tema del vídeo:", placeholder="Ej: Negocios y Mentalidad")
 color_sub = st.selectbox("🎨 Color Subtítulos:", ["yellow", "white", "#00FFD1"])
+# NUEVA FUNCIÓN: Enlace de música personalizado
+link_musica = st.text_input("🔗 Enlace de Música MP3 (Opcional):", placeholder="Pega aquí el link de tu música...")
 
-if st.button("🚀 CREAR VÍDEO (DOBLE LÍNEA + MÚSICA)"):
+if st.button("🚀 CREAR VÍDEO (DJ A LA CARTA)"):
     if not tema: st.error("⚠️ Escribe un tema")
     else:
         preparar()
         log = st.container()
         with log:
-            st.markdown('<div class="msg">📝 IA redactando guion estilo 134...</div>', unsafe_allow_html=True)
+            st.markdown('<div class="msg">📝 IA redactando guion...</div>', unsafe_allow_html=True)
             p_g = f"Escribe una frase motivacional de éxito sobre {tema} para TikTok. Solo español. Maximo 80 palabras."
             try:
                 g_raw = requests.get(f"https://text.pollinations.ai/{urllib.parse.quote(p_g)}", timeout=20).text
@@ -68,14 +70,28 @@ if st.button("🚀 CREAR VÍDEO (DOBLE LÍNEA + MÚSICA)"):
             audio_voz = "taller/voz.mp3"
             subprocess.run(f'edge-tts --voice es-MX-JorgeNeural --text "{guion}" --write-media "{audio_voz}"', shell=True)
             
-            st.markdown('<div class="msg">🎵 Descargando música épica de Wikipedia...</div>', unsafe_allow_html=True)
+            # LÓGICA DE MÚSICA PERSONALIZADA
+            st.markdown('<div class="msg">🎵 Procesando banda sonora...</div>', unsafe_allow_html=True)
             musica_file = "taller/bg.mp3"
-            u_m = "https://upload.wikimedia.org/wikipedia/commons/4/4c/A_Hero_Steps_Forward.mp3"
-            try:
-                r_m = requests.get(u_m, timeout=15)
-                if r_m.status_code == 200:
-                    with open(musica_file, "wb") as f: f.write(r_m.content)
-            except: pass
+            exito_musica = False
+            
+            if link_musica:
+                try:
+                    r_m = requests.get(link_musica, timeout=15)
+                    if r_m.status_code == 200:
+                        with open(musica_file, "wb") as f: f.write(r_m.content)
+                        exito_musica = True
+                        st.markdown('<div class="msg">✅ ¡Tu música personalizada se ha descargado!</div>', unsafe_allow_html=True)
+                except: 
+                    st.markdown('<div class="msg">⚠️ Falló tu enlace. Usando música de respaldo...</div>', unsafe_allow_html=True)
+
+            if not exito_musica:
+                u_m = "https://upload.wikimedia.org/wikipedia/commons/4/4c/A_Hero_Steps_Forward.mp3"
+                try:
+                    r_m = requests.get(u_m, timeout=15)
+                    if r_m.status_code == 200:
+                        with open(musica_file, "wb") as f: f.write(r_m.content)
+                except: pass
 
             try: dur = float(subprocess.check_output(f'ffprobe -i "{audio_voz}" -show_entries format=duration -v quiet -of csv="p=0"', shell=True))
             except: dur = 20.0
@@ -120,19 +136,16 @@ if st.button("🚀 CREAR VÍDEO (DOBLE LÍNEA + MÚSICA)"):
             mudo = "taller/mudo.mp4"
             subprocess.run(f'ffmpeg -y -f concat -safe 0 -i taller/lista.txt -c copy "{mudo}"', shell=True)
             
-            # EL CEREBRO DE SUBTÍTULOS DE 2 LÍNEAS
             chunks_sub = [palabras_puras[j:j+2] for j in range(0, len(palabras_puras), 2)]
             t_ch = dur / max(len(chunks_sub), 1)
             f_s = f"fontfile='{f_abs}':" if os.path.exists(f_abs) else ""
             subs = []
             for j, p in enumerate(chunks_sub):
                 ts, te = j * t_ch, (j + 1) * t_ch
-                # Si son 2 palabras y juntas suman más de 10 letras, se parten en dos líneas (arriba y abajo)
                 if len(p) == 2 and (len(p[0]) + len(p[1]) > 10):
                     subs.append(f"drawtext=text='{p[0]}':{f_s}fontcolor={color_sub}:fontsize=70:borderw=5:bordercolor=black:x=(w-tw)/2:y=(h-th)/2-45:enable='between(t,{ts},{te})'")
                     subs.append(f"drawtext=text='{p[1]}':{f_s}fontcolor={color_sub}:fontsize=70:borderw=5:bordercolor=black:x=(w-tw)/2:y=(h-th)/2+45:enable='between(t,{ts},{te})'")
                 else:
-                    # Si son cortas o es una sola, se pone centrada
                     subs.append(f"drawtext=text='{' '.join(p)}':{f_s}fontcolor={color_sub}:fontsize=70:borderw=5:bordercolor=black:x=(w-tw)/2:y=(h-th)/2:enable='between(t,{ts},{te})'")
 
             with open("taller/s.txt", "w") as f: f.write(",\n".join(subs))
@@ -141,6 +154,6 @@ if st.button("🚀 CREAR VÍDEO (DOBLE LÍNEA + MÚSICA)"):
             subprocess.run(f'ffmpeg -y -i "{mudo}" -i "{audio_mezcla}" -filter_script:v taller/s.txt -map 0:v:0 -map 1:a:0 -c:v libx264 -preset ultrafast -crf 28 -c:a copy -threads 1 -t {dur} "{final}"', shell=True)
             
             if os.path.exists(final):
-                st.markdown('<div class="info-card">🏆 VÍDEO CON SUBTÍTULOS INTELIGENTES COMPLETADO</div>', unsafe_allow_html=True)
+                st.markdown('<div class="info-card">🏆 VÍDEO CON MÚSICA PERSONALIZADA COMPLETADO</div>', unsafe_allow_html=True)
                 with open(final, "rb") as f: st.video(f.read())
                 st.balloons()
