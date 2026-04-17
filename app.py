@@ -3,7 +3,7 @@ import os, time, subprocess, re, urllib.parse, shutil, math, random, gc
 import requests
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Fénix Studio V179", layout="centered")
+st.set_page_config(page_title="Fénix Studio V180", layout="centered")
 components.html("<script>if('wakeLock' in navigator){navigator.wakeLock.request('screen');}</script>", height=0)
 
 st.markdown("""
@@ -16,7 +16,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V179 🦅🧼</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V180 🦅🌪️</div>', unsafe_allow_html=True)
 
 @st.cache_resource
 def get_font():
@@ -36,6 +36,7 @@ def obtener_datos_tema(t_input):
         return {
             "tipo": "terror",
             "voz": "es-ES-AlvaroNeural",
+            # Música 100% segura (FreePD/Wikimedia)
             "musica": ["https://freepd.com/music/Horror%20Ambience.mp3", "https://freepd.com/music/Deep%20Space.mp3"],
             "kws": ["scary dark", "abandoned building", "creepy forest", "horror night", "dark shadows", "spooky"],
             "fallback": "En el silencio de la noche, las sombras susurran verdades que nadie quiere escuchar."
@@ -44,7 +45,8 @@ def obtener_datos_tema(t_input):
         return {
             "tipo": "gym",
             "voz": "es-MX-JorgeNeural",
-            "musica": ["https://cdn.pixabay.com/download/audio/2021/11/25/audio_91b12b556b.mp3?filename=powerful-beat-12179.mp3"],
+            # Sustituido Pixabay por FreePD (No falla)
+            "musica": ["https://freepd.com/music/Vopna.mp3", "https://freepd.com/music/Epic%20Boss%20Battle.mp3"],
             "kws": ["gym workout", "fitness motivation", "heavy weights", "running athlete", "boxing training"],
             "fallback": "El dolor de hoy es la fuerza de mañana. No te rindas, levántate y pelea."
         }
@@ -52,28 +54,24 @@ def obtener_datos_tema(t_input):
         return {
             "tipo": "negocio",
             "voz": "es-MX-JorgeNeural",
-            "musica": ["https://cdn.pixabay.com/download/audio/2021/05/20/audio_f31f9b3b8e.mp3?filename=dance-playful-night-51078.mp3", "https://upload.wikimedia.org/wikipedia/commons/4/4c/A_Hero_Steps_Forward.mp3"],
+            # Sustituido Pixabay por FreePD/Wikimedia
+            "musica": ["https://freepd.com/music/The%20Crown.mp3", "https://upload.wikimedia.org/wikipedia/commons/4/4c/A_Hero_Steps_Forward.mp3"],
             "kws": ["luxury lifestyle", "dubai skyline", "private jet", "expensive supercar", "modern mansion", "money wealth"],
             "fallback": "El éxito no es un accidente, es el resultado de la disciplina y el trabajo constante."
         }
 
 def purificar_guion(t, fallback_text):
-    # Si la IA manda código roto, usa el fallback
     if any(x in t.lower() for x in ["<div", "doctype", "html", "class="]):
         return fallback_text
     
-    # EL NUEVO FILTRO LIMPIO: Cortar el texto si aparece la firma de Pollinations
     texto_limpio = t
     cortes = ["support pollinations", "powered by", "free text api", "coffee to keep"]
     for corte in cortes:
         if corte.lower() in texto_limpio.lower():
-            # Corta el texto justo donde empieza la basura publicitaria
             texto_limpio = texto_limpio[:texto_limpio.lower().index(corte.lower())]
 
-    # Limpieza final de caracteres raros
     texto_limpio = re.sub(r'[^a-zA-ZáéíóúÁÉÍÓÚñÑ.,! ]', '', texto_limpio).strip()
     
-    # Si al final se queda vacío, pon el fallback
     if len(texto_limpio) < 5:
         return fallback_text
         
@@ -88,7 +86,7 @@ f_abs = get_font()
 tema = st.text_input("🧠 Tema del vídeo:", placeholder="Ej: Dieta para perder kilos... o Terror en el bosque...")
 color_sub = st.selectbox("🎨 Color Subtítulos:", ["yellow", "white", "#FF3E3E", "#00FFD1"])
 
-if st.button("🚀 CREAR VÍDEO CON CEREBRO V179"):
+if st.button("🚀 CREAR VÍDEO CON FLUIDEZ V180"):
     if not tema: st.error("⚠️ Escribe un tema primero")
     else:
         preparar()
@@ -107,7 +105,7 @@ if st.button("🚀 CREAR VÍDEO CON CEREBRO V179"):
             audio_voz = "taller/voz.mp3"
             subprocess.run(f'edge-tts --voice {datos_tema["voz"]} --text "{guion}" --write-media "{audio_voz}"', shell=True)
             
-            st.markdown('<div class="msg">🎵 Descargando atmósfera de audio...</div>', unsafe_allow_html=True)
+            st.markdown('<div class="msg">🎵 Descargando atmósfera de audio segura...</div>', unsafe_allow_html=True)
             musica_file = "taller/bg.mp3"
             try:
                 r_m = requests.get(random.choice(datos_tema["musica"]), timeout=15)
@@ -134,19 +132,19 @@ if st.button("🚀 CREAR VÍDEO CON CEREBRO V179"):
 
             for i in range(n_clips):
                 kw = random.choice(datos_tema["kws"])
-                st.markdown(f'<div class="msg">🎥 Escena {i+1}: Buscando vídeos reales de "{kw}"...</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="msg">🎥 Escena {i+1}: Buscando clips distintos de "{kw}"...</div>', unsafe_allow_html=True)
                 
                 vid = f"taller/v_{i}.mp4"
                 try:
                     h = {"Authorization": PEXELS_API}
                     res = requests.get(f"https://api.pexels.com/videos/search?query={urllib.parse.quote(kw)}&orientation=portrait&per_page=15", headers=h).json()
                     
-                    v_url = None
-                    for v_item in res.get('videos', []):
-                        if v_item['duration'] > 3:
-                            v_url = v_item['video_files'][0]['link']
-                            break
-                    if not v_url: v_url = res['videos'][0]['video_files'][0]['link']
+                    # MAGIA V180: Elegimos un vídeo ALEATORIO de la lista para que no se repitan
+                    videos_validos = [v for v in res.get('videos', []) if v.get('duration', 0) > 3]
+                    if videos_validos:
+                        v_url = random.choice(videos_validos)['video_files'][0]['link']
+                    else:
+                        v_url = res['videos'][0]['video_files'][0]['link']
 
                     sub_split = [palabras[j:j+2] for j in range(i*len(palabras)//n_clips, (i+1)*len(palabras)//n_clips, 2)]
                     t_p = t_clip / max(len(sub_split), 1)
@@ -172,5 +170,5 @@ if st.button("🚀 CREAR VÍDEO CON CEREBRO V179"):
             subprocess.run(f'ffmpeg -y -f concat -safe 0 -i taller/lista.txt -i "{audio_mezcla}" -map 0:v -map 1:a -c:v libx264 -preset ultrafast -t {dur} "{final}" > /dev/null 2>&1', shell=True)
             
             if os.path.exists(final):
-                st.markdown('<div class="info-card">🏆 VÍDEO 100% LIMPIO COMPLETADO</div>', unsafe_allow_html=True)
+                st.markdown('<div class="info-card">🏆 VÍDEO 100% FLUIDO Y CON MÚSICA COMPLETADO</div>', unsafe_allow_html=True)
                 with open(final, "rb") as f: st.video(f.read())
