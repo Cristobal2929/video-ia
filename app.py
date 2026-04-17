@@ -10,14 +10,14 @@ st.markdown("""
 <style>
     .stApp { background: #000000; color: #FFFFFF; }
     .pro-title { font-size: 42px; font-weight: 900; background: -webkit-linear-gradient(45deg, #00FFD1, #FFD700); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: center; text-transform: uppercase; margin-bottom: 20px;}
-    .msg { color: #00FFD1; font-family: 'Courier New', monospace; font-size: 14px; margin-bottom: 8px; border-left: 3px solid #FFD700; padding-left: 12px; }
+    .msg { color: #00FFD1; font-family: 'Courier New', monospace; font-size: 14px; margin-bottom: 8px; border-left: 3px solid #00FFD1; padding-left: 12px; }
     .info-card { padding: 15px; border-radius: 12px; background: #0f172a; border: 1px solid #00FFD1; text-align: center; color: #00FFD1; margin-top: 25px; font-weight: bold;}
     .stButton>button { width: 100%; background: linear-gradient(45deg, #00FFD1, #0088ff); color: white; border: none; font-weight: 900; height: 55px; border-radius: 12px; font-size: 18px;}
     .stTextArea>div>div>textarea, .stTextInput>div>div>input { background-color: #1a1a1a; color: white; border: 1px solid #00FFD1; border-radius: 8px;}
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V185 🦅⚙️</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V185 🦅G</div>', unsafe_allow_html=True)
 
 @st.cache_resource
 def get_font():
@@ -31,158 +31,191 @@ def get_font():
 
 PEXELS_API = "Ty0uFISh3APEAXIVcrFpSM7ZdwOeRElCuUgoG42EW6WVISRTEfqjm0BZ"
 
-def descargar_musica(ruta, lista_urls):
-    random.shuffle(lista_urls)
-    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
-    for url in lista_urls:
-        try:
-            r = requests.get(url, headers=headers, timeout=15)
-            if r.status_code == 200 and len(r.content) > 100000:
-                with open(ruta, "wb") as f: f.write(r.content)
-                return True
-        except: pass
-    return False
+# MÚSICA 100% ESTABLE (Wikimedia Commons)
+MUSICA_NEGOCIO = "https://upload.wikimedia.org/wikipedia/commons/4/4c/A_Hero_Steps_Forward.mp3"
+MUSICA_TERROR = "https://upload.wikimedia.org/wikipedia/commons/2/23/Closer_to_the_Void.mp3"
 
-def limpiar_texto(t):
-    # Anticódigo y Spam de IA
+GUIONES_TERROR = [
+    "Cierra los ojos. Imagina que estás solo en tu casa. De repente, escuchas un susurro desde el pasillo. Te giras lentamente, y ahí está... la sombra que te ha estado observando todo este tiempo. Quieres gritar, pero no tienes voz.",
+    "Dicen que si te despiertas a las 3 de la madrugada sin razón, es porque alguien te está mirando fijamente desde la esquina de tu habitación. No abras los ojos. Hazte el dormido. Porque si la miras, nunca te dejará ir."
+]
+GUIONES_GYM = [
+    "El noventa y nueve por ciento de la gente se rinde justo antes de lograrlo. Pero tú no eres del montón. Levántate, ponte las zapatillas y ve a sudar. El dolor que sientes hoy, es la fuerza que tendrás mañana. No hay excusas.",
+    "Nadie va a hacer el trabajo por ti. Nadie te va a regalar el cuerpo de tus sueños. Tienes que ganártelo en cada repetición, en cada gota de sudor. Mírate al espejo y prométete que hoy vas a darlo absolutamente todo."
+]
+GUIONES_NEGOCIO = [
+    "Te dijeron que era imposible. Se rieron de tus ideas. Hoy tú construyes tu imperio mientras ellos siguen perdiendo el tiempo. La libertad financiera no se sueña, se trabaja cada maldito día. El mundo es de los que toman acción.",
+    "La diferencia entre un soñador y un ganador es la ejecución. Mientras otros buscan el fin de semana para descansar, tú buscas la forma de multiplicar tus ingresos. No te detengas hasta que tu cuenta bancaria parezca un número de teléfono."
+]
+
+def purificar_guion_fluido(t, fallback_text):
+    if any(x in t.lower() for x in ["<div", "doctype", "html", "class="]):
+        return fallback_text
+    
     texto_limpio = t
-    cortes = ["support pollinations", "powered by", "free text api", "tool_calls", "doctype", "html"]
+    cortes = ["support pollinations", "powered by", "free text api", "coffee to keep"]
     for corte in cortes:
         if corte.lower() in texto_limpio.lower():
             texto_limpio = texto_limpio[:texto_limpio.lower().index(corte.lower())]
 
-    t = re.sub(r'[^a-zA-ZáéíóúÁÉÍÓÚñÑ.,! ]', '', texto_limpio)
-    return re.sub(r'\s+', ' ', t).strip()
+    texto_limpio = re.sub(r'[^a-zA-ZáéíóúÁÉÍÓÚñÑ.,! ]', '', texto_limpio).strip()
+    
+    # GARANTÍA DE CONTINUIDAD: Comprobar que no esté cortado por la mitad (falta puntuación final)
+    if len(texto_limpio.split()) < 15 or not texto_limpio.endswith(('.', '!', '?')):
+        return fallback_text
+    return texto_limpio
 
 def preparar():
     if os.path.exists("taller"): shutil.rmtree("taller")
     os.makedirs("taller", exist_ok=True)
     subprocess.run("pkill ffmpeg", shell=True)
+    # Persistencia de vídeos usados en el render actual y siguientes
+    if 'videos_usados' not in st.session_state:
+        st.session_state['videos_usados'] = []
 
 f_abs = get_font()
 
-# INTERFAZ FUSIONADA
-categoria = st.selectbox("🎬 Temática General (Voz y Música):", ["Negocios / Éxito", "Gym / Motivación", "Terror / Misterio"])
-color_sub = st.selectbox("🎨 Color Subtítulos:", ["yellow", "white", "#00FFD1", "#FF3E3E"])
-tema_prompt = st.text_input("🧠 Tema para que la IA escriba el guion:", placeholder="Ej: Hábitos de éxito")
-guion_personalizado = st.text_area("📝 O pega tu propio guion EXACTO:", placeholder="Si pegas un texto aquí, el bot lo usará sin importar lo que ponga arriba.", height=100)
+categoria = st.selectbox("🎬 Temática General:", ["Negocios / Éxito", "Gym / Motivación", "Terror / Misterio"])
+color_sub = st.selectbox("🎨 Color Subtítulos:", ["yellow", "white", "#FF3E3E", "#00FFD1"])
+st.markdown("---")
+tema_prompt = st.text_input("🧠 Tema para guion de IA:", placeholder="Ej: Hábitos millonarios, hospital abandonado...")
+guion_personalizado = st.text_area("📝 O guion EXACTO (mín 15 palabras):", placeholder="Si pegas tu texto aquí, el bot lo usará literalmente.", height=120)
 
-if st.button("🚀 CREAR VÍDEO (NÚCLEO V169)"):
+if st.button("🚀 CREAR VÍDEO CON GARANTÍA V185"):
     preparar()
     log = st.container()
     with log:
-        # 1. AJUSTES SEGÚN CATEGORÍA
         if categoria == "Terror / Misterio":
-            voz_ia = "es-ES-AlvaroNeural"
-            musica_lista = ["https://freepd.com/music/Horror%20Ambience.mp3", "https://freepd.com/music/Deep%20Space.mp3"]
-            kws = ["scary dark", "abandoned building", "creepy forest"]
-            fallback = "El miedo es solo una ilusión, pero las sombras siempre estarán ahí para recordarte lo que ocultas."
+            voz = "es-ES-AlvaroNeural"
+            musica_url = MUSICA_TERROR
+            kws = ["scary dark", "abandoned building", "creepy forest", "horror night"]
+            fallback_lista = GUIONES_TERROR
+            vol_musica = "0.08"
         elif categoria == "Gym / Motivación":
-            voz_ia = "es-MX-JorgeNeural"
-            musica_lista = ["https://freepd.com/music/Vopna.mp3", "https://freepd.com/music/Epic%20Boss%20Battle.mp3"]
-            kws = ["gym workout", "fitness motivation", "heavy weights training"]
-            fallback = "Nadie va a hacer el trabajo por ti. Levántate y suda hasta que te sientas orgulloso."
-        else:
-            voz_ia = "es-MX-JorgeNeural"
-            musica_lista = ["https://upload.wikimedia.org/wikipedia/commons/4/4c/A_Hero_Steps_Forward.mp3", "https://upload.wikimedia.org/wikipedia/commons/c/c5/Winds_Of_Stories.mp3"]
+            voz = "es-MX-JorgeNeural"
+            musica_url = MUSICA_NEGOCIO # Wikimedia A Hero Steps Forward (sirve para ambos)
+            kws = ["gym workout", "fitness motivation", "heavy weights training", "running athlete"]
+            fallback_lista = GUIONES_GYM
+            vol_musica = "0.10"
+        else: 
+            voz = "es-MX-JorgeNeural"
+            musica_url = MUSICA_NEGOCIO
             kws = ["luxury lifestyle", "dubai skyline", "private jet", "expensive supercar"]
-            fallback = "La disciplina es el puente entre tus metas y tus logros. Ve a por todas."
+            fallback_lista = GUIONES_NEGOCIO
+            vol_musica = "0.10"
 
-        # 2. SELECCIÓN DEL GUION
-        if guion_personalizado.strip():
-            st.markdown('<div class="msg">📝 Usando tu guion manual...</div>', unsafe_allow_html=True)
-            guion = limpiar_texto(guion_personalizado)
-        elif tema_prompt.strip():
-            st.markdown('<div class="msg">📝 Redactando guion con IA...</div>', unsafe_allow_html=True)
-            p_g = f"Escribe una historia o frase motivacional sobre {tema_prompt}. Solo español. Maximo 75 palabras."
-            try:
-                g_raw = requests.get(f"https://text.pollinations.ai/{urllib.parse.quote(p_g)}", timeout=20).text
-                guion = limpiar_texto(g_raw)
-                if len(guion.split()) < 5: guion = fallback
-            except: guion = fallback
-        else:
-            guion = fallback
-
-        st.markdown('<div class="msg">🎙️ Grabando voz...</div>', unsafe_allow_html=True)
-        audio_voz = "taller/voz.mp3"
-        subprocess.run(f'edge-tts --voice {voz_ia} --text "{guion}" --write-media "{audio_voz}"', shell=True)
+        # LÓGICA DE GARANTÍA DE GUION
+        fallback_texto = random.choice(fallback_lista)
         
-        st.markdown('<div class="msg">🎵 Descargando música segura...</div>', unsafe_allow_html=True)
+        if guion_personalizado.strip():
+            if len(guion_personalizado.strip().split()) < 15:
+                st.error("⚠️ Tu guion personalizado es muy corto (mínimo 15 palabras).")
+                st.stop()
+            st.markdown('<div class="msg">📝 Usando tu guion personalizado exacto y fluido...</div>', unsafe_allow_html=True)
+            guion_final = guion_personalizado.strip()
+        elif tema_prompt.strip():
+            st.markdown('<div class="msg">🧠 Pidiendo a la IA que redacte un guion completo...</div>', unsafe_allow_html=True)
+            prompt = f"Escribe un guion fluido, intenso, completo y narrativo para TikTok sobre: {tema_prompt}. Debe tener entre 45 y 70 palabras. Asegúrate de que termine con una frase conclusiva, con punto final. Solo español."
+            try:
+                g_raw = requests.get(f"https://text.pollinations.ai/{urllib.parse.quote(prompt)}", timeout=25).text
+                guion_final = purificar_guion_fluido(g_raw, fallback_texto)
+                if guion_final == fallback_texto:
+                    st.markdown('<div class="msg" style="color:orange;">⚠️ La IA dio un guion cortado. Activando guion de seguridad fluido.</div>', unsafe_allow_html=True)
+            except: 
+                guion_final = fallback_texto
+        else:
+            st.markdown('<div class="msg">🎲 Usando guion viral de la biblioteca garantizada.</div>', unsafe_allow_html=True)
+            guion_final = fallback_texto
+
+        # 2. GARANTÍA DE AUDIO (Wikimedia)
+        st.markdown('<div class="msg">🎵 Descargando música inquebrantable desde Wikimedia...</div>', unsafe_allow_html=True)
         musica_file = "taller/bg.mp3"
-        descargar_musica(musica_file, musica_lista)
+        try:
+            r_m = requests.get(musica_url, headers={"User-Agent": "Mozilla/5.0"}, timeout=15)
+            if r_m.status_code != 200 or len(r_m.content) < 100000:
+                raise Exception("Fallo en descarga de música")
+            with open(musica_file, "wb") as f: f.write(r_m.content)
+        except:
+            st.error("❌ Fallo crítico de audio: No se pudo descargar la música de Wikimedia. Abortando render para evitar vídeo mudo.")
+            st.stop()
+
+        # 3. GENERAR AUDIO Y VOZ
+        st.markdown('<div class="msg">🎙️ Grabando locución...</div>', unsafe_allow_html=True)
+        audio_voz = "taller/voz.mp3"
+        subprocess.run(f'edge-tts --voice {voz} --text "{guion_final}" --write-media "{audio_voz}"', shell=True)
 
         try: dur = float(subprocess.check_output(f'ffprobe -i "{audio_voz}" -show_entries format=duration -v quiet -of csv="p=0"', shell=True))
-        except: dur = 15.0
+        except: dur = 20.0
 
-        st.markdown('<div class="msg">🎧 Mezclando audio (Motor V169)...</div>', unsafe_allow_html=True)
         audio_mezcla = "taller/mezcla.mp3"
         fade_st = max(0, dur - 2)
-        if os.path.exists(musica_file):
-            # CÓDIGO INTACTO V169
-            subprocess.run(f'ffmpeg -y -i "{audio_voz}" -i "{musica_file}" -filter_complex "[1:a]volume=0.10,afade=t=out:st={fade_st}:d=2[m];[0:a][m]amix=inputs=2:duration=first" -c:a libmp3lame -threads 1 "{audio_mezcla}" > /dev/null 2>&1', shell=True)
-        
-        if not os.path.exists(audio_mezcla) or os.path.getsize(audio_mezcla) < 1000:
-            shutil.copy(audio_voz, audio_mezcla)
+        subprocess.run(f'ffmpeg -y -i "{audio_voz}" -i "{musica_file}" -filter_complex "[1:a]volume={vol_musica},afade=t=out:st={fade_st}:d=2[m];[0:a][m]amix=inputs=2:duration=first" -c:a libmp3lame "{audio_mezcla}" > /dev/null 2>&1', shell=True)
 
-        palabras_puras = guion.upper().split()
-        n_clips = min(math.ceil(dur / 3.0), 12) 
+        palabras = guion_final.upper().split()
+        n_clips = min(math.ceil(dur / 2.8), 12) 
         t_clip = dur / n_clips
         clips = []
-        chunk_size = max(len(palabras_puras) // n_clips, 1)
-        videos_usados = [] # MEMORIA PARA NO REPETIR
 
+        # 4. GARANTÍA DE NO REPETICIÓN DE VÍDEOS (Uses Session State)
         for i in range(n_clips):
             kw = random.choice(kws)
-            st.markdown(f'<div class="msg">🎥 Escena {i+1}/{n_clips}: Descargando y tatuando "{kw}"...</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="msg">🎥 Escena {i+1}/{n_clips}: Recortando vídeo ÚNICO para "{kw}"...</div>', unsafe_allow_html=True)
             
-            raw_vid, vid = f"taller/r_{i}.mp4", f"taller/v_{i}.mp4"
+            vid = f"taller/v_{i}.mp4"
+            exito_vid = False
             
-            pal_clip = palabras_puras[i*chunk_size:(i+1)*chunk_size] if i < n_clips-1 else palabras_puras[i*chunk_size:]
-            chunks_sub = [pal_clip[j:j+2] for j in range(0, len(pal_clip), 2)]
-            t_pair = t_clip / max(len(chunks_sub), 1)
-            text_filters = []
-            
-            for j, p in enumerate(chunks_sub):
-                ts, te = j * t_pair, (j + 1) * t_pair
-                if len(p) == 2 and (len(p[0]) + len(p[1]) > 10):
-                    text_filters.append(f"drawtext=text='{p[0]}':fontfile='{f_abs}':fontcolor={color_sub}:fontsize=70:borderw=5:bordercolor=black:x=(w-tw)/2:y=(h-th)/2-45:enable='between(t,{ts},{te})'")
-                    text_filters.append(f"drawtext=text='{p[1]}':fontfile='{f_abs}':fontcolor={color_sub}:fontsize=70:borderw=5:bordercolor=black:x=(w-tw)/2:y=(h-th)/2+45:enable='between(t,{ts},{te})'")
+            # SUBTÍTULOS RÁPIDOS Y CLAROS
+            sub_split = [palabras[j:j+2] for j in range(i*len(palabras)//n_clips, (i+1)*len(palabras)//n_clips, 2)]
+            t_p = t_clip / max(len(sub_split), 1)
+            draws = []
+            for k, p in enumerate(sub_split):
+                t_txt = " ".join(p)
+                if len(t_txt) > 10:
+                    draws.append(f"drawtext=text='{p[0]}':fontfile='{f_abs}':fontcolor={color_sub}:fontsize=70:borderw=5:bordercolor=black:x=(w-tw)/2:y=(h-th)/2-45:enable='between(t,{k*t_p},{(k+1)*t_p})'")
+                    if len(p) > 1:
+                        draws.append(f"drawtext=text='{p[1]}':fontfile='{f_abs}':fontcolor={color_sub}:fontsize=70:borderw=5:bordercolor=black:x=(w-tw)/2:y=(h-th)/2+45:enable='between(t,{k*t_p},{(k+1)*t_p})'")
                 else:
-                    text_filters.append(f"drawtext=text='{' '.join(p)}':fontfile='{f_abs}':fontcolor={color_sub}:fontsize=70:borderw=5:bordercolor=black:x=(w-tw)/2:y=(h-th)/2:enable='between(t,{ts},{te})'")
-
-            vf_script = ",".join(text_filters)
-            with open(f"taller/f_{i}.txt", "w") as f: f.write(f"scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,setsar=1,format=yuv420p,{vf_script}")
+                    draws.append(f"drawtext=text='{t_txt}':fontfile='{f_abs}':fontcolor={color_sub}:fontsize=70:borderw=5:bordercolor=black:x=(w-tw)/2:y=(h-th)/2:enable='between(t,{k*t_p},{(k+1)*t_p})'")
+            
+            vf = f"scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,setsar=1,{','.join(draws)}"
 
             try:
                 h = {"Authorization": PEXELS_API}
-                res = requests.get(f"https://api.pexels.com/videos/search?query={urllib.parse.quote(kw)}&orientation=portrait&per_page=15", headers=h, timeout=10).json()
+                res = requests.get(f"https://api.pexels.com/videos/search?query={urllib.parse.quote(kw)}&orientation=portrait&per_page=20", headers=h, timeout=10).json()
                 
-                # SELECCIÓN ANTI-REPETICIÓN
-                validos = [v for v in res.get('videos', []) if v.get('duration', 0) > 3 and v.get('id') not in videos_usados]
-                if validos: v_elegido = random.choice(validos)
-                else: v_elegido = res['videos'][0]
+                # MEMORIA DE VÍDEOS USADOS: Filtramos los que ya se han usado en renders anteriores
+                videos_validos = [v for v in res.get('videos', []) if v.get('duration', 0) > 3 and v.get('id') not in st.session_state['videos_usados']]
                 
-                videos_usados.append(v_elegido['id'])
-                v_url = v_elegido['video_files'][0]['link']
-                
-                # DESCARGA LOCAL (El secreto de la V169)
-                with open(raw_vid, 'wb') as f: f.write(requests.get(v_url, timeout=15).content)
-                subprocess.run(f'ffmpeg -y -stream_loop -1 -i "{raw_vid}" -t {t_clip} -filter_script:v taller/f_{i}.txt -c:v libx264 -preset ultrafast -r 24 -an -threads 1 "{vid}" > /dev/null 2>&1', shell=True)
-            except:
-                subprocess.run(f'ffmpeg -y -f lavfi -i color=c=#1A1A1A:s=720x1280:d={t_clip}:r=24 -vf "format=yuv420p,{vf_script}" -c:v libx264 -preset ultrafast -an -threads 1 "{vid}" > /dev/null 2>&1', shell=True)
+                if videos_validos:
+                    v_elegido = random.choice(videos_validos)
+                    # Guardamos el ID en la memoria infinita
+                    st.session_state['videos_usados'].append(v_elegido['id'])
+                    v_url = v_elegido['video_files'][0]['link']
+                    
+                    subprocess.run(f'ffmpeg -y -stream_loop -1 -i "{v_url}" -t {t_clip} -vf "{vf}" -c:v libx264 -preset ultrafast -an "{vid}" > /dev/null 2>&1', shell=True)
+                    if os.path.exists(vid): exito_vid = True
+            except: pass
 
-            clips.append(os.path.abspath(vid).replace('\\', '/'))
-            if os.path.exists(raw_vid): os.remove(raw_vid)
-            gc.collect()
+            if not exito_vid:
+                st.warning(f"⚠️ Pexels falló para la keyword '{kw}'. Usando escena neutra.")
+                vf_neutro = f"format=yuv420p,{','.join(draws)}"
+                subprocess.run(f'ffmpeg -y -f lavfi -i color=c=#1A1A1A:s=720x1280:d={t_clip}:r=24 -vf "{vf_neutro}" -c:v libx264 -preset ultrafast -an "{vid}" > /dev/null 2>&1', shell=True)
 
-        st.markdown('<div class="msg">🎬 Ensamblado final...</div>', unsafe_allow_html=True)
+            clips.append(os.path.abspath(vid))
+
+        # 5. GARANTÍA DE LONGITUD FINAL
         with open("taller/lista.txt", "w") as f:
             for c in clips: f.write(f"file '{c}'\n")
         
+        # Comprobar si el guion o clips son muy cortos para un video viral
+        if dur < 8.0:
+            st.error(f"❌ Fallo de Garantía Viral: El vídeo final duraría solo {dur:.1f}s. Demasiado corto. Revisa tu prompt o guion.")
+            st.stop()
+
         final = "taller/master.mp4"
-        subprocess.run(f'ffmpeg -y -f concat -safe 0 -i taller/lista.txt -i "{audio_mezcla}" -map 0:v -map 1:a -c:v libx264 -preset ultrafast -crf 28 -c:a aac -threads 1 -t {dur} "{final}" > /dev/null 2>&1', shell=True)
+        subprocess.run(f'ffmpeg -y -f concat -safe 0 -i taller/lista.txt -i "{audio_mezcla}" -map 0:v -map 1:a -c:v libx264 -preset ultrafast -crf 28 -t {dur} "{final}" > /dev/null 2>&1', shell=True)
         
         if os.path.exists(final):
-            st.markdown('<div class="info-card">🏆 VÍDEO ESTABLE V185 COMPLETADO</div>', unsafe_allow_html=True)
+            st.markdown('<div class="info-card">🏆 VÍDEO CON GARANTÍA COMPLETO</div>', unsafe_allow_html=True)
             with open(final, "rb") as f: st.video(f.read())
             st.balloons()
