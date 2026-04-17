@@ -3,7 +3,7 @@ import os, time, subprocess, re, urllib.parse, shutil, math, random, gc
 import requests
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Fénix Studio V150", layout="centered")
+st.set_page_config(page_title="Fénix Studio V151", layout="centered")
 components.html("<script>if('wakeLock' in navigator){navigator.wakeLock.request('screen');}</script>", height=0)
 
 st.markdown("""
@@ -16,7 +16,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V150 🧬🏆</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V151 🏎️🛡️</div>', unsafe_allow_html=True)
 
 @st.cache_resource
 def get_font():
@@ -51,14 +51,14 @@ def preparar():
 tema = st.text_input("🧠 Tema del vídeo:", placeholder="Ej: Hábitos de titan")
 color_sub = st.selectbox("🎨 Color Subtítulos:", ["yellow", "white", "#00FFD1"])
 
-if st.button("🚀 CREAR VÍDEO (CERO RAM / ADN CLONADO)"):
+if st.button("🚀 CREAR VÍDEO (MODO SEGURO - THREADS 1)"):
     if not tema: st.error("Escribe un tema")
     else:
         preparar()
         log = st.container()
         with log:
-            # 1. GUION Y AUDIO MAESTRO
-            st.markdown('<div class="msg">📝 IA redactando y grabando...</div>', unsafe_allow_html=True)
+            # 1. GUION Y AUDIO
+            st.markdown('<div class="msg">📝 IA redactando guion y grabando voz...</div>', unsafe_allow_html=True)
             p = f"Escribe UNICAMENTE el texto para TikTok sobre {tema}. Sin notas. Solo español fluido. Maximo 90 palabras."
             try:
                 g_raw = requests.get(f"https://text.pollinations.ai/{urllib.parse.quote(p)}", timeout=20).text
@@ -75,70 +75,67 @@ if st.button("🚀 CREAR VÍDEO (CERO RAM / ADN CLONADO)"):
             try: dur = float(subprocess.check_output(f'ffprobe -i "{audio_voz}" -show_entries format=duration -v quiet -of csv="p=0"', shell=True))
             except: dur = 20.0
 
-            st.markdown('<div class="msg">🎧 Consolidando audio mp3...</div>', unsafe_allow_html=True)
+            # Pre-mezcla de audio controlando los hilos
+            st.markdown('<div class="msg">🎧 Pre-mezclando audio maestro...</div>', unsafe_allow_html=True)
             audio_mezcla = "taller/mezcla_final.mp3"
             fade_st = max(0, dur - 2)
-            # Aseguramos que la mezcla salga como un mp3 estándar
-            subprocess.run(f'ffmpeg -y -i "{audio_voz}" -i "{musica_file}" -filter_complex "[1:a]volume=0.15,afade=t=out:st={fade_st}:d=2[m];[0:a][m]amix=inputs=2:duration=first" -c:a libmp3lame "{audio_mezcla}"', shell=True)
+            subprocess.run(f'ffmpeg -y -i "{audio_voz}" -i "{musica_file}" -filter_complex "[1:a]volume=0.15,afade=t=out:st={fade_st}:d=2[m];[0:a][m]amix=inputs=2:duration=first" -threads 1 "{audio_mezcla}"', shell=True)
 
-            # 2. PROCESAMIENTO ESTRICTO DE CLIPS
+            # 2. CAPTURA Y RECORTE DE VÍDEOS (Estables, sin audio, mismo formato)
             n_clips = min(math.ceil(dur / 3.4), 14)
             t_clip = dur / n_clips
             clips = []
             palabras = guion.split()
             chunk = max(len(palabras) // n_clips, 1)
-            f_s = f"fontfile='{f_abs}':" if os.path.exists(f_abs) else ""
 
             for i in range(n_clips):
-                pal_clip = palabras[i*chunk : (i+1)*chunk] if i < n_clips - 1 else palabras[i*chunk:]
-                txt_part = " ".join(pal_clip)
+                txt_part = " ".join(palabras[i*chunk:(i+1)*chunk])
                 kw = extraer_kw(txt_part, i)
-                st.markdown(f'<div class="msg">🎥 Escena {i+1}/{n_clips}: Clonando ADN de "{kw.upper()}"...</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="msg">🎥 Escena {i+1}/{n_clips}: Recortando "{kw.upper()}"...</div>', unsafe_allow_html=True)
                 
-                chunks_c = [pal_clip[j:j+2] for j in range(0, len(pal_clip), 2)]
-                t_pair = t_clip / max(len(chunks_c), 1)
-                text_filters = []
-                for j, p_par in enumerate(chunks_c):
-                    ts, te = j * t_pair, (j + 1) * t_pair
-                    txt_draw = ' '.join(p_par).upper().replace("'", "").replace(":", "").replace(",", "").replace(";", "")
-                    text_filters.append(f"drawtext=text='{txt_draw}':fontcolor={color_sub}:fontsize=70:{f_s}borderw=5:bordercolor=black:x=(w-tw)/2:y=(h-th)/2:enable='between(t,{ts},{te})'")
-                
-                vf_txt = ",".join(text_filters) if text_filters else ""
-                vf_base = "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,setsar=1,fps=24,format=yuv420p"
-                vf_full = f"{vf_base},{vf_txt}" if vf_txt else vf_base
-
-                raw = f"taller/r_{i}.mp4"
-                vid = f"taller/v_{i}.mp4"
-                
-                # LA MAGIA ESTÁ AQUÍ: -profile:v baseline -video_track_timescale 90000 
-                cmd_render = f'ffmpeg -y -stream_loop -1 -i "{raw}" -t {t_clip} -vf "{vf_full}" -c:v libx264 -preset ultrafast -crf 28 -profile:v baseline -level 3.0 -video_track_timescale 90000 -an "{vid}"'
-                cmd_fall = f'ffmpeg -y -f lavfi -i color=c=#111827:s=720x1280:d={t_clip}:r=24 -vf "{vf_full}" -c:v libx264 -preset ultrafast -crf 28 -profile:v baseline -level 3.0 -video_track_timescale 90000 -an "{vid}"'
-
+                raw, vid = f"taller/r_{i}.mp4", f"taller/v_{i}.mp4"
                 try:
                     h = {"Authorization": PEXELS_API}
                     url_p = f"https://api.pexels.com/videos/search?query={urllib.parse.quote(kw)}&orientation=portrait&per_page=1"
                     v_link = requests.get(url_p, headers=h, timeout=12).json()['videos'][0]['video_files'][0]['link']
                     with open(raw, 'wb') as f: f.write(requests.get(v_link).content)
-                    subprocess.run(cmd_render, shell=True)
+                    # OJO: -threads 1 para no ahogar la RAM al recortar
+                    subprocess.run(f'ffmpeg -y -stream_loop -1 -i "{raw}" -t {t_clip} -vf "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,setsar=1,format=yuv420p" -c:v libx264 -preset ultrafast -r 24 -an -threads 1 "{vid}"', shell=True)
                 except:
-                    subprocess.run(cmd_fall, shell=True)
+                    subprocess.run(f'ffmpeg -y -f lavfi -i color=c=#111827:s=720x1280:d={t_clip}:r=24 -c:v libx264 -preset ultrafast -an -threads 1 "{vid}"', shell=True)
                 
                 clips.append(os.path.abspath(vid))
                 if os.path.exists(raw): os.remove(raw)
                 gc.collect()
 
-            # 3. ENSAMBLADO DE CERO RAM
-            st.markdown('<div class="msg">🎬 Unión final instantánea...</div>', unsafe_allow_html=True)
+            # 3. ENSAMBLADO Y SUBTÍTULOS (MÉTODO V133 QUE NUNCA FALLA)
+            st.markdown('<div class="msg">🎬 Unión final (Forzando 1 solo núcleo para no petar)...</div>', unsafe_allow_html=True)
             with open("taller/lista.txt", "w") as f:
                 for c in clips: f.write(f"file '{c}'\n")
             
+            mudo = "taller/mudo.mp4"
+            subprocess.run(f'ffmpeg -y -f concat -safe 0 -i taller/lista.txt -c copy "{mudo}"', shell=True)
+            
+            # Generar el archivo de texto de los subtítulos
+            pal_sub = guion.upper().split()
+            chunks = [pal_sub[j:j+2] for j in range(0, len(pal_sub), 2)]
+            t_ch = dur / max(len(chunks), 1)
+            f_s = f"fontfile='{f_abs}':" if os.path.exists(f_abs) else ""
+            subs = []
+            for j, p in enumerate(chunks):
+                ts, te = j * t_ch, (j + 1) * t_ch
+                txt_draw = ' '.join(p).replace("'", "").replace(":", "")
+                subs.append(f"drawtext=text='{txt_draw}':fontcolor={color_sub}:fontsize=70:{f_s}borderw=5:bordercolor=black:x=(w-tw)/2:y=(h-th)/2:enable='between(t,{ts},{te})'")
+            
+            with open("taller/s.txt", "w") as f: f.write(",\n".join(subs))
+            
             final = "taller/master.mp4"
-            # Pegamos vídeo (copy) y audio (copy) a la velocidad de la luz. 0 RAM.
-            subprocess.run(f'ffmpeg -y -f concat -safe 0 -i taller/lista.txt -i "{audio_mezcla}" -map 0:v -map 1:a -c:v copy -c:a copy -shortest "{final}"', shell=True)
+            # EL COMANDO MÁGICO QUE NO PETA: -threads 1
+            subprocess.run(f'ffmpeg -y -i "{mudo}" -i "{audio_mezcla}" -filter_complex_script taller/s.txt -map 0:v -map 1:a -c:v libx264 -preset ultrafast -crf 28 -threads 1 -t {dur} "{final}"', shell=True)
             
             if os.path.exists(final):
-                st.markdown('<div class="info-card">🏆 VÍDEO COMPLETO (HEMOS GANADO AL SERVIDOR)</div>', unsafe_allow_html=True)
+                st.markdown('<div class="info-card">🏆 VÍDEO COMPLETO (¡HEMOS VENCIDO AL SERVIDOR!)</div>', unsafe_allow_html=True)
                 with open(final, "rb") as f: st.video(f.read())
                 st.balloons()
             else:
-                st.error("❌ No es posible... Avísame.")
+                st.error("❌ Si esto falla, Streamlit nos odia de verdad.")
