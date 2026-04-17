@@ -3,7 +3,7 @@ import os, time, subprocess, re, urllib.parse, shutil, math, random, gc
 import requests
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Fénix Studio V189", layout="centered")
+st.set_page_config(page_title="Fénix Studio V190", layout="centered")
 components.html("<script>if('wakeLock' in navigator){navigator.wakeLock.request('screen');}</script>", height=0)
 
 st.markdown("""
@@ -17,7 +17,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V189 🦅🧠</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V190 🦅🛡️</div>', unsafe_allow_html=True)
 
 @st.cache_resource
 def get_font():
@@ -31,31 +31,39 @@ def get_font():
 
 PEXELS_API = "Ty0uFISh3APEAXIVcrFpSM7ZdwOeRElCuUgoG42EW6WVISRTEfqjm0BZ"
 
-# EL MOTOR MUSICAL EXACTO DE LA V169
-MUSICA_EPICA = [
+# RULETA DE SERVIDORES MUSICALES (Si uno falla, salta al otro)
+MIRRORS_NEGOCIO = [
+    "https://upload.wikimedia.org/wikipedia/commons/4/4c/A_Hero_Steps_Forward.mp3",
     "https://cdn.pixabay.com/download/audio/2021/05/20/audio_f31f9b3b8e.mp3?filename=dance-playful-night-51078.mp3",
-    "https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3?filename=inspiring-cinematic-ambient-11619.mp3",
-    "https://upload.wikimedia.org/wikipedia/commons/4/4c/A_Hero_Steps_Forward.mp3"
+    "https://ia801400.us.archive.org/1/items/A_Hero_Steps_Forward/A_Hero_Steps_Forward.mp3"
 ]
 
-MUSICA_TERROR = [
+MIRRORS_TERROR = [
+    "https://upload.wikimedia.org/wikipedia/commons/2/23/Closer_to_the_Void.mp3",
     "https://freepd.com/music/Horror%20Ambience.mp3",
-    "https://freepd.com/music/Deep%20Space.mp3",
-    "https://upload.wikimedia.org/wikipedia/commons/2/23/Closer_to_the_Void.mp3"
+    "https://ia800104.us.archive.org/1/items/HorrorAmbience_201901/Horror%20Ambience.mp3"
 ]
 
-def descargar_musica_169(ruta, tipo):
-    # Usamos list() para no machacar la lista original
-    lista_urls = list(MUSICA_TERROR) if tipo == "terror" else list(MUSICA_EPICA)
-    random.shuffle(lista_urls)
-    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
-    for url in lista_urls:
+def descargar_musica_bunker(ruta, tipo):
+    mirrors = MIRRORS_TERROR if tipo == "terror" else MIRRORS_NEGOCIO
+    random.shuffle(mirrors)
+    # User-Agent rotatorio ultra-seguro
+    headers = {
+        "User-Agent": f"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{random.randint(100, 120)}.0.0.0 Safari/537.36",
+        "Accept": "audio/mpeg, audio/*; q=0.9, */*; q=0.8"
+    }
+    
+    for url in mirrors:
         try:
-            r = requests.get(url, headers=headers, timeout=15)
-            if r.status_code == 200 and len(r.content) > 150000:
-                with open(ruta, "wb") as f: f.write(r.content)
-                return True
-        except: pass
+            r = requests.get(url, headers=headers, timeout=15, stream=True)
+            if r.status_code == 200:
+                with open(ruta, "wb") as f:
+                    for chunk in r.iter_content(chunk_size=8192):
+                        f.write(chunk)
+                if os.path.getsize(ruta) > 100000: # Valida que no sea un HTML vacío
+                    return True
+        except: 
+            continue
     return False
 
 GUIONES_TERROR = [
@@ -63,14 +71,19 @@ GUIONES_TERROR = [
     "Dicen que si te despiertas a las 3 de la madrugada sin razón, es porque alguien te está mirando fijamente desde la esquina de tu habitación. No abras los ojos. Hazte el dormido. Porque si la miras, nunca te dejará ir."
 ]
 GUIONES_GYM = [
-    "El noventa y nueve por ciento de la gente se rinde justo antes de lograrlo. Pero tú no eres del montón. Levántate, ponte las zapatillas y ve a sudar. El dolor que sientes hoy, es la fuerza que tendrás mañana. No hay excusas."
+    "El noventa y nueve por ciento de la gente se rinde justo antes de lograrlo. Pero tú no eres del montón. Levántate, ponte las zapatillas y ve a sudar. El dolor que sientes hoy, es la fuerza que tendrás mañana. No hay excusas.",
+    "Nadie va a hacer el trabajo por ti. Nadie te va a regalar el cuerpo de tus sueños. Tienes que ganártelo en cada repetición, en cada gota de sudor. Mírate al espejo y prométete que hoy vas a darlo absolutamente todo."
 ]
 GUIONES_NEGOCIO = [
-    "Te dijeron que era imposible. Se rieron de tus ideas. Hoy tú construyes tu imperio mientras ellos siguen perdiendo el tiempo. La libertad financiera no se sueña, se trabaja cada maldito día. El mundo es de los que toman acción."
+    "Te dijeron que era imposible. Se rieron de tus ideas. Hoy tú construyes tu imperio mientras ellos siguen perdiendo el tiempo. La libertad financiera no se sueña, se trabaja cada maldito día. El mundo es de los que toman acción.",
+    "La diferencia entre un soñador y un ganador es la ejecución. Mientras otros buscan el fin de semana para descansar, tú buscas la forma de multiplicar tus ingresos. No te detengas hasta que tu cuenta bancaria parezca un número de teléfono."
 ]
 
 def purificar_guion_fluido(t, fallback_text):
-    if any(x in t.lower() for x in ["<div", "doctype", "html", "class="]):
+    t_lower = t.lower()
+    # FILTRO NUCLEAR ANTI-CLOUDFLARE Y ANTI-HTML
+    bad_words = ["<div", "doctype", "html", "class=", "cloudflare", "bad gateway", "502", "error", "function("]
+    if any(x in t_lower for x in bad_words):
         return fallback_text
     
     texto_limpio = t
@@ -94,43 +107,34 @@ def preparar():
 
 f_abs = get_font()
 
-# Interfaz más limpia
+categoria = st.selectbox("🎬 Temática General:", ["Negocios / Éxito", "Gym / Motivación", "Terror / Misterio"])
 color_sub = st.selectbox("🎨 Color Subtítulos:", ["yellow", "white", "#FF3E3E", "#00FFD1"])
 st.markdown("---")
-tema_prompt = st.text_input("🧠 Tema para guion de IA:", placeholder="Ej: Hospital abandonado o Hábitos de éxito...")
+tema_prompt = st.text_input("🧠 Tema para guion de IA:", placeholder="Ej: Hábitos millonarios...")
 guion_personalizado = st.text_area("📝 O guion EXACTO (mín 15 palabras):", placeholder="Pega tu texto aquí y el bot lo usará literalmente.", height=120)
 
-if st.button("🚀 CREAR VÍDEO CON CEREBRO V189"):
+if st.button("🚀 CREAR VÍDEO (BÚNKER V190)"):
     preparar()
     log = st.container()
     with log:
-        # LÓGICA DEL CEREBRO: Lee tu texto para saber de qué trata realmente
-        texto_total = (tema_prompt + " " + guion_personalizado).lower()
-        
-        # SI DETECTA PALABRAS DE TERROR, ACTIVA EL MODO MIEDO
-        if any(x in texto_total for x in ["miedo", "terror", "horror", "oscuro", "hospital", "sangre", "paranormal", "fantasma", "muerte"]):
+        if categoria == "Terror / Misterio":
             tipo_musica = "terror"
             voz = "es-ES-AlvaroNeural"
             kws = ["scary dark", "abandoned building", "creepy forest", "horror night"]
             fallback_lista = GUIONES_TERROR
             vol_musica = "0.08"
-            st.markdown('<div class="msg">🧠 ¡Cerebro Fénix detectó MODO TERROR! Activando música de miedo y voz oscura...</div>', unsafe_allow_html=True)
-        # SI DETECTA GYM
-        elif any(x in texto_total for x in ["gym", "entrenar", "fuerte", "disciplina", "fitness", "dieta", "kilos"]):
-            tipo_musica = "epica" 
+        elif categoria == "Gym / Motivación":
+            tipo_musica = "negocio" 
             voz = "es-MX-JorgeNeural"
             kws = ["gym workout", "fitness motivation", "heavy weights training", "running athlete"]
             fallback_lista = GUIONES_GYM
             vol_musica = "0.10"
-            st.markdown('<div class="msg">🧠 ¡Cerebro Fénix detectó MODO GYM! Activando música motivacional...</div>', unsafe_allow_html=True)
-        # POR DEFECTO: NEGOCIOS/ÉXITO
         else: 
-            tipo_musica = "epica"
+            tipo_musica = "negocio"
             voz = "es-MX-JorgeNeural"
             kws = ["luxury lifestyle", "dubai skyline", "private jet", "expensive supercar"]
             fallback_lista = GUIONES_NEGOCIO
             vol_musica = "0.10"
-            st.markdown('<div class="msg">🧠 ¡Cerebro Fénix detectó MODO NEGOCIOS! Activando música de éxito...</div>', unsafe_allow_html=True)
 
         fallback_texto = random.choice(fallback_lista)
         
@@ -141,7 +145,7 @@ if st.button("🚀 CREAR VÍDEO CON CEREBRO V189"):
             st.markdown('<div class="msg">📝 Usando tu guion personalizado exacto...</div>', unsafe_allow_html=True)
             guion_final = guion_personalizado.strip()
         elif tema_prompt.strip():
-            st.markdown('<div class="msg">🤖 Pidiendo a la IA que redacte un guion...</div>', unsafe_allow_html=True)
+            st.markdown('<div class="msg">🧠 Pidiendo a la IA que redacte un guion...</div>', unsafe_allow_html=True)
             prompt = f"Escribe un guion fluido, intenso y completo para TikTok sobre: {tema_prompt}. Debe tener entre 45 y 70 palabras. Asegúrate de que termine con una frase conclusiva, con punto final. Solo español."
             try:
                 g_raw = requests.get(f"https://text.pollinations.ai/{urllib.parse.quote(prompt)}", timeout=25).text
@@ -152,10 +156,10 @@ if st.button("🚀 CREAR VÍDEO CON CEREBRO V189"):
             st.markdown('<div class="msg">🎲 Usando guion viral de la biblioteca garantizada.</div>', unsafe_allow_html=True)
             guion_final = fallback_texto
 
-        st.markdown('<div class="msg">🎵 Extrayendo banda sonora...</div>', unsafe_allow_html=True)
+        st.markdown('<div class="msg">🎵 Extrayendo música con Ruleta Anti-Caídas...</div>', unsafe_allow_html=True)
         musica_file = "taller/bg.mp3"
-        if not descargar_musica_169(musica_file, tipo_musica):
-            st.error("❌ Fallo crítico de audio. Abortando render para evitar vídeo mudo.")
+        if not descargar_musica_bunker(musica_file, tipo_musica):
+            st.error("❌ Fallo crítico de audio en todos los servidores. Abortando render para evitar vídeo mudo.")
             st.stop()
 
         st.markdown('<div class="msg">🎙️ Grabando locución...</div>', unsafe_allow_html=True)
@@ -235,6 +239,6 @@ if st.button("🚀 CREAR VÍDEO CON CEREBRO V189"):
         subprocess.run(f'ffmpeg -y -f concat -safe 0 -i taller/lista.txt -i "{audio_mezcla}" -map 0:v -map 1:a -c:v libx264 -preset ultrafast -crf 28 -r 24 -t {dur} "{final}" > /dev/null 2>&1', shell=True)
         
         if os.path.exists(final):
-            st.markdown('<div class="info-card">🏆 VÍDEO CON CEREBRO INTELIGENTE COMPLETADO</div>', unsafe_allow_html=True)
+            st.markdown('<div class="info-card">🏆 VÍDEO BÚNKER V190 COMPLETADO</div>', unsafe_allow_html=True)
             with open(final, "rb") as f: st.video(f.read())
             st.balloons()
