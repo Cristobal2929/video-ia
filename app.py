@@ -16,7 +16,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V179 🦅🧠</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V179 🦅🧼</div>', unsafe_allow_html=True)
 
 @st.cache_resource
 def get_font():
@@ -32,9 +32,7 @@ PEXELS_API = "Ty0uFISh3APEAXIVcrFpSM7ZdwOeRElCuUgoG42EW6WVISRTEfqjm0BZ"
 
 def obtener_datos_tema(t_input):
     t = t_input.lower()
-    
-    # DICCIONARIO TERROR
-    if any(x in t for x in ["miedo", "terror", "horror", "oscuro", "hospital", "sangre", "paranormal", "fantasma", "asustar", "creepy"]):
+    if any(x in t for x in ["miedo", "terror", "horror", "oscuro", "hospital", "sangre", "paranormal"]):
         return {
             "tipo": "terror",
             "voz": "es-ES-AlvaroNeural",
@@ -42,16 +40,14 @@ def obtener_datos_tema(t_input):
             "kws": ["scary dark", "abandoned building", "creepy forest", "horror night", "dark shadows", "spooky"],
             "fallback": "En el silencio de la noche, las sombras susurran verdades que nadie quiere escuchar."
         }
-    # DICCIONARIO GYM / SALUD / DIETAS (¡El que falló antes!)
-    elif any(x in t for x in ["gym", "entrenar", "fuerte", "disciplina", "fitness", "dieta", "kilos", "peso", "adelgazar", "nutricion", "salud", "ejercicio", "rutina", "cuerpo", "musculo"]):
+    elif any(x in t for x in ["gym", "entrenar", "fuerte", "disciplina", "fitness", "dieta", "kilos"]):
         return {
-            "tipo": "salud y fitness",
+            "tipo": "gym",
             "voz": "es-MX-JorgeNeural",
-            "musica": ["https://cdn.pixabay.com/download/audio/2021/11/25/audio_91b12b556b.mp3?filename=powerful-beat-12179.mp3", "https://freepd.com/music/The%20Crown.mp3"],
-            "kws": ["gym workout", "healthy food", "running athlete", "fitness motivation", "diet fruit", "heavy weights"],
-            "fallback": "Tu cuerpo es tu templo. La disciplina en tu mesa es la victoria en tu espejo."
+            "musica": ["https://cdn.pixabay.com/download/audio/2021/11/25/audio_91b12b556b.mp3?filename=powerful-beat-12179.mp3"],
+            "kws": ["gym workout", "fitness motivation", "heavy weights", "running athlete", "boxing training"],
+            "fallback": "El dolor de hoy es la fuerza de mañana. No te rindas, levántate y pelea."
         }
-    # DICCIONARIO NEGOCIOS (Por defecto si no es nada de lo anterior)
     else:
         return {
             "tipo": "negocio",
@@ -62,9 +58,26 @@ def obtener_datos_tema(t_input):
         }
 
 def purificar_guion(t, fallback_text):
+    # Si la IA manda código roto, usa el fallback
     if any(x in t.lower() for x in ["<div", "doctype", "html", "class="]):
         return fallback_text
-    return re.sub(r'[^a-zA-ZáéíóúÁÉÍÓÚñÑ.,! ]', '', t).strip()
+    
+    # EL NUEVO FILTRO LIMPIO: Cortar el texto si aparece la firma de Pollinations
+    texto_limpio = t
+    cortes = ["support pollinations", "powered by", "free text api", "coffee to keep"]
+    for corte in cortes:
+        if corte.lower() in texto_limpio.lower():
+            # Corta el texto justo donde empieza la basura publicitaria
+            texto_limpio = texto_limpio[:texto_limpio.lower().index(corte.lower())]
+
+    # Limpieza final de caracteres raros
+    texto_limpio = re.sub(r'[^a-zA-ZáéíóúÁÉÍÓÚñÑ.,! ]', '', texto_limpio).strip()
+    
+    # Si al final se queda vacío, pon el fallback
+    if len(texto_limpio) < 5:
+        return fallback_text
+        
+    return texto_limpio
 
 def preparar():
     if os.path.exists("taller"): shutil.rmtree("taller")
@@ -72,10 +85,10 @@ def preparar():
     subprocess.run("pkill ffmpeg", shell=True)
 
 f_abs = get_font()
-tema = st.text_input("🧠 Tema del vídeo:", placeholder="Ej: Dietas para perder peso... o Negocios de lujo...")
+tema = st.text_input("🧠 Tema del vídeo:", placeholder="Ej: Dieta para perder kilos... o Terror en el bosque...")
 color_sub = st.selectbox("🎨 Color Subtítulos:", ["yellow", "white", "#FF3E3E", "#00FFD1"])
 
-if st.button("🚀 CREAR VÍDEO CON CEREBRO EXPANDIDO V179"):
+if st.button("🚀 CREAR VÍDEO CON CEREBRO V179"):
     if not tema: st.error("⚠️ Escribe un tema primero")
     else:
         preparar()
@@ -84,9 +97,9 @@ if st.button("🚀 CREAR VÍDEO CON CEREBRO EXPANDIDO V179"):
         log = st.container()
         with log:
             st.markdown(f'<div class="msg">🤖 Modo activado: {datos_tema["tipo"].upper()}</div>', unsafe_allow_html=True)
-            st.markdown('<div class="msg">📝 Redactando guion temático...</div>', unsafe_allow_html=True)
+            st.markdown('<div class="msg">📝 Redactando guion temático y eliminando spam...</div>', unsafe_allow_html=True)
             try:
-                g_raw = requests.get(f"https://text.pollinations.ai/{urllib.parse.quote('Escribe una frase para TikTok sobre: ' + tema + '. Solo español. Maximo 70 palabras.')}", timeout=25).text
+                g_raw = requests.get(f"https://text.pollinations.ai/{urllib.parse.quote('Escribe un guion corto para TikTok sobre: ' + tema + '. Solo español. Maximo 60 palabras.')}", timeout=25).text
                 guion = purificar_guion(g_raw, datos_tema["fallback"])
             except: guion = datos_tema["fallback"]
 
@@ -159,5 +172,5 @@ if st.button("🚀 CREAR VÍDEO CON CEREBRO EXPANDIDO V179"):
             subprocess.run(f'ffmpeg -y -f concat -safe 0 -i taller/lista.txt -i "{audio_mezcla}" -map 0:v -map 1:a -c:v libx264 -preset ultrafast -t {dur} "{final}" > /dev/null 2>&1', shell=True)
             
             if os.path.exists(final):
-                st.markdown('<div class="info-card">🏆 VÍDEO 100% COHERENTE COMPLETADO</div>', unsafe_allow_html=True)
+                st.markdown('<div class="info-card">🏆 VÍDEO 100% LIMPIO COMPLETADO</div>', unsafe_allow_html=True)
                 with open(final, "rb") as f: st.video(f.read())
