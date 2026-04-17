@@ -3,7 +3,7 @@ import os, time, subprocess, re, urllib.parse, shutil, math, random, gc
 import requests
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Fénix Studio V157", layout="centered")
+st.set_page_config(page_title="Fénix Studio V158", layout="centered")
 components.html("<script>if('wakeLock' in navigator){navigator.wakeLock.request('screen');}</script>", height=0)
 
 st.markdown("""
@@ -17,7 +17,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V157 👁️⚡</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V158 🛡️🔊</div>', unsafe_allow_html=True)
 
 @st.cache_resource
 def get_font():
@@ -27,7 +27,7 @@ def get_font():
             r = requests.get("https://github.com/matomo-org/travis-scripts/raw/master/fonts/Arial.ttf")
             with open(p, "wb") as f: f.write(r.content)
         except: pass
-    return "font.ttf" # RUTA RELATIVA: Evita errores de sintaxis en FFmpeg
+    return "font.ttf"
 
 PEXELS_API = "Ty0uFISh3APEAXIVcrFpSM7ZdwOeRElCuUgoG42EW6WVISRTEfqjm0BZ"
 
@@ -53,7 +53,7 @@ f_abs = get_font()
 tema = st.text_input("🧠 Tema del vídeo:", placeholder="Ej: Hábitos de titan")
 color_sub = st.selectbox("🎨 Color Subtítulos:", ["yellow", "white", "#00FFD1"])
 
-if st.button("🚀 CREAR VÍDEO (SISTEMA CHIVATO)"):
+if st.button("🚀 CREAR VÍDEO (AUDIO BLINDADO)"):
     if not tema: st.error("⚠️ Escribe un tema")
     else:
         preparar()
@@ -74,16 +74,27 @@ if st.button("🚀 CREAR VÍDEO (SISTEMA CHIVATO)"):
             subprocess.run(f'edge-tts --voice es-MX-JorgeNeural --rate=+0% --text "{guion}" --write-media "{audio_voz}"', shell=True)
             
             musica_file = "taller/bg.mp3"
-            r_m = requests.get("https://www.chosic.com/wp-content/uploads/2021/07/Inspirational-Cinematic-Background.mp3")
-            with open(musica_file, "wb") as f: f.write(r_m.content)
+            try:
+                r_m = requests.get("https://www.chosic.com/wp-content/uploads/2021/07/Inspirational-Cinematic-Background.mp3", timeout=10)
+                with open(musica_file, "wb") as f: f.write(r_m.content)
+            except: pass # Si la red falla, no pasa nada
 
             try: dur = float(subprocess.check_output(f'ffprobe -i "{audio_voz}" -show_entries format=duration -v quiet -of csv="p=0"', shell=True))
             except: dur = 20.0
 
-            st.markdown('<div class="msg">🎧 Mezclando MP3 Maestro Seguro...</div>', unsafe_allow_html=True)
-            audio_mezcla = "taller/mezcla.mp3" # GUARDAMOS EN MP3 PARA CERO CONFLICTOS
+            st.markdown('<div class="msg">🎧 Procesando Audio Maestro Seguro...</div>', unsafe_allow_html=True)
+            audio_mezcla = "taller/mezcla.mp3"
             fade_st = max(0, dur - 2)
+            
+            # Intentamos mezclar
             subprocess.run(f'ffmpeg -y -i "{audio_voz}" -i "{musica_file}" -filter_complex "[1:a]volume=0.15,afade=t=out:st={fade_st}:d=2[m];[0:a][m]amix=inputs=2:duration=first" -c:a libmp3lame -threads 1 "{audio_mezcla}"', shell=True)
+
+            # EL BLINDAJE: Si la mezcla falló por culpa del servidor de música, usamos solo la voz
+            if not os.path.exists(audio_mezcla):
+                if os.path.exists(audio_voz):
+                    subprocess.run(f'cp "{audio_voz}" "{audio_mezcla}"', shell=True)
+                else: # Si todo falla, generamos audio mudo para que el video no se cuelgue
+                    subprocess.run(f'ffmpeg -y -f lavfi -i anullsrc=r=44100:cl=stereo -t {dur} -c:a libmp3lame "{audio_mezcla}"', shell=True)
 
             palabras_puras = re.sub(r'[^a-zA-ZáéíóúÁÉÍÓÚñÑ ]', '', guion).upper().split()
 
@@ -103,7 +114,7 @@ if st.button("🚀 CREAR VÍDEO (SISTEMA CHIVATO)"):
                 try:
                     headers = {"Authorization": PEXELS_API}
                     url_p = f"https://api.pexels.com/videos/search?query={urllib.parse.quote(kw)}&orientation=portrait&per_page=1"
-                    r_p = requests.get(url_p, headers=headers, timeout=12).json()
+                    r_p = requests.get(url_p, headers=headers, timeout=10).json()
                     v_url = r_p['videos'][0]['video_files'][0]['link']
                     with open(raw_vid, 'wb') as f: f.write(requests.get(v_url).content)
                     subprocess.run(f'ffmpeg -y -stream_loop -1 -i "{raw_vid}" -t {t_clip} -vf "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,setsar=1,format=yuv420p" -c:v libx264 -preset ultrafast -r 24 -an -threads 1 "{vid}"', shell=True)
@@ -135,12 +146,10 @@ if st.button("🚀 CREAR VÍDEO (SISTEMA CHIVATO)"):
             with open("taller/s.txt", "w") as f: f.write(",\n".join(subs))
             final = "taller/master.mp4"
             
-            st.markdown('<div class="msg">✨ Masterizado final (Con reporte de errores activado)...</div>', unsafe_allow_html=True)
+            st.markdown('<div class="msg">✨ Masterizado final (Inyectando audio blindado)...</div>', unsafe_allow_html=True)
             
-            # EL COMANDO DEFINITIVO: filter_script:v para aplicar al vídeo, y mapas explícitos
             cmd_final = f'ffmpeg -y -i "{mudo}" -i "{audio_mezcla}" -filter_script:v taller/s.txt -map 0:v:0 -map 1:a:0 -c:v libx264 -preset ultrafast -crf 28 -c:a copy -threads 1 -t {dur} "{final}"'
             
-            # EJECUTAMOS Y ATRAPAMOS EL ERROR SI LO HAY
             proceso = subprocess.run(cmd_final, shell=True, capture_output=True, text=True)
             
             if os.path.exists(final):
