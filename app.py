@@ -3,7 +3,7 @@ import os, time, subprocess, re, urllib.parse, shutil, math, random, gc
 import requests
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Fénix Studio V147", layout="centered")
+st.set_page_config(page_title="Fénix Studio V148", layout="centered")
 components.html("<script>if('wakeLock' in navigator){navigator.wakeLock.request('screen');}</script>", height=0)
 
 st.markdown("""
@@ -11,11 +11,12 @@ st.markdown("""
     .stApp { background: #000000; color: #FFFFFF; }
     .pro-title { font-size: 42px; font-weight: 900; background: -webkit-linear-gradient(45deg, #00FFD1, #FFD700); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: center; text-transform: uppercase; margin-bottom: 20px;}
     .msg { color: #00FFD1; font-family: 'Courier New', monospace; font-size: 14px; margin-bottom: 8px; border-left: 3px solid #FFD700; padding-left: 12px; }
+    .info-card { padding: 15px; border-radius: 12px; background: #0f172a; border: 1px solid #00FFD1; text-align: center; color: #00FFD1; margin-top: 25px; font-weight: bold;}
     .stButton>button { width: 100%; background: linear-gradient(45deg, #00FFD1, #0088ff); color: white; border: none; font-weight: 900; height: 55px; border-radius: 12px; font-size: 18px;}
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V147 🧩🛡️</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V148 🧩📺</div>', unsafe_allow_html=True)
 
 @st.cache_resource
 def get_font():
@@ -50,7 +51,7 @@ def preparar():
 tema = st.text_input("🧠 Tema del vídeo:", placeholder="Ej: Hábitos de titan")
 color_sub = st.selectbox("🎨 Color Subtítulos:", ["yellow", "white", "#00FFD1"])
 
-if st.button("🚀 CREAR VÍDEO (PIEZAS ESTANDARIZADAS)"):
+if st.button("🚀 CREAR VÍDEO (FUSIÓN PERFECTA TS)"):
     if not tema: st.error("Escribe un tema")
     else:
         preparar()
@@ -79,7 +80,7 @@ if st.button("🚀 CREAR VÍDEO (PIEZAS ESTANDARIZADAS)"):
             fade_st = max(0, dur - 2)
             subprocess.run(f'ffmpeg -y -i "{audio_voz}" -i "{musica_file}" -filter_complex "[1:a]volume=0.15,afade=t=out:st={fade_st}:d=2[m];[0:a][m]amix=inputs=2:duration=first" "{audio_mezcla}"', shell=True)
 
-            # 2. PROCESAMIENTO FRAGMENTADO Y ESTANDARIZADO
+            # 2. PROCESAMIENTO A FORMATO TS (TRANSPORT STREAM)
             n_clips = min(math.ceil(dur / 3.4), 14)
             t_clip = dur / n_clips
             clips = []
@@ -91,15 +92,15 @@ if st.button("🚀 CREAR VÍDEO (PIEZAS ESTANDARIZADAS)"):
                 pal_clip = palabras[i*chunk : (i+1)*chunk] if i < n_clips - 1 else palabras[i*chunk:]
                 txt_part = " ".join(pal_clip)
                 kw = extraer_kw(txt_part, i)
-                st.markdown(f'<div class="msg">🎥 Escena {i+1}/{n_clips}: Estandarizando "{kw.upper()}"...</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="msg">🎥 Escena {i+1}/{n_clips}: Creando bloque TS "{kw.upper()}"...</div>', unsafe_allow_html=True)
                 
-                # Crear filtro de subtitulos
                 chunks_c = [pal_clip[j:j+2] for j in range(0, len(pal_clip), 2)]
                 t_pair = t_clip / max(len(chunks_c), 1)
                 text_filters = []
                 for j, p_par in enumerate(chunks_c):
                     ts, te = j * t_pair, (j + 1) * t_pair
-                    txt_draw = ' '.join(p_par).replace("'", "").replace(":", "")
+                    # Limpieza extrema de caracteres para evitar errores en FFmpeg
+                    txt_draw = ' '.join(p_par).replace("'", "").replace(":", "").replace(",", "").replace(";", "")
                     text_filters.append(f"drawtext=text='{txt_draw}':fontcolor={color_sub}:fontsize=70:{f_s}borderw=5:bordercolor=black:x=(w-tw)/2:y=(h-th)/2:enable='between(t,{ts},{te})'")
                 
                 vf_txt = ",".join(text_filters) if text_filters else ""
@@ -108,38 +109,39 @@ if st.button("🚀 CREAR VÍDEO (PIEZAS ESTANDARIZADAS)"):
                 
                 with open(f"taller/f_{i}.txt", "w") as f: f.write(vf_full)
 
-                raw, vid = f"taller/r_{i}.mp4", f"taller/v_{i}.mp4"
+                raw = f"taller/r_{i}.mp4"
+                # OJO AQUI: Guardamos como .ts
+                vid = f"taller/v_{i}.ts" 
+                
                 try:
                     h = {"Authorization": PEXELS_API}
                     url_p = f"https://api.pexels.com/videos/search?query={urllib.parse.quote(kw)}&orientation=portrait&per_page=1"
                     v_link = requests.get(url_p, headers=h, timeout=12).json()['videos'][0]['video_files'][0]['link']
                     with open(raw, 'wb') as f: f.write(requests.get(v_link).content)
                     
-                    # MAGIA AQUÍ: -an quita el audio de Pexels, -r 24 iguala fps, -pix_fmt yuv420p iguala color.
-                    subprocess.run(f'ffmpeg -y -stream_loop -1 -i "{raw}" -t {t_clip} -filter_complex_script taller/f_{i}.txt -map 0:v -c:v libx264 -preset ultrafast -r 24 -pix_fmt yuv420p -an "{vid}"', shell=True)
+                    # Convertimos a MPEG-TS: Perfecto para unir después sin fallos
+                    subprocess.run(f'ffmpeg -y -stream_loop -1 -i "{raw}" -t {t_clip} -filter_complex_script taller/f_{i}.txt -map 0:v -c:v libx264 -preset ultrafast -r 24 -pix_fmt yuv420p -an -f mpegts "{vid}"', shell=True)
                 except:
                     vf_fall = "format=yuv420p" + (f",{vf_txt}" if vf_txt else "")
                     with open(f"taller/ff_{i}.txt", "w") as f: f.write(vf_fall)
-                    subprocess.run(f'ffmpeg -y -f lavfi -i color=c=#111827:s=720x1280:d={t_clip}:r=24 -filter_complex_script taller/ff_{i}.txt -map 0:v -c:v libx264 -preset ultrafast -pix_fmt yuv420p -an "{vid}"', shell=True)
+                    subprocess.run(f'ffmpeg -y -f lavfi -i color=c=#111827:s=720x1280:d={t_clip}:r=24 -filter_complex_script taller/ff_{i}.txt -map 0:v -c:v libx264 -preset ultrafast -pix_fmt yuv420p -an -f mpegts "{vid}"', shell=True)
                 
                 clips.append(os.path.abspath(vid))
                 if os.path.exists(raw): os.remove(raw)
                 gc.collect()
 
-            # 3. ENSAMBLADO INSTANTÁNEO
-            st.markdown('<div class="msg">🎬 Unión final (Ensamblando piezas idénticas)...</div>', unsafe_allow_html=True)
+            # 3. ENSAMBLADO FINAL A PRUEBA DE BOMBAS
+            st.markdown('<div class="msg">🎬 Unión final (Soldando bloques TS)...</div>', unsafe_allow_html=True)
             with open("taller/lista.txt", "w") as f:
                 for c in clips: f.write(f"file '{c}'\n")
             
-            mudo = "taller/mudo.mp4"
-            subprocess.run(f'ffmpeg -y -f concat -safe 0 -i taller/lista.txt -c copy "{mudo}"', shell=True)
-            
             final = "taller/master.mp4"
-            subprocess.run(f'ffmpeg -y -i "{mudo}" -i "{audio_mezcla}" -c:v copy -c:a copy -t {dur} "{final}"', shell=True)
+            # Unimos los TS y le pegamos el audio todo a la vez sin gastar RAM
+            subprocess.run(f'ffmpeg -y -f concat -safe 0 -i taller/lista.txt -i "{audio_mezcla}" -map 0:v -map 1:a -c:v copy -c:a aac -t {dur} "{final}"', shell=True)
             
             if os.path.exists(final):
                 st.markdown('<div class="info-card">🏆 VÍDEO COMPLETO (¡CERO PETAZOS!)</div>', unsafe_allow_html=True)
                 with open(final, "rb") as f: st.video(f.read())
                 st.balloons()
             else:
-                st.error("❌ Error en el montaje final. Avisa a soporte.")
+                st.error("❌ Error inesperado. ¡Pero esta vez no fue la RAM!")
