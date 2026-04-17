@@ -3,7 +3,7 @@ import os, time, subprocess, re, urllib.parse, shutil, math, random, gc
 import requests
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Fénix Studio V144", layout="centered")
+st.set_page_config(page_title="Fénix Studio V145", layout="centered")
 components.html("<script>if('wakeLock' in navigator){navigator.wakeLock.request('screen');}</script>", height=0)
 
 st.markdown("""
@@ -15,7 +15,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V144 🎬🎵</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V145 🛡️🎬</div>', unsafe_allow_html=True)
 
 @st.cache_resource
 def get_font():
@@ -50,13 +50,13 @@ def preparar():
 tema = st.text_input("🧠 Tema del vídeo:", placeholder="Ej: Las leyes del éxito")
 color_sub = st.selectbox("🎨 Color Subtítulos:", ["yellow", "white", "#00FFD1"])
 
-if st.button("🚀 CREAR VÍDEO (134 + MÚSICA)"):
+if st.button("🚀 CREAR VÍDEO (SISTEMA ANTI-COLAPSO)"):
     if not tema: st.error("Escribe un tema")
     else:
         preparar()
         log = st.container()
         with log:
-            # 1. GUION Y AUDIO
+            # 1. GUION Y AUDIO (VOZ Y MÚSICA)
             st.markdown('<div class="msg">📝 IA redactando guion...</div>', unsafe_allow_html=True)
             p = f"Escribe UNICAMENTE el texto para TikTok sobre {tema}. Sin notas. Solo español fluido. Maximo 90 palabras."
             try:
@@ -67,8 +67,7 @@ if st.button("🚀 CREAR VÍDEO (134 + MÚSICA)"):
             audio_voz = "taller/voz.mp3"
             subprocess.run(f'edge-tts --voice es-MX-JorgeNeural --text "{guion}" --write-media "{audio_voz}"', shell=True)
             
-            # Descargamos música de fondo
-            st.markdown('<div class="msg">🎵 Bajando banda sonora...</div>', unsafe_allow_html=True)
+            st.markdown('<div class="msg">🎵 Preparando banda sonora...</div>', unsafe_allow_html=True)
             musica_file = "taller/bg.mp3"
             r_m = requests.get("https://www.chosic.com/wp-content/uploads/2021/07/Inspirational-Cinematic-Background.mp3")
             with open(musica_file, "wb") as f: f.write(r_m.content)
@@ -76,7 +75,13 @@ if st.button("🚀 CREAR VÍDEO (134 + MÚSICA)"):
             try: dur = float(subprocess.check_output(f'ffprobe -i "{audio_voz}" -show_entries format=duration -v quiet -of csv="p=0"', shell=True))
             except: dur = 20.0
 
-            # 2. CAPTURA DE VÍDEOS (PEXELS V134)
+            # 2. PRE-MEZCLA DE AUDIO (LA CLAVE PARA QUE NO PETE)
+            st.markdown('<div class="msg">🎧 Pre-mezclando audios (Ahorrando memoria)...</div>', unsafe_allow_html=True)
+            audio_mezcla = "taller/mezcla_final.mp3"
+            fade_st = max(0, dur - 2)
+            subprocess.run(f'ffmpeg -y -i "{audio_voz}" -i "{musica_file}" -filter_complex "[1:a]volume=0.15,afade=t=out:st={fade_st}:d=2[m];[0:a][m]amix=inputs=2:duration=first" "{audio_mezcla}"', shell=True)
+
+            # 3. CAPTURA DE VÍDEOS (PEXELS REALES)
             n_clips = min(math.ceil(dur / 3.4), 14)
             t_clip = dur / n_clips
             clips = []
@@ -104,17 +109,16 @@ if st.button("🚀 CREAR VÍDEO (134 + MÚSICA)"):
                 clips.append(os.path.abspath(vid))
                 ultima = vid
                 if os.path.exists(raw): os.remove(raw)
-                gc.collect()
+                gc.collect() # Liberamos RAM
 
-            # 3. ENSAMBLADO Y MEZCLA FINAL
-            st.markdown('<div class="msg">🎬 Mezclando vídeo, voz y música...</div>', unsafe_allow_html=True)
+            # 4. ENSAMBLADO FINAL LIGERO
+            st.markdown('<div class="msg">🎬 Tatuando subtítulos (Modo Ligero)...</div>', unsafe_allow_html=True)
             with open("taller/lista.txt", "w") as f:
                 for c in clips: f.write(f"file '{c}'\n")
             
             mudo = "taller/mudo.mp4"
             subprocess.run(f'ffmpeg -y -f concat -safe 0 -i taller/lista.txt -c copy "{mudo}"', shell=True)
             
-            # SUBTÍTULOS
             pal_sub = guion.upper().split()
             chunks = [pal_sub[j:j+2] for j in range(0, len(pal_sub), 2)]
             t_ch = dur / max(len(chunks), 1)
@@ -123,11 +127,10 @@ if st.button("🚀 CREAR VÍDEO (134 + MÚSICA)"):
             with open("taller/s.txt", "w") as f: f.write(",\n".join(subs))
             
             final = "taller/master.mp4"
-            fade_st = max(0, dur - 2)
-            # Mezcla: Bajamos volumen música (0.15) y aplicamos fade out
-            cmd = f'ffmpeg -y -i "{mudo}" -i "{audio_voz}" -i "{musica_file}" -filter_complex "[2:a]volume=0.15,afade=t=out:st={fade_st}:d=2[m];[1:a][m]amix=inputs=2:duration=first[a];[0:v]filter_complex_script=taller/s.txt[v]" -map "[v]" -map "[a]" -c:v libx264 -preset ultrafast -t {dur} "{final}"'
-            subprocess.run(cmd, shell=True)
+            # Comando final ultra simple: Toma el video mudo, añade el audio ya mezclado, y aplica subtitulos.
+            subprocess.run(f'ffmpeg -y -i "{mudo}" -i "{audio_mezcla}" -filter_complex_script taller/s.txt -map 0:v -map 1:a -c:v libx264 -preset ultrafast -crf 28 -t {dur} "{final}"', shell=True)
             
             if os.path.exists(final):
-                st.markdown('<div class="info-card">🏆 VÍDEO 134 + MÚSICA COMPLETADO</div>')
+                st.markdown('<div class="info-card">🏆 VÍDEO CON MÚSICA Y VÍDEOS REALES COMPLETADO</div>')
                 with open(final, "rb") as f: st.video(f.read())
+                st.balloons()
