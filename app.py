@@ -3,7 +3,7 @@ import os, time, subprocess, re, urllib.parse, shutil, math, random, gc
 import requests
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Fénix Studio V187", layout="centered")
+st.set_page_config(page_title="Fénix Studio V188", layout="centered")
 components.html("<script>if('wakeLock' in navigator){navigator.wakeLock.request('screen');}</script>", height=0)
 
 st.markdown("""
@@ -17,7 +17,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V187 🦅🎵</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V188 🦅🎬</div>', unsafe_allow_html=True)
 
 @st.cache_resource
 def get_font():
@@ -47,11 +47,10 @@ MUSICA_TERROR = [
 def descargar_musica_169(ruta, tipo):
     lista_urls = MUSICA_TERROR if tipo == "terror" else MUSICA_V169_BASE
     random.shuffle(lista_urls)
-    # El User-Agent y el validador > 150000 que funcionó a la perfección en la V169
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
     for url in lista_urls:
         try:
-            r = requests.get(url, headers=headers, timeout=12)
+            r = requests.get(url, headers=headers, timeout=15)
             if r.status_code == 200 and len(r.content) > 150000:
                 with open(ruta, "wb") as f: f.write(r.content)
                 return True
@@ -102,7 +101,7 @@ st.markdown("---")
 tema_prompt = st.text_input("🧠 Tema para guion de IA:", placeholder="Ej: Hábitos millonarios...")
 guion_personalizado = st.text_area("📝 O guion EXACTO (mín 15 palabras):", placeholder="Pega tu texto aquí y el bot lo usará literalmente.", height=120)
 
-if st.button("🚀 CREAR VÍDEO (MOTOR DE MÚSICA V169)"):
+if st.button("🚀 CREAR VÍDEO CON FLUIDEZ V188"):
     preparar()
     log = st.container()
     with log:
@@ -145,8 +144,7 @@ if st.button("🚀 CREAR VÍDEO (MOTOR DE MÚSICA V169)"):
             st.markdown('<div class="msg">🎲 Usando guion viral de la biblioteca garantizada.</div>', unsafe_allow_html=True)
             guion_final = fallback_texto
 
-        # AQUI ESTÁ LA MAGIA DE LA V169
-        st.markdown('<div class="msg">🎵 Extrayendo música con el Motor V169 (Pixabay CDN)...</div>', unsafe_allow_html=True)
+        st.markdown('<div class="msg">🎵 Extrayendo música estable...</div>', unsafe_allow_html=True)
         musica_file = "taller/bg.mp3"
         if not descargar_musica_169(musica_file, tipo_musica):
             st.error("❌ Fallo crítico de audio. Abortando render para evitar vídeo mudo.")
@@ -170,8 +168,9 @@ if st.button("🚀 CREAR VÍDEO (MOTOR DE MÚSICA V169)"):
 
         for i in range(n_clips):
             kw = random.choice(kws)
-            st.markdown(f'<div class="msg">🎥 Escena {i+1}/{n_clips}: Recortando vídeo ÚNICO para "{kw}"...</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="msg">🎥 Escena {i+1}/{n_clips}: Descargando metraje puro de "{kw}"...</div>', unsafe_allow_html=True)
             
+            raw_vid = f"taller/r_{i}.mp4"
             vid = f"taller/v_{i}.mp4"
             exito_vid = False
             
@@ -187,7 +186,9 @@ if st.button("🚀 CREAR VÍDEO (MOTOR DE MÚSICA V169)"):
                 else:
                     draws.append(f"drawtext=text='{t_txt}':fontfile='{f_abs}':fontcolor={color_sub}:fontsize=70:borderw=5:bordercolor=black:x=(w-tw)/2:y=(h-th)/2:enable='between(t,{k*t_p},{(k+1)*t_p})'")
             
-            vf = f"scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,setsar=1,{','.join(draws)}"
+            vf_script = f"scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,setsar=1,{','.join(draws)}"
+            with open(f"taller/f_{i}.txt", "w", encoding="utf-8") as f: 
+                f.write(vf_script)
 
             try:
                 h = {"Authorization": PEXELS_API}
@@ -200,16 +201,21 @@ if st.button("🚀 CREAR VÍDEO (MOTOR DE MÚSICA V169)"):
                     st.session_state['videos_usados'].append(v_elegido['id'])
                     v_url = v_elegido['video_files'][0]['link']
                     
-                    subprocess.run(f'ffmpeg -y -stream_loop -1 -i "{v_url}" -t {t_clip} -vf "{vf}" -c:v libx264 -preset ultrafast -an "{vid}" > /dev/null 2>&1', shell=True)
+                    # LA CLAVE: Descargar el vídeo físicamente antes de procesarlo para evitar congelamientos
+                    v_data = requests.get(v_url, timeout=15).content
+                    with open(raw_vid, 'wb') as f: f.write(v_data)
+                    
+                    subprocess.run(f'ffmpeg -y -stream_loop -1 -i "{raw_vid}" -t {t_clip} -filter_script:v taller/f_{i}.txt -c:v libx264 -preset ultrafast -r 24 -an -threads 1 "{vid}" > /dev/null 2>&1', shell=True)
                     if os.path.exists(vid): exito_vid = True
             except: pass
 
             if not exito_vid:
-                st.warning(f"⚠️ Pexels falló para '{kw}'. Usando escena neutra.")
-                vf_neutro = f"format=yuv420p,{','.join(draws)}"
-                subprocess.run(f'ffmpeg -y -f lavfi -i color=c=#1A1A1A:s=720x1280:d={t_clip}:r=24 -vf "{vf_neutro}" -c:v libx264 -preset ultrafast -an "{vid}" > /dev/null 2>&1', shell=True)
+                st.warning(f"⚠️ Fallo visual en escena {i+1}. Inyectando plano de rescate.")
+                subprocess.run(f'ffmpeg -y -f lavfi -i color=c=#1A1A1A:s=720x1280:d={t_clip}:r=24 -filter_script:v taller/f_{i}.txt -c:v libx264 -preset ultrafast -an -threads 1 "{vid}" > /dev/null 2>&1', shell=True)
 
             clips.append(os.path.abspath(vid))
+            if os.path.exists(raw_vid): os.remove(raw_vid)
+            gc.collect()
 
         with open("taller/lista.txt", "w") as f:
             for c in clips: f.write(f"file '{c}'\n")
@@ -219,9 +225,9 @@ if st.button("🚀 CREAR VÍDEO (MOTOR DE MÚSICA V169)"):
             st.stop()
 
         final = "taller/master.mp4"
-        subprocess.run(f'ffmpeg -y -f concat -safe 0 -i taller/lista.txt -i "{audio_mezcla}" -map 0:v -map 1:a -c:v libx264 -preset ultrafast -crf 28 -t {dur} "{final}" > /dev/null 2>&1', shell=True)
+        subprocess.run(f'ffmpeg -y -f concat -safe 0 -i taller/lista.txt -i "{audio_mezcla}" -map 0:v -map 1:a -c:v libx264 -preset ultrafast -crf 28 -r 24 -t {dur} "{final}" > /dev/null 2>&1', shell=True)
         
         if os.path.exists(final):
-            st.markdown('<div class="info-card">🏆 VÍDEO CON MOTOR V169 COMPLETADO</div>', unsafe_allow_html=True)
+            st.markdown('<div class="info-card">🏆 VÍDEO CON FLUIDEZ V188 COMPLETADO</div>', unsafe_allow_html=True)
             with open(final, "rb") as f: st.video(f.read())
             st.balloons()
