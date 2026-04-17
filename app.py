@@ -3,21 +3,21 @@ import os, time, subprocess, re, urllib.parse, shutil, math, random, gc
 import requests
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Fénix Studio V192", layout="centered")
+st.set_page_config(page_title="Fénix Studio V193", layout="centered")
 components.html("<script>if('wakeLock' in navigator){navigator.wakeLock.request('screen');}</script>", height=0)
 
 st.markdown("""
 <style>
     .stApp { background: #000000; color: #FFFFFF; }
-    .pro-title { font-size: 42px; font-weight: 900; background: -webkit-linear-gradient(45deg, #FF3E3E, #00FFD1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: center; text-transform: uppercase; margin-bottom: 20px;}
+    .pro-title { font-size: 42px; font-weight: 900; background: -webkit-linear-gradient(45deg, #00FFD1, #FFD700); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: center; text-transform: uppercase; margin-bottom: 20px;}
     .msg { color: #00FFD1; font-family: 'Courier New', monospace; font-size: 14px; margin-bottom: 8px; border-left: 3px solid #00FFD1; padding-left: 12px; }
     .info-card { padding: 15px; border-radius: 12px; background: #0f172a; border: 1px solid #00FFD1; text-align: center; color: #00FFD1; margin-top: 25px; font-weight: bold;}
-    .stButton>button { width: 100%; background: linear-gradient(45deg, #FF3E3E, #0088ff); color: white; border: none; font-weight: 900; height: 55px; border-radius: 12px; font-size: 18px;}
+    .stButton>button { width: 100%; background: linear-gradient(45deg, #00FFD1, #0088ff); color: white; border: none; font-weight: 900; height: 55px; border-radius: 12px; font-size: 18px;}
     .stTextArea>div>div>textarea, .stTextInput>div>div>input { background-color: #1a1a1a; color: white; border: 1px solid #00FFD1; border-radius: 8px;}
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V192 🦅👑</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V193 🦅📦</div>', unsafe_allow_html=True)
 
 @st.cache_resource
 def get_font():
@@ -31,20 +31,23 @@ def get_font():
 
 PEXELS_API = "Ty0uFISh3APEAXIVcrFpSM7ZdwOeRElCuUgoG42EW6WVISRTEfqjm0BZ"
 
-MUSICA_TERROR = ["https://ia800104.us.archive.org/1/items/HorrorAmbience_201901/Horror%20Ambience.mp3"]
-MUSICA_NEGOCIO = ["https://ia801400.us.archive.org/1/items/A_Hero_Steps_Forward/A_Hero_Steps_Forward.mp3"]
+# ==========================================
+# EL TRUCO ANTI-BANEO: ALMACÉN LOCAL
+# Descarga la música una sola vez y la guarda
+# ==========================================
+@st.cache_resource
+def cargar_almacen_musical():
+    os.makedirs("almacen_musical", exist_ok=True)
+    # Descarga directa y silenciosa usando wget (indetectable)
+    if not os.path.exists("almacen_musical/negocio.mp3") or os.path.getsize("almacen_musical/negocio.mp3") < 50000:
+        subprocess.run('wget -q -U "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" -O "almacen_musical/negocio.mp3" "https://ia801400.us.archive.org/1/items/A_Hero_Steps_Forward/A_Hero_Steps_Forward.mp3"', shell=True)
+    
+    if not os.path.exists("almacen_musical/terror.mp3") or os.path.getsize("almacen_musical/terror.mp3") < 50000:
+        subprocess.run('wget -q -U "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" -O "almacen_musical/terror.mp3" "https://ia800104.us.archive.org/1/items/HorrorAmbience_201901/Horror%20Ambience.mp3"', shell=True)
+    return True
 
-def descargar_musica(ruta, tipo):
-    urls = MUSICA_TERROR if tipo == "terror" else MUSICA_NEGOCIO
-    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
-    for u in urls:
-        try:
-            r = requests.get(u, headers=headers, timeout=15)
-            if r.status_code == 200 and len(r.content) > 50000:
-                with open(ruta, "wb") as f: f.write(r.content)
-                return True
-        except: pass
-    return False
+# Inicializamos el almacén en cuanto se carga la página
+cargar_almacen_musical()
 
 GUIONES_TERROR = [
     "Cierra los ojos. Imagina que estás solo en tu casa. De repente, escuchas un susurro desde el pasillo. Te giras lentamente, y ahí está... la sombra que te ha estado observando todo este tiempo. Quieres gritar, pero no tienes voz."
@@ -62,7 +65,6 @@ def purificar_guion_fluido(t, fallback_text):
         return fallback_text
     
     texto_limpio = t
-    # FILTRO LETAL: A la mínima que vea la marca, corta todo lo que va detrás
     cortes = ["pollinations", "support", "powered", "http", "www", ".ai", "free text", "api"]
     for corte in cortes:
         if corte.lower() in texto_limpio.lower():
@@ -89,26 +91,26 @@ st.markdown("---")
 tema_prompt = st.text_input("🧠 Tema para guion de IA:", placeholder="Ej: Hábitos millonarios...")
 guion_personalizado = st.text_area("📝 O guion EXACTO (mín 15 palabras):", placeholder="Pega tu texto aquí y el bot lo usará literalmente.", height=120)
 st.markdown("---")
-archivo_musica = st.file_uploader("🎵 Sube tu propia música MP3 (OPCIONAL - Recomendado si fallan los servidores)", type=["mp3", "wav"])
+archivo_musica = st.file_uploader("🎵 Sube tu propia música (Sustituirá a la del almacén local)", type=["mp3", "wav"])
 
-if st.button("🚀 CREAR VÍDEO (CONTROL ABSOLUTO V192)"):
+if st.button("🚀 CREAR VÍDEO VIRAL (MODO ANTI-BANEOS)"):
     preparar()
     log = st.container()
     with log:
         if categoria == "Terror / Misterio":
-            tipo_musica = "terror"
+            pista_local = "almacen_musical/terror.mp3"
             voz = "es-ES-AlvaroNeural"
             kws = ["scary dark", "abandoned building", "creepy forest"]
             fallback_lista = GUIONES_TERROR
             vol_musica = "0.08"
         elif categoria == "Gym / Motivación":
-            tipo_musica = "negocio" 
+            pista_local = "almacen_musical/negocio.mp3"
             voz = "es-MX-JorgeNeural"
             kws = ["gym workout", "fitness motivation", "heavy weights training"]
             fallback_lista = GUIONES_GYM
             vol_musica = "0.10"
         else: 
-            tipo_musica = "negocio"
+            pista_local = "almacen_musical/negocio.mp3"
             voz = "es-MX-JorgeNeural"
             kws = ["luxury lifestyle", "dubai skyline", "private jet"]
             fallback_lista = GUIONES_NEGOCIO
@@ -124,7 +126,7 @@ if st.button("🚀 CREAR VÍDEO (CONTROL ABSOLUTO V192)"):
             guion_final = guion_personalizado.strip()
         elif tema_prompt.strip():
             st.markdown('<div class="msg">🧠 Pidiendo a la IA que redacte un guion limpio...</div>', unsafe_allow_html=True)
-            prompt = f"Escribe un guion para TikTok sobre: {tema_prompt}. Debe tener entre 45 y 70 palabras. Sin enlaces. Sin palabras en ingles. Solo español."
+            prompt = f"Escribe un guion épico y viral para TikTok sobre: {tema_prompt}. Debe tener entre 45 y 70 palabras. Sin enlaces. Sin palabras en ingles. Solo español."
             try:
                 g_raw = requests.get(f"https://text.pollinations.ai/{urllib.parse.quote(prompt)}", timeout=25).text
                 guion_final = purificar_guion_fluido(g_raw, fallback_texto)
@@ -134,17 +136,23 @@ if st.button("🚀 CREAR VÍDEO (CONTROL ABSOLUTO V192)"):
             st.markdown('<div class="msg">🎲 Usando guion de la biblioteca...</div>', unsafe_allow_html=True)
             guion_final = fallback_texto
 
+        # -----------------------------------------------
+        # EL SISTEMA DE AUDIO INFALIBLE
+        # -----------------------------------------------
         musica_file = "taller/bg.mp3"
         exito_mus = False
         
         if archivo_musica is not None:
-            st.markdown('<div class="msg">🎵 Usando la música que has subido...</div>', unsafe_allow_html=True)
+            st.markdown('<div class="msg">🎵 Usando tu archivo de música subido...</div>', unsafe_allow_html=True)
             with open(musica_file, "wb") as f:
                 f.write(archivo_musica.getbuffer())
             exito_mus = True
+        elif os.path.exists(pista_local) and os.path.getsize(pista_local) > 50000:
+            st.markdown('<div class="msg">🎵 Cargando música al instante desde el Almacén Local...</div>', unsafe_allow_html=True)
+            shutil.copy(pista_local, musica_file)
+            exito_mus = True
         else:
-            st.markdown('<div class="msg">🎵 Descargando música de respaldo...</div>', unsafe_allow_html=True)
-            exito_mus = descargar_musica(musica_file, tipo_musica)
+            st.error("❌ El almacén local está vacío y no subiste música. El servidor cortó la red inicial.")
 
         st.markdown('<div class="msg">🎙️ Grabando locución...</div>', unsafe_allow_html=True)
         audio_voz = "taller/voz.mp3"
@@ -158,7 +166,6 @@ if st.button("🚀 CREAR VÍDEO (CONTROL ABSOLUTO V192)"):
         if exito_mus:
             subprocess.run(f'ffmpeg -y -i "{audio_voz}" -i "{musica_file}" -filter_complex "[1:a]volume={vol_musica},afade=t=out:st={fade_st}:d=2[m];[0:a][m]amix=inputs=2:duration=first" -c:a libmp3lame "{audio_mezcla}" > /dev/null 2>&1', shell=True)
         else:
-            st.warning("⚠️ No se pudo obtener música. Renderizando solo con voz.")
             shutil.copy(audio_voz, audio_mezcla)
 
         palabras = guion_final.upper().split()
@@ -220,6 +227,6 @@ if st.button("🚀 CREAR VÍDEO (CONTROL ABSOLUTO V192)"):
         subprocess.run(f'ffmpeg -y -f concat -safe 0 -i taller/lista.txt -i "{audio_mezcla}" -map 0:v -map 1:a -c:v libx264 -preset ultrafast -crf 28 -r 24 -t {dur} "{final}" > /dev/null 2>&1', shell=True)
         
         if os.path.exists(final):
-            st.markdown('<div class="info-card">🏆 VÍDEO COMPLETADO</div>', unsafe_allow_html=True)
+            st.markdown('<div class="info-card">🏆 VÍDEO CON ALMACÉN LOCAL COMPLETADO</div>', unsafe_allow_html=True)
             with open(final, "rb") as f: st.video(f.read())
             st.balloons()
