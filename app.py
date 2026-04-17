@@ -3,7 +3,7 @@ import os, time, subprocess, re, urllib.parse, shutil, math, random, gc
 import requests
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Fénix Studio V148", layout="centered")
+st.set_page_config(page_title="Fénix Studio V149", layout="centered")
 components.html("<script>if('wakeLock' in navigator){navigator.wakeLock.request('screen');}</script>", height=0)
 
 st.markdown("""
@@ -16,7 +16,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V148 🧩📺</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V149 🚀🛡️</div>', unsafe_allow_html=True)
 
 @st.cache_resource
 def get_font():
@@ -51,7 +51,7 @@ def preparar():
 tema = st.text_input("🧠 Tema del vídeo:", placeholder="Ej: Hábitos de titan")
 color_sub = st.selectbox("🎨 Color Subtítulos:", ["yellow", "white", "#00FFD1"])
 
-if st.button("🚀 CREAR VÍDEO (FUSIÓN PERFECTA TS)"):
+if st.button("🚀 CREAR VÍDEO (FUSIÓN V149)"):
     if not tema: st.error("Escribe un tema")
     else:
         preparar()
@@ -80,7 +80,7 @@ if st.button("🚀 CREAR VÍDEO (FUSIÓN PERFECTA TS)"):
             fade_st = max(0, dur - 2)
             subprocess.run(f'ffmpeg -y -i "{audio_voz}" -i "{musica_file}" -filter_complex "[1:a]volume=0.15,afade=t=out:st={fade_st}:d=2[m];[0:a][m]amix=inputs=2:duration=first" "{audio_mezcla}"', shell=True)
 
-            # 2. PROCESAMIENTO A FORMATO TS (TRANSPORT STREAM)
+            # 2. PROCESAMIENTO FRAGMENTADO CON SUBTÍTULOS INTEGRADOS
             n_clips = min(math.ceil(dur / 3.4), 14)
             t_clip = dur / n_clips
             clips = []
@@ -92,26 +92,23 @@ if st.button("🚀 CREAR VÍDEO (FUSIÓN PERFECTA TS)"):
                 pal_clip = palabras[i*chunk : (i+1)*chunk] if i < n_clips - 1 else palabras[i*chunk:]
                 txt_part = " ".join(pal_clip)
                 kw = extraer_kw(txt_part, i)
-                st.markdown(f'<div class="msg">🎥 Escena {i+1}/{n_clips}: Creando bloque TS "{kw.upper()}"...</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="msg">🎥 Escena {i+1}/{n_clips}: Tatuando "{kw.upper()}"...</div>', unsafe_allow_html=True)
                 
+                # Creamos los subtitulos para este trozo exacto
                 chunks_c = [pal_clip[j:j+2] for j in range(0, len(pal_clip), 2)]
                 t_pair = t_clip / max(len(chunks_c), 1)
                 text_filters = []
                 for j, p_par in enumerate(chunks_c):
                     ts, te = j * t_pair, (j + 1) * t_pair
-                    # Limpieza extrema de caracteres para evitar errores en FFmpeg
-                    txt_draw = ' '.join(p_par).replace("'", "").replace(":", "").replace(",", "").replace(";", "")
+                    txt_draw = ' '.join(p_par).upper().replace("'", "").replace(":", "").replace(",", "").replace(";", "")
                     text_filters.append(f"drawtext=text='{txt_draw}':fontcolor={color_sub}:fontsize=70:{f_s}borderw=5:bordercolor=black:x=(w-tw)/2:y=(h-th)/2:enable='between(t,{ts},{te})'")
                 
                 vf_txt = ",".join(text_filters) if text_filters else ""
                 vf_base = "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,setsar=1,format=yuv420p"
                 vf_full = f"{vf_base},{vf_txt}" if vf_txt else vf_base
-                
-                with open(f"taller/f_{i}.txt", "w") as f: f.write(vf_full)
 
                 raw = f"taller/r_{i}.mp4"
-                # OJO AQUI: Guardamos como .ts
-                vid = f"taller/v_{i}.ts" 
+                vid = f"taller/v_{i}.mp4"
                 
                 try:
                     h = {"Authorization": PEXELS_API}
@@ -119,29 +116,28 @@ if st.button("🚀 CREAR VÍDEO (FUSIÓN PERFECTA TS)"):
                     v_link = requests.get(url_p, headers=h, timeout=12).json()['videos'][0]['video_files'][0]['link']
                     with open(raw, 'wb') as f: f.write(requests.get(v_link).content)
                     
-                    # Convertimos a MPEG-TS: Perfecto para unir después sin fallos
-                    subprocess.run(f'ffmpeg -y -stream_loop -1 -i "{raw}" -t {t_clip} -filter_complex_script taller/f_{i}.txt -map 0:v -c:v libx264 -preset ultrafast -r 24 -pix_fmt yuv420p -an -f mpegts "{vid}"', shell=True)
+                    # Le quitamos el audio original (-an) y le incrustamos el texto
+                    subprocess.run(f'ffmpeg -y -stream_loop -1 -i "{raw}" -t {t_clip} -vf "{vf_full}" -c:v libx264 -preset ultrafast -r 24 -an "{vid}"', shell=True)
                 except:
                     vf_fall = "format=yuv420p" + (f",{vf_txt}" if vf_txt else "")
-                    with open(f"taller/ff_{i}.txt", "w") as f: f.write(vf_fall)
-                    subprocess.run(f'ffmpeg -y -f lavfi -i color=c=#111827:s=720x1280:d={t_clip}:r=24 -filter_complex_script taller/ff_{i}.txt -map 0:v -c:v libx264 -preset ultrafast -pix_fmt yuv420p -an -f mpegts "{vid}"', shell=True)
+                    subprocess.run(f'ffmpeg -y -f lavfi -i color=c=#111827:s=720x1280:d={t_clip}:r=24 -vf "{vf_fall}" -c:v libx264 -preset ultrafast -an "{vid}"', shell=True)
                 
                 clips.append(os.path.abspath(vid))
                 if os.path.exists(raw): os.remove(raw)
                 gc.collect()
 
-            # 3. ENSAMBLADO FINAL A PRUEBA DE BOMBAS
-            st.markdown('<div class="msg">🎬 Unión final (Soldando bloques TS)...</div>', unsafe_allow_html=True)
+            # 3. ENSAMBLADO SEGURO
+            st.markdown('<div class="msg">🎬 Unión final (Forzando encaje perfecto)...</div>', unsafe_allow_html=True)
             with open("taller/lista.txt", "w") as f:
                 for c in clips: f.write(f"file '{c}'\n")
             
             final = "taller/master.mp4"
-            # Unimos los TS y le pegamos el audio todo a la vez sin gastar RAM
-            subprocess.run(f'ffmpeg -y -f concat -safe 0 -i taller/lista.txt -i "{audio_mezcla}" -map 0:v -map 1:a -c:v copy -c:a aac -t {dur} "{final}"', shell=True)
+            # EN LUGAR DE "-c copy", usamos "-c:v libx264" para obligar a que todo encaje sin errores, pero muy rapido
+            subprocess.run(f'ffmpeg -y -f concat -safe 0 -i taller/lista.txt -i "{audio_mezcla}" -map 0:v -map 1:a -c:v libx264 -preset ultrafast -crf 28 -c:a aac -t {dur} "{final}"', shell=True)
             
             if os.path.exists(final):
-                st.markdown('<div class="info-card">🏆 VÍDEO COMPLETO (¡CERO PETAZOS!)</div>', unsafe_allow_html=True)
+                st.markdown('<div class="info-card">🏆 VÍDEO COMPLETO (¡SISTEMA BLINDADO!)</div>', unsafe_allow_html=True)
                 with open(final, "rb") as f: st.video(f.read())
                 st.balloons()
             else:
-                st.error("❌ Error inesperado. ¡Pero esta vez no fue la RAM!")
+                st.error("❌ Error en el montaje. Streamlit se ha quedado sin recursos.")
