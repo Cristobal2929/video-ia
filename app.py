@@ -3,7 +3,7 @@ import os, time, subprocess, re, urllib.parse, shutil, math, random, gc
 import requests
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Fénix Studio V162", layout="centered")
+st.set_page_config(page_title="Fénix Studio V163", layout="centered")
 components.html("<script>if('wakeLock' in navigator){navigator.wakeLock.request('screen');}</script>", height=0)
 
 st.markdown("""
@@ -16,7 +16,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V162 🦅🎬</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V163 🦅✍️</div>', unsafe_allow_html=True)
 
 @st.cache_resource
 def get_font():
@@ -51,7 +51,7 @@ f_abs = get_font()
 tema = st.text_input("🧠 Tema del vídeo:", placeholder="Ej: Negocios y Mentalidad")
 color_sub = st.selectbox("🎨 Color Subtítulos:", ["yellow", "white", "#00FFD1"])
 
-if st.button("🚀 CREAR VÍDEO (MOTOR 134 + MÚSICA REAL)"):
+if st.button("🚀 CREAR VÍDEO (DOBLE LÍNEA + MÚSICA)"):
     if not tema: st.error("⚠️ Escribe un tema")
     else:
         preparar()
@@ -105,7 +105,6 @@ if st.button("🚀 CREAR VÍDEO (MOTOR 134 + MÚSICA REAL)"):
                     u_p = f"https://api.pexels.com/videos/search?query={urllib.parse.quote(kw)}&orientation=portrait&per_page=1"
                     v_url = requests.get(u_p, headers=h, timeout=10).json()['videos'][0]['video_files'][0]['link']
                     with open(raw_vid, 'wb') as f: f.write(requests.get(v_url).content)
-                    # MOTOR 134: Recorte vertical perfecto
                     subprocess.run(f'ffmpeg -y -stream_loop -1 -i "{raw_vid}" -t {t_clip} -vf "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,setsar=1,format=yuv420p" -c:v libx264 -preset ultrafast -r 24 -an -threads 1 "{vid}"', shell=True)
                 except:
                     subprocess.run(f'ffmpeg -y -f lavfi -i color=c=#1A1A1A:s=720x1280:d={t_clip}:r=24 -c:v libx264 -preset ultrafast -an -threads 1 "{vid}"', shell=True)
@@ -121,15 +120,27 @@ if st.button("🚀 CREAR VÍDEO (MOTOR 134 + MÚSICA REAL)"):
             mudo = "taller/mudo.mp4"
             subprocess.run(f'ffmpeg -y -f concat -safe 0 -i taller/lista.txt -c copy "{mudo}"', shell=True)
             
+            # EL CEREBRO DE SUBTÍTULOS DE 2 LÍNEAS
             chunks_sub = [palabras_puras[j:j+2] for j in range(0, len(palabras_puras), 2)]
             t_ch = dur / max(len(chunks_sub), 1)
-            subs = [f"drawtext=text='{' '.join(p)}':fontfile='{f_abs}':fontcolor={color_sub}:fontsize=70:borderw=5:bordercolor=black:x=(w-tw)/2:y=(h-th)/2:enable='between(t,{j*t_ch},{(j+1)*t_ch})'" for j, p in enumerate(chunks_sub)]
+            f_s = f"fontfile='{f_abs}':" if os.path.exists(f_abs) else ""
+            subs = []
+            for j, p in enumerate(chunks_sub):
+                ts, te = j * t_ch, (j + 1) * t_ch
+                # Si son 2 palabras y juntas suman más de 10 letras, se parten en dos líneas (arriba y abajo)
+                if len(p) == 2 and (len(p[0]) + len(p[1]) > 10):
+                    subs.append(f"drawtext=text='{p[0]}':{f_s}fontcolor={color_sub}:fontsize=70:borderw=5:bordercolor=black:x=(w-tw)/2:y=(h-th)/2-45:enable='between(t,{ts},{te})'")
+                    subs.append(f"drawtext=text='{p[1]}':{f_s}fontcolor={color_sub}:fontsize=70:borderw=5:bordercolor=black:x=(w-tw)/2:y=(h-th)/2+45:enable='between(t,{ts},{te})'")
+                else:
+                    # Si son cortas o es una sola, se pone centrada
+                    subs.append(f"drawtext=text='{' '.join(p)}':{f_s}fontcolor={color_sub}:fontsize=70:borderw=5:bordercolor=black:x=(w-tw)/2:y=(h-th)/2:enable='between(t,{ts},{te})'")
+
             with open("taller/s.txt", "w") as f: f.write(",\n".join(subs))
             
             final = "taller/master.mp4"
             subprocess.run(f'ffmpeg -y -i "{mudo}" -i "{audio_mezcla}" -filter_script:v taller/s.txt -map 0:v:0 -map 1:a:0 -c:v libx264 -preset ultrafast -crf 28 -c:a copy -threads 1 -t {dur} "{final}"', shell=True)
             
             if os.path.exists(final):
-                st.markdown('<div class="info-card">🏆 VÍDEO 134 + MÚSICA COMPLETADO</div>', unsafe_allow_html=True)
+                st.markdown('<div class="info-card">🏆 VÍDEO CON SUBTÍTULOS INTELIGENTES COMPLETADO</div>', unsafe_allow_html=True)
                 with open(final, "rb") as f: st.video(f.read())
                 st.balloons()
