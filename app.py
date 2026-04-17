@@ -3,7 +3,7 @@ import os, time, subprocess, re, urllib.parse, shutil, math, random, gc
 import requests
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Fénix Studio V158", layout="centered")
+st.set_page_config(page_title="Fénix Studio V159", layout="centered")
 components.html("<script>if('wakeLock' in navigator){navigator.wakeLock.request('screen');}</script>", height=0)
 
 st.markdown("""
@@ -17,7 +17,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="pro-title">FÉNIX STUDIO V158 🛡️🔊</div>', unsafe_allow_html=True)
+st.markdown('<div class="pro-title">FÉNIX STUDIO V159 🛡️💎</div>', unsafe_allow_html=True)
 
 @st.cache_resource
 def get_font():
@@ -50,85 +50,78 @@ def preparar():
     subprocess.run("pkill ffmpeg", shell=True)
 
 f_abs = get_font()
-tema = st.text_input("🧠 Tema del vídeo:", placeholder="Ej: Hábitos de titan")
+tema = st.text_input("🧠 Tema del vídeo:", placeholder="Ej: Negocios online")
 color_sub = st.selectbox("🎨 Color Subtítulos:", ["yellow", "white", "#00FFD1"])
 
-if st.button("🚀 CREAR VÍDEO (AUDIO BLINDADO)"):
+if st.button("🚀 CREAR VÍDEO (NÚCLEO V159)"):
     if not tema: st.error("⚠️ Escribe un tema")
     else:
         preparar()
         log = st.container()
         
         with log:
-            st.markdown('<div class="msg">📝 IA redactando guion y purificando...</div>', unsafe_allow_html=True)
-            prompt_g = f"Escribe una frase motivacional sobre {tema} para TikTok. Solo español. Maximo 75 palabras."
-            
+            st.markdown('<div class="msg">📝 Redactando guion purificado...</div>', unsafe_allow_html=True)
+            p_g = f"Escribe una frase de éxito sobre {tema} para TikTok. Solo español. Maximo 75 palabras."
             try:
-                g_raw = requests.get(f"https://text.pollinations.ai/{urllib.parse.quote(prompt_g)}", timeout=20).text
+                g_raw = requests.get(f"https://text.pollinations.ai/{urllib.parse.quote(p_g)}", timeout=20).text
                 guion = limpiar_texto_tts(g_raw)
-            except: guion = "El éxito es la suma de pequeños esfuerzos diarios."
-            if len(guion) < 5: guion = "La disciplina te lleva donde la motivación no alcanza."
+            except: guion = "La disciplina es el puente entre tus metas y tus logros."
+            if len(guion) < 5: guion = "Enfócate en el proceso y los resultados llegarán solos."
             
-            st.markdown('<div class="msg">🎙️ Grabando voz y bajando audio...</div>', unsafe_allow_html=True)
+            st.markdown('<div class="msg">🎙️ Generando audio de Jorge...</div>', unsafe_allow_html=True)
             audio_voz = "taller/voz.mp3"
-            subprocess.run(f'edge-tts --voice es-MX-JorgeNeural --rate=+0% --text "{guion}" --write-media "{audio_voz}"', shell=True)
+            subprocess.run(f'edge-tts --voice es-MX-JorgeNeural --text "{guion}" --write-media "{audio_voz}"', shell=True)
             
             musica_file = "taller/bg.mp3"
             try:
                 r_m = requests.get("https://www.chosic.com/wp-content/uploads/2021/07/Inspirational-Cinematic-Background.mp3", timeout=10)
                 with open(musica_file, "wb") as f: f.write(r_m.content)
-            except: pass # Si la red falla, no pasa nada
+            except: pass
 
             try: dur = float(subprocess.check_output(f'ffprobe -i "{audio_voz}" -show_entries format=duration -v quiet -of csv="p=0"', shell=True))
-            except: dur = 20.0
+            except: dur = 15.0
 
-            st.markdown('<div class="msg">🎧 Procesando Audio Maestro Seguro...</div>', unsafe_allow_html=True)
+            # MEZCLA BLINDADA V159
+            st.markdown('<div class="msg">🎧 Consolidando audio maestro...</div>', unsafe_allow_html=True)
             audio_mezcla = "taller/mezcla.mp3"
             fade_st = max(0, dur - 2)
-            
-            # Intentamos mezclar
             subprocess.run(f'ffmpeg -y -i "{audio_voz}" -i "{musica_file}" -filter_complex "[1:a]volume=0.15,afade=t=out:st={fade_st}:d=2[m];[0:a][m]amix=inputs=2:duration=first" -c:a libmp3lame -threads 1 "{audio_mezcla}"', shell=True)
 
-            # EL BLINDAJE: Si la mezcla falló por culpa del servidor de música, usamos solo la voz
-            if not os.path.exists(audio_mezcla):
-                if os.path.exists(audio_voz):
-                    subprocess.run(f'cp "{audio_voz}" "{audio_mezcla}"', shell=True)
-                else: # Si todo falla, generamos audio mudo para que el video no se cuelgue
-                    subprocess.run(f'ffmpeg -y -f lavfi -i anullsrc=r=44100:cl=stereo -t {dur} -c:a libmp3lame "{audio_mezcla}"', shell=True)
+            # COMPROBACIÓN DE EXISTENCIA: Si falló la mezcla, forzamos un archivo
+            if not os.path.exists(audio_mezcla) or os.path.getsize(audio_mezcla) == 0:
+                if os.path.exists(audio_voz): shutil.copy(audio_voz, audio_mezcla)
+                else: subprocess.run(f'ffmpeg -y -f lavfi -i anullsrc=r=44100:cl=stereo -t {dur} -c:a libmp3lame "{audio_mezcla}"', shell=True)
 
             palabras_puras = re.sub(r'[^a-zA-ZáéíóúÁÉÍÓÚñÑ ]', '', guion).upper().split()
-
-            n_clips = min(math.ceil(dur / 3.2), 12) 
+            n_clips = min(math.ceil(dur / 3.5), 10) 
             t_clip = dur / n_clips
             clips = []
             chunk_size = max(len(palabras_puras) // n_clips, 1)
 
             for i in range(n_clips):
-                pal_clip = palabras_puras[i*chunk_size:(i+1)*chunk_size] if i < n_clips - 1 else palabras_puras[i*chunk_size:]
-                txt_chunk = " ".join(pal_clip)
-                kw = extraer_kw(txt_chunk, i)
-                st.markdown(f'<div class="msg">🎥 Escena {i+1}/{n_clips}: Limpiando "{kw.upper()}"...</div>', unsafe_allow_html=True)
+                pal_clip = palabras_puras[i*chunk_size:(i+chunk_size)] if i < n_clips-1 else palabras_puras[i*chunk_size:]
+                txt_c = " ".join(pal_clip)
+                kw = extraer_kw(txt_c, i)
+                st.markdown(f'<div class="msg">🎥 Escena {i+1}/{n_clips}: Procesando "{kw.upper()}"...</div>', unsafe_allow_html=True)
                 
-                raw_vid, vid = f"taller/raw_{i}.mp4", f"taller/v_{i}.mp4"
-                exito_vid = False
+                raw_vid, vid = f"taller/r_{i}.mp4", f"taller/v_{i}.mp4"
+                exito = False
                 try:
-                    headers = {"Authorization": PEXELS_API}
-                    url_p = f"https://api.pexels.com/videos/search?query={urllib.parse.quote(kw)}&orientation=portrait&per_page=1"
-                    r_p = requests.get(url_p, headers=headers, timeout=10).json()
-                    v_url = r_p['videos'][0]['video_files'][0]['link']
+                    h = {"Authorization": PEXELS_API}
+                    u_p = f"https://api.pexels.com/videos/search?query={urllib.parse.quote(kw)}&orientation=portrait&per_page=1"
+                    v_url = requests.get(u_p, headers=h, timeout=10).json()['videos'][0]['video_files'][0]['link']
                     with open(raw_vid, 'wb') as f: f.write(requests.get(v_url).content)
                     subprocess.run(f'ffmpeg -y -stream_loop -1 -i "{raw_vid}" -t {t_clip} -vf "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280,setsar=1,format=yuv420p" -c:v libx264 -preset ultrafast -r 24 -an -threads 1 "{vid}"', shell=True)
-                    if os.path.exists(vid): exito_vid = True
+                    if os.path.exists(vid): exito = True
                 except: pass
 
-                if not exito_vid:
+                if not exito:
                     subprocess.run(f'ffmpeg -y -f lavfi -i color=c=#1A1A1A:s=720x1280:d={t_clip}:r=24 -c:v libx264 -preset ultrafast -an -threads 1 "{vid}"', shell=True)
 
                 clips.append(os.path.abspath(vid).replace('\\', '/'))
                 if os.path.exists(raw_vid): os.remove(raw_vid)
-                gc.collect()
 
-            st.markdown('<div class="msg">🎬 Ensamblando piezas base...</div>', unsafe_allow_html=True)
+            st.markdown('<div class="msg">🎬 Ensamblando bloques...</div>', unsafe_allow_html=True)
             with open("taller/lista.txt", "w") as f:
                 for c in clips: f.write(f"file '{c}'\n")
             
@@ -137,25 +130,17 @@ if st.button("🚀 CREAR VÍDEO (AUDIO BLINDADO)"):
             
             chunks_sub = [palabras_puras[j:j+2] for j in range(0, len(palabras_puras), 2)]
             t_ch = dur / max(len(chunks_sub), 1)
-            subs = []
-            for j, p in enumerate(chunks_sub):
-                ts, te = j * t_ch, (j + 1) * t_ch
-                txt_draw = ' '.join(p)
-                subs.append(f"drawtext=text='{txt_draw}':fontfile='{f_abs}':fontcolor={color_sub}:fontsize=70:borderw=5:bordercolor=black:x=(w-tw)/2:y=(h-th)/2:enable='between(t,{ts},{te})'")
-            
+            subs = [f"drawtext=text='{' '.join(p)}':fontfile='{f_abs}':fontcolor={color_sub}:fontsize=70:borderw=5:bordercolor=black:x=(w-tw)/2:y=(h-th)/2:enable='between(t,{j*t_ch},{(j+1)*t_ch})'" for j, p in enumerate(chunks_sub)]
             with open("taller/s.txt", "w") as f: f.write(",\n".join(subs))
+            
             final = "taller/master.mp4"
-            
-            st.markdown('<div class="msg">✨ Masterizado final (Inyectando audio blindado)...</div>', unsafe_allow_html=True)
-            
-            cmd_final = f'ffmpeg -y -i "{mudo}" -i "{audio_mezcla}" -filter_script:v taller/s.txt -map 0:v:0 -map 1:a:0 -c:v libx264 -preset ultrafast -crf 28 -c:a copy -threads 1 -t {dur} "{final}"'
-            
-            proceso = subprocess.run(cmd_final, shell=True, capture_output=True, text=True)
+            cmd_f = f'ffmpeg -y -i "{mudo}" -i "{audio_mezcla}" -filter_script:v taller/s.txt -map 0:v:0 -map 1:a:0 -c:v libx264 -preset ultrafast -crf 28 -c:a copy -threads 1 -t {dur} "{final}"'
+            proc = subprocess.run(cmd_f, shell=True, capture_output=True, text=True)
             
             if os.path.exists(final):
-                st.markdown('<div class="info-card">🏆 VÍDEO MAESTRO COMPLETADO SIN FALLOS</div>', unsafe_allow_html=True)
+                st.markdown('<div class="info-card">🏆 VÍDEO FINALIZADO CON ÉXITO</div>', unsafe_allow_html=True)
                 with open(final, "rb") as f: st.video(f.read())
                 st.balloons()
             else:
-                st.error("❌ Fénix Caído. El servidor ha escupido este error exacto:")
-                st.markdown(f'<div class="error-box">{proceso.stderr}</div>', unsafe_allow_html=True)
+                st.error("❌ Fallo en masterizado final:")
+                st.markdown(f'<div class="error-box">{proc.stderr}</div>', unsafe_allow_html=True)
